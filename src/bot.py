@@ -31,6 +31,12 @@ async def on_command_error(ctx: commands.Context, err: Exception) -> None:
     await ctx.reply(error_type, mention_author=False)
 
 
+@BOT.event
+async def on_ready() -> None:
+    print(f'Bot logged in as {BOT.user.name} ({BOT.user.id})')
+    print(f'Bot version: {app_settings.VERSION}')
+
+
 
 
 
