@@ -24,10 +24,10 @@ async def cmd_role(ctx: commands.Context) -> None:
     pass
 
 
-@cmd_role.command(name='add', brief='Add a role to the specified members')
+@cmd_role.command(name='add', brief='Add a role to specified members')
 async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: str) -> None:
     """
-    Add one role to many members.
+    Add one role to multiple members.
     """
     user_ids = set(user_ids.split(' '))
     users_added = []
@@ -48,6 +48,21 @@ async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
         member.remove_roles(role)
 
     await ctx.reply(f'Removed role {role} from all members.')
+
+
+@cmd_role.command(name='remove', brief='Remove a role from specified members')
+async def cmd_role_remove(ctx: commands.Context, role: discord.Role, *, user_ids: str) -> None:
+    """
+    Remove one role from multiple members.
+    """
+    user_ids = set(user_ids.split(' '))
+    users_added = []
+    for user_id in user_ids:
+        member = await ctx.guild.fetch_member(int(user_id))
+        await member.remove_roles(role.id)
+        users_added.append(f'{member.display_name} ({user_id})')
+
+    await ctx.reply(f'Removed role {role} from members: {", ".join(users_added)}')
 
 
 
