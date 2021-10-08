@@ -44,7 +44,7 @@ async def on_ready() -> None:
 
 @BOT.group(name='role', brief='Role management', invoke_without_command=True)
 async def cmd_role(ctx: commands.Context) -> None:
-    pass
+    await ctx.send_help('role')
 
 
 @cmd_role.command(name='add', brief='Add a role to specified members')
