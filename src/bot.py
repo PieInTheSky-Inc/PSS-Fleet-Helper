@@ -36,7 +36,7 @@ async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: s
         await member.add_roles(role.id)
         users_added.append(f'{member.display_name} ({user_id})')
 
-    await ctx.reply(f'Added role {role} to members: {", ".join(users_added)}')
+    await ctx.reply(f'Added role {role} to members: {", ".join(users_added)}', mention_author=False)
 
 
 @cmd_role.command(name='clear', brief='Remove a role from all members')
@@ -47,7 +47,7 @@ async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
     for member in list(role.members):
         member.remove_roles(role)
 
-    await ctx.reply(f'Removed role {role} from all members.')
+    await ctx.reply(f'Removed role {role} from all members.', mention_author=False)
 
 
 @cmd_role.command(name='remove', brief='Remove a role from specified members')
@@ -62,7 +62,7 @@ async def cmd_role_remove(ctx: commands.Context, role: discord.Role, *, user_ids
         await member.remove_roles(role.id)
         users_added.append(f'{member.display_name} ({user_id})')
 
-    await ctx.reply(f'Removed role {role} from members: {", ".join(users_added)}')
+    await ctx.reply(f'Removed role {role} from members: {", ".join(users_added)}', mention_author=False)
 
 
 
@@ -77,12 +77,12 @@ async def cmd_about(ctx: commands.Context) -> None:
         'Version': app_settings.VERSION,
         'Github': '<https://github.com/PieInTheSky-Inc/ViViBot>',
     }
-    await ctx.reply('\n'.join([f'{key}: {value}' for key, value in info.items()]))
+    await ctx.reply('\n'.join([f'{key}: {value}' for key, value in info.items()]), mention_author=False)
 
 
 @BOT.command(name='invite', brief='Produce invite link')
 async def cmd_invite(ctx: commands.Context) -> None:
-    await ctx.reply('https://discordapp.com/oauth2/authorize?scope=bot&permissions=139251403840&client_id=895959886834331658')
+    await ctx.reply('https://discordapp.com/oauth2/authorize?scope=bot&permissions=139251403840&client_id=895959886834331658', mention_author=False)
 
 
 
