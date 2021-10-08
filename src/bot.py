@@ -19,7 +19,7 @@ BOT = commands.Bot(
 
 # ---------- Basic role management ----------
 
-@BOT.group(name='role', invoke_without_command=True)
+@BOT.group(name='role', brief='Role management', invoke_without_command=True)
 async def cmd_role(ctx: commands.Context) -> None:
     pass
 
@@ -60,6 +60,7 @@ async def cmd_about(ctx: commands.Context) -> None:
         'Server count': len(BOT.guilds),
         'Member count': sum([guild.member_count for guild in BOT.guilds]),
         'Version': app_settings.VERSION,
+        'Github': 'https://github.com/PieInTheSky-Inc/ViViBot',
     }
     await ctx.send('\n'.join([f'{key} {value}' for key, value in info.items()]))
 
