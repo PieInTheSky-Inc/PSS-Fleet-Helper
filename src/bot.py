@@ -3,6 +3,7 @@ from typing import Dict
 
 import discord
 from discord.ext import commands
+from discord.ext.commands.core import bot_has_guild_permissions, bot_has_permissions
 
 import app_settings
 
@@ -30,8 +31,12 @@ async def on_command_error(ctx: commands.Context, err: Exception) -> None:
     if isinstance(err, commands.errors.CommandInvokeError):
         err = err.original
     error_type = type(err).__name__
+    error_text = (err.args[0] or '') if err.args else ''
+    msg = f'**{error_type}**'
+    if error_text:
+        msg += f'\n{error_text}'
 
-    await ctx.reply(error_type, mention_author=False)
+    await ctx.reply(f'{msg}', mention_author=False)
 
 
 @BOT.event
@@ -50,6 +55,7 @@ async def cmd_role(ctx: commands.Context) -> None:
     await ctx.send_help('role')
 
 
+@bot_has_guild_permissions(manage_roles=True)
 @cmd_role.command(name='add', brief='Add a role to specified members')
 async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: str) -> None:
     """
@@ -69,6 +75,7 @@ async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: s
         await ctx.reply(f'Added role {role} to members:\n{user_list}', mention_author=False)
 
 
+@bot_has_guild_permissions(manage_roles=True)
 @cmd_role.command(name='clear', brief='Remove a role from all members')
 async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
     """
@@ -90,6 +97,7 @@ async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
         await ctx.reply(f'There are no members with the role {role}.', mention_author=False)
 
 
+@bot_has_guild_permissions(manage_roles=True)
 @cmd_role.command(name='remove', brief='Remove a role from specified members')
 async def cmd_role_remove(ctx: commands.Context, role: discord.Role, *, user_ids: str) -> None:
     """
