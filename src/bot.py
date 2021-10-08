@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from discord.ext.commands.core import cooldown
 
 import app_settings
 
@@ -9,8 +8,9 @@ import app_settings
 
 
 BOT = commands.Bot(
-    command_prefix='vivi ',
-    intents=discord.Intents.all()
+    command_prefix=commands.when_mentioned_or('vivi '),
+    intents=discord.Intents.all(),
+    activity=discord.activity.Activity(type=discord.ActivityType.playing, name='vivi help')
 )
 
 
