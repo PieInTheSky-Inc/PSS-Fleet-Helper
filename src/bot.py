@@ -5,13 +5,27 @@ import app_settings
 
 
 
-
+# ---------- Setup ----------
 
 BOT = commands.Bot(
     command_prefix=commands.when_mentioned_or('vivi '),
     intents=discord.Intents.all(),
     activity=discord.activity.Activity(type=discord.ActivityType.playing, name='vivi help')
 )
+
+
+
+
+
+# ---------- Event handlers ----------
+
+@BOT.event
+async def on_command_error(ctx: commands.Context, err: Exception) -> None:
+    if isinstance(err, commands.errors.CommandInvokeError):
+        err = err.original
+    error_type = type(err).__name__
+
+    await ctx.reply(error_type, mention_author=False)
 
 
 
