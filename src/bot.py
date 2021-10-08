@@ -21,6 +21,9 @@ BOT = commands.Bot(
 
 @BOT.event
 async def on_command_error(ctx: commands.Context, err: Exception) -> None:
+    if app_settings.THROW_COMMAND_ERRORS:
+        raise err
+
     if isinstance(err, commands.errors.CommandInvokeError):
         err = err.original
     error_type = type(err).__name__
