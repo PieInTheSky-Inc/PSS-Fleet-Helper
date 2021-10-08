@@ -40,7 +40,7 @@ async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
 
 @BOT.command(name='invite', brief='Produce invite link')
 async def cmd_invite(ctx: commands.Context) -> None:
-    ctx.send('https://discordapp.com/oauth/authorize?scope=138982837312&client_id=895959886834331658')
+    ctx.send('https://discordapp.com/oauth2/authorize?scope=bot&permissions=139251403840&client_id=895959886834331658')
 
 
 
