@@ -36,7 +36,7 @@ async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: s
         await member.add_roles(role.id)
         users_added.append(f'{member.display_name} ({user_id})')
 
-    ctx.send(f'Added role {role} to members: {users_added.join(", ")}')
+    await ctx.send(f'Added role {role} to members: {users_added.join(", ")}')
 
 
 @cmd_role.command(name='clear', brief='Remove a role from all members')
@@ -47,7 +47,7 @@ async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
     for member in list(role.members):
         member.remove_roles(role)
 
-    ctx.send(f'Removed role {role} from all members.')
+    await ctx.send(f'Removed role {role} from all members.')
 
 
 
@@ -56,7 +56,7 @@ async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
 
 @BOT.command(name='invite', brief='Produce invite link')
 async def cmd_invite(ctx: commands.Context) -> None:
-    ctx.send('https://discordapp.com/oauth2/authorize?scope=bot&permissions=139251403840&client_id=895959886834331658')
+    await ctx.send('https://discordapp.com/oauth2/authorize?scope=bot&permissions=139251403840&client_id=895959886834331658')
 
 
 
