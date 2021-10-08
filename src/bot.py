@@ -56,6 +56,7 @@ async def cmd_role(ctx: commands.Context) -> None:
 
 
 @bot_has_guild_permissions(manage_roles=True)
+@commands.has_guild_permissions(manage_roles=True)
 @cmd_role.command(name='add', brief='Add a role to specified members')
 async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: str) -> None:
     """
@@ -76,6 +77,7 @@ async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: s
 
 
 @bot_has_guild_permissions(manage_roles=True)
+@commands.has_guild_permissions(manage_roles=True)
 @cmd_role.command(name='clear', brief='Remove a role from all members')
 async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
     """
@@ -98,6 +100,7 @@ async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
 
 
 @bot_has_guild_permissions(manage_roles=True)
+@commands.has_guild_permissions(manage_roles=True)
 @cmd_role.command(name='remove', brief='Remove a role from specified members')
 async def cmd_role_remove(ctx: commands.Context, role: discord.Role, *, user_ids: str) -> None:
     """
