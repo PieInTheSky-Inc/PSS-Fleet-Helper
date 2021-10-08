@@ -59,7 +59,7 @@ async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: s
         await member.add_roles(role)
         users_added.append(f'{member.display_name} ({user_id})')
 
-    user_list = '\n'.join(users_added)
+    user_list = '\n'.join(sorted(users_added))
 
     await ctx.reply(f'Added role {role} to members:\n{user_list}', mention_author=False)
 
@@ -69,10 +69,14 @@ async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
     """
     Remove a specific role from all members.
     """
+    users_removed = []
     for member in list(role.members):
         await member.remove_roles(role)
+        users_removed.append(f'{member.display_name} ({member.id})')
 
-    await ctx.reply(f'Removed role {role} from all members.', mention_author=False)
+    user_list = '\n'.join(sorted(users_removed))
+
+    await ctx.reply(f'Removed role {role} from members:\n{user_list}', mention_author=False)
 
 
 @cmd_role.command(name='remove', brief='Remove a role from specified members')
@@ -81,13 +85,13 @@ async def cmd_role_remove(ctx: commands.Context, role: discord.Role, *, user_ids
     Remove one role from multiple members.
     """
     user_ids = set(user_ids.split(' '))
-    users_added = []
+    users_removed = []
     for user_id in user_ids:
         member = await ctx.guild.fetch_member(int(user_id))
         await member.remove_roles(role)
-        users_added.append(f'{member.display_name} ({user_id})')
+        users_removed.append(f'{member.display_name} ({user_id})')
 
-    user_list = '\n'.join(users_added)
+    user_list = '\n'.join(sorted(users_removed))
 
     await ctx.reply(f'Removed role {role} from members:\n{user_list}', mention_author=False)
 
