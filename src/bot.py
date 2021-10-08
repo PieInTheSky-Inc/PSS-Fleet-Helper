@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands.core import cooldown
 
 import app_settings
 
@@ -8,7 +9,7 @@ import app_settings
 
 
 BOT = commands.Bot(
-    command_prefix='vv ',
+    command_prefix='vivi ',
     intents=discord.Intents.all()
 )
 
@@ -25,13 +26,28 @@ async def cmd_role(ctx: commands.Context) -> None:
 
 @cmd_role.command(name='add', brief='Add a role to the specified members')
 async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: str) -> None:
-    pass
+    """
+    Add one role to many members.
+    """
+    user_ids = set(user_ids.split(' '))
+    users_added = []
+    for user_id in user_ids:
+        member = await ctx.guild.fetch_member(int(user_id))
+        await member.add_roles(role.id)
+        users_added.append(f'{member.display_name} ({user_id})')
+
+    ctx.send(f'Added role {role} to members: {users_added.join(", ")}')
 
 
 @cmd_role.command(name='clear', brief='Remove a role from all members')
 async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
-    pass
+    """
+    Remove a specific role from all members.
+    """
+    for member in list(role.members):
+        member.remove_roles(role)
 
+    ctx.send(f'Removed role {role} from all members.')
 
 
 
