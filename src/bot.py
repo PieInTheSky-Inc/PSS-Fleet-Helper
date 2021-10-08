@@ -50,7 +50,7 @@ async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: s
     users_added = []
     for user_id in user_ids:
         member = await ctx.guild.fetch_member(int(user_id))
-        await member.add_roles(role.id)
+        await member.add_roles(role)
         users_added.append(f'{member.display_name} ({user_id})')
 
     await ctx.reply(f'Added role {role} to members: {", ".join(users_added)}', mention_author=False)
@@ -76,7 +76,7 @@ async def cmd_role_remove(ctx: commands.Context, role: discord.Role, *, user_ids
     users_added = []
     for user_id in user_ids:
         member = await ctx.guild.fetch_member(int(user_id))
-        await member.remove_roles(role.id)
+        await member.remove_roles(role)
         users_added.append(f'{member.display_name} ({user_id})')
 
     await ctx.reply(f'Removed role {role} from members: {", ".join(users_added)}', mention_author=False)
