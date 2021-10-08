@@ -82,7 +82,7 @@ async def cmd_about(ctx: commands.Context) -> None:
 
 @BOT.command(name='invite', brief='Produce invite link')
 async def cmd_invite(ctx: commands.Context) -> None:
-    await ctx.reply('https://discordapp.com/oauth2/authorize?scope=bot&permissions=139251403840&client_id=895959886834331658', mention_author=False)
+    await ctx.reply('https://discordapp.com/oauth2/authorize?scope=bot&permissions=139519839296&client_id=895959886834331658', mention_author=False)
 
 
 
