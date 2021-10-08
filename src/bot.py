@@ -59,7 +59,7 @@ async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: s
         await member.add_roles(role)
         users_added.append(f'{member.display_name} ({user_id})')
 
-    await ctx.reply(f'Added role {role} to members: {", ".join(users_added)}', mention_author=False)
+    await ctx.reply(f'Added role {role} to members:\n{"\n".join(users_added)}', mention_author=False)
 
 
 @cmd_role.command(name='clear', brief='Remove a role from all members')
@@ -85,7 +85,7 @@ async def cmd_role_remove(ctx: commands.Context, role: discord.Role, *, user_ids
         await member.remove_roles(role)
         users_added.append(f'{member.display_name} ({user_id})')
 
-    await ctx.reply(f'Removed role {role} from members: {", ".join(users_added)}', mention_author=False)
+    await ctx.reply(f'Removed role {role} from members:\n{"\n".join(users_added)}', mention_author=False)
 
 
 
