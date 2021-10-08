@@ -45,7 +45,7 @@ async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
     Remove a specific role from all members.
     """
     for member in list(role.members):
-        member.remove_roles(role)
+        await member.remove_roles(role)
 
     await ctx.reply(f'Removed role {role} from all members.', mention_author=False)
 
