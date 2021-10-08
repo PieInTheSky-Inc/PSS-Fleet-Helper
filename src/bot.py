@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord.ext.commands.core import bot_has_guild_permissions, bot_has_permissions
 
 import app_settings
+import database
 
 
 
@@ -197,5 +198,10 @@ class Confirmator():
 
 # ---------- Module init ----------
 
+async def __initialize() -> None:
+    await database.init()
+
 if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(__initialize())
     BOT.run(app_settings.DISCORD_BOT_TOKEN)
