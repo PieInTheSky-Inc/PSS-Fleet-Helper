@@ -8,6 +8,8 @@ from discord.ext.commands.core import bot_has_guild_permissions, bot_has_permiss
 import app_settings
 from confirmator import Confirmator
 import database
+import pssapi
+from selector import Selector
 
 
 
@@ -120,6 +122,47 @@ async def cmd_role_remove(ctx: commands.Context, role: discord.Role, *, user_ids
         user_list = '\n'.join(sorted(users_removed))
 
         await ctx.reply(f'Removed role {role} from members:\n{user_list}', mention_author=False)
+
+
+
+
+
+# ---------- PSS commands ----------
+
+@BOT.group(name='fleet', aliases=['alliance'], brief='Search for fleets', invoke_without_command=True)
+async def cmd_fleet(ctx: commands.Context, *, fleet_name: str) -> None:
+    """
+    Search for fleets
+    """
+    access_token = await pssapi.login()
+    alliances = await pssapi.search_alliances(fleet_name, access_token)
+    if alliances:
+        msg = '\n'.join([f'{alliance.name}: {alliance.trophy}' for alliance in alliances])
+    else:
+        msg = f'Could not find a fleet named: {fleet_name}'
+    await ctx.reply(msg, mention_author=False)
+
+
+@cmd_fleet.command(name='members', aliases=['players', 'users'], brief='List fleet members')
+async def cmd_fleet_members(ctx: commands.Context, *, fleet_name: str) -> None:
+    """
+    List fleet members
+    """
+    access_token = await pssapi.login()
+    alliances = await pssapi.search_alliances(fleet_name, access_token)
+    if alliances:
+        if len(alliances) > 1:
+            selector = Selector(ctx, fleet_name, alliances, lambda alliance: alliance.name)
+            _, alliance = await selector.wait_for_option_selection()
+        else:
+            alliance = alliances[0]
+
+        members = await alliance.fetch_members(access_token)
+        msg = f'**{alliance.name} members**\n' + '\n'.join([f'{user.name}: {user.trophy}' for user in members])
+    else:
+        msg = f'Could not find a fleet named: {fleet_name}'
+    await ctx.reply(msg, mention_author=False)
+
 
 
 

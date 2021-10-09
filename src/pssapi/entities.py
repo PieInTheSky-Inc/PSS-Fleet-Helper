@@ -7,10 +7,13 @@ from typing import Optional as _Optional
 from . import convert as _convert
 from . import enums as _enums
 from . import utils as _utils
-from . import alliance_service as _alliance_service
 
 
-class PssAlliance():
+class PssEntityBase():
+    pass
+
+
+class PssAlliance(PssEntityBase):
     def __init__(self, alliance_info: _Dict[str, _Any]) -> None:
         self.__alliance_info: _Dict[str, _Any] = dict(alliance_info)
         self.__members: _List['PssUser'] = None
@@ -59,9 +62,10 @@ class PssAlliance():
 
 
     async def fetch_members(self, access_token: str) -> _List['PssUser']:
+        from . import alliance_service as _alliance_service
         members: _List['PssUser'] = await _alliance_service.list_users(self.id, access_token)
         self.__members = members
-        self.__members_updated = _utils.datetime.get_utc_now()
+        self.__members_updated = _utils.get_utc_now()
         for member in members:
             if member.alliance_id == self.id:
                 member.set_alliance(self)
@@ -71,7 +75,7 @@ class PssAlliance():
 
 
 
-class PssUser():
+class PssUser(PssEntityBase):
     def __init__(self, user_info: _Dict[str, _Any]) -> None:
         self.__user_info = dict(user_info)
         alliance_info = self.__user_info.get('Alliance')

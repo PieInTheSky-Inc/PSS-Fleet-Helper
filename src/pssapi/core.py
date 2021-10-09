@@ -9,10 +9,10 @@ from .types import EntityInfo as _EntityInfo
 
 # ---------- Constants ----------
 
-__LATEST_SETTINGS_BASE_PATH: str = 'SettingService/GetLatestVersion3?deviceType=DeviceTypeAndroid&languageKey=en'
+__LATEST_SETTINGS_BASE_PATH: str = 'SettingService/GetLatestVersion3'
 __LATEST_SETTINGS_BASE_PARAMS: _Dict = {
-    'deviceType': 'deviceTypeAndroid',
-    'languageKey': 'en',
+    'deviceType': _settings.DEVICE_TYPE,
+    'languageKey': _settings.LANGUAGE_KEY,
 }
 
 
@@ -38,7 +38,7 @@ async def get_data_from_path(path: str, **params) -> str:
 async def get_latest_settings(base_url: str = None) -> _EntityInfo:
     base_url = base_url or await get_base_url()
     url = f'{base_url}{__LATEST_SETTINGS_BASE_PATH}'
-    raw_text = await __get_data_from_url(url, __LATEST_SETTINGS_BASE_PARAMS)
+    raw_text = await __get_data_from_url(url, **__LATEST_SETTINGS_BASE_PARAMS)
     result = _convert.xmltree_to_dict3(raw_text)
     maintenance_message = result.get('MaintenanceMessage')
     if maintenance_message:
