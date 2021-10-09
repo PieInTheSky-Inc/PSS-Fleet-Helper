@@ -61,7 +61,7 @@ async def create_schema() -> bool:
 
     schema_version = await get_schema_version()
     if schema_version:
-        compare_010 = _utils.compare_version(schema_version, '0.1.0')
+        compare_010 = _utils.compare_versions(schema_version, '0.1.0')
         if compare_010:
             return True
 
