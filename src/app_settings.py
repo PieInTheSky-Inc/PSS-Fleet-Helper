@@ -1,8 +1,6 @@
 import os
 
 
-ACCESS_TOKEN: str = os.environ.get('PSS_ACCESS_TOKEN')
-
 
 DATABASE_SSL_MODE: str = os.environ.get('DATABASE_SSL_MODE', 'require')
 DATABASE_URL: str = f'{os.environ.get("DATABASE_URL")}?sslmode={DATABASE_SSL_MODE}'
