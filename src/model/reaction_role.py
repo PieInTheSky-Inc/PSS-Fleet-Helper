@@ -142,7 +142,7 @@ class ReactionRole(_database.DatabaseRowBase):
         message_id = message_id or self.message_id
         name = name or self.name
         reaction = reaction or self.reaction
-        is_active = is_active or self.is_active
+        is_active = self.is_active if is_active is None else is_active
         updated = await _db_update_reaction_role(self.id, message_id, name, reaction, is_active)
         if updated:
             self.__message_id = message_id
@@ -267,8 +267,8 @@ class ReactionRoleChange(_database.DatabaseRowBase):
         if role_id is None and add is None and allow_toggle is None and message_channel_id is None and message_content is None:
             return True
         role_id = role_id or self.role_id
-        add = add or self.add
-        allow_toggle = allow_toggle or self.allow_toggle
+        add = self.add if add is None else add
+        allow_toggle = self.allow_toggle if allow_toggle is None else allow_toggle
         message_channel_id = message_channel_id or self.message_channel_id
         message_content = message_content or self.message_content
         updated = await _db_update_reaction_role_change(self.id, role_id, add, allow_toggle, message_content, message_channel_id)

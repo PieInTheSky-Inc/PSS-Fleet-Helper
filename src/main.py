@@ -391,16 +391,46 @@ async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, messa
     await ctx.reply('Successfully set up a Reaction Role.', mention_author=False)
 
 
+@cmd_reactionrole.command(name='activate', brief='Activate a Reaction Role')
+async def cmd_reactionrole_activate(ctx: Context, reaction_role_id: int) -> None:
+    reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if reaction_role.id == reaction_role_id]
+    if reaction_roles:
+        reaction_role = reaction_roles[0]
+        if reaction_role.is_active:
+            raise Exception(f'The Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}` is already active.')
+        if (await reaction_role.update(is_active=True)):
+            await ctx.reply(f'Activated Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}`', mention_author=False)
+        else:
+            raise Exception(f'Failed to activate Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}`.')
+    else:
+        raise Exception(f'There is no Reaction Role configured on this server having the ID `{reaction_role_id}`.')
+
+
+@cmd_reactionrole.command(name='deactivate', brief='Deactivate a Reaction Role')
+async def cmd_reactionrole_deactivate(ctx: Context, reaction_role_id: int) -> None:
+    reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if reaction_role.id == reaction_role_id]
+    if reaction_roles:
+        reaction_role = reaction_roles[0]
+        if not reaction_role.is_active:
+            raise Exception(f'The Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}` is already inactive.')
+        if (await reaction_role.update(is_active=False)):
+            await ctx.reply(f'Deactivated Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}`.', mention_author=False)
+        else:
+            raise Exception(f'Failed to deactivate Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}`.')
+    else:
+        raise Exception(f'There is no Reaction Role configured on this server having the ID `{reaction_role_id}`.')
+
+
 @cmd_reactionrole.group(name='list', brief='List reaction roles', invoke_without_command=True)
 async def cmd_reactionrole_list(ctx: Context, include_messages: bool) -> None:
-    reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id]]
+    reaction_roles = list(VIVI.reaction_roles[ctx.guild.id])
     if reaction_roles:
         outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
         for output in outputs:
             for post in output:
                 await ctx.reply(post, mention_author=False)
     else:
-        await ctx.reply('There are no Reaction Roles configured for this server.')
+        raise Exception('There are no Reaction Roles configured for this server.')
 
 
 @cmd_reactionrole_list.command(name='active', brief='List reaction roles', invoke_without_command=True)
@@ -412,7 +442,7 @@ async def cmd_reactionrole_list_active(ctx: Context, include_messages: str) -> N
             for post in output:
                 await ctx.reply(post, mention_author=False)
     else:
-        await ctx.reply('There are no active Reaction Roles configured for this server.')
+        raise Exception('There are no active Reaction Roles configured for this server.')
 
 
 @cmd_reactionrole_list.command(name='inactive', brief='List reaction roles', invoke_without_command=True)
@@ -424,7 +454,7 @@ async def cmd_reactionrole_list_inactive(ctx: Context, include_messages: str) ->
             for post in output:
                 await ctx.reply(post, mention_author=False)
     else:
-        await ctx.reply('There are no inactive Reaction Roles configured for this server.')
+        raise Exception('There are no inactive Reaction Roles configured for this server.')
 
 
 
