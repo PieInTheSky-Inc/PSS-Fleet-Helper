@@ -153,13 +153,15 @@ async def cmd_invite(ctx: Context) -> None:
 
 @VIVI.bot.group(name='reactionrole', aliases=['rr'], brief='Set up reaction roles', invoke_without_command=True)
 async def cmd_reactionrole(ctx: Context) -> None:
-    ctx.send_help('reactionrole')
+    await ctx.send_help('reactionrole')
 
 
 @cmd_reactionrole.command(name='add', brief='Add a reaction role')
 async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, message_id: int, emoji: str, *, name: str) -> None:
     """
     Assistant for adding reaction roles
+
+    [message_id] must be of a message in [channel]
     """
     try:
         reaction_message = await channel.fetch_message(message_id)
@@ -374,7 +376,7 @@ async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, messa
     if finish_setup is None:
         return
 
-    reaction_role_definition = await model.ReactionRole.create(ctx.guild.id, reaction_message.id, name, emoji)
+    reaction_role_definition = await model.ReactionRole.create(ctx.guild.id, channel.id, reaction_message.id, name, emoji)
     for role, add, allow_toggle, message_channel, message_text in role_reaction_changes:
         await reaction_role_definition.add_change(
             role.id,
@@ -399,6 +401,8 @@ async def cmd_reactionrole_activate(ctx: Context, reaction_role_id: int) -> None
         if reaction_role.is_active:
             raise Exception(f'The Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}` is already active.')
         if (await reaction_role.update(is_active=True)):
+            reaction_message = await ctx.guild.get_channel(reaction_role.channel_id).fetch_message(reaction_role.message_id)
+            await reaction_message.add_reaction(reaction_role.reaction)
             await ctx.reply(f'Activated Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}`', mention_author=False)
         else:
             raise Exception(f'Failed to activate Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}`.')
@@ -414,6 +418,8 @@ async def cmd_reactionrole_deactivate(ctx: Context, reaction_role_id: int) -> No
         if not reaction_role.is_active:
             raise Exception(f'The Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}` is already inactive.')
         if (await reaction_role.update(is_active=False)):
+            reaction_message = await ctx.guild.get_channel(reaction_role.channel_id).fetch_message(reaction_role.message_id)
+            await reaction_message.remove_reaction(reaction_role.reaction, ctx.guild.me)
             await ctx.reply(f'Deactivated Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}`.', mention_author=False)
         else:
             raise Exception(f'Failed to deactivate Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}`.')
@@ -422,7 +428,7 @@ async def cmd_reactionrole_deactivate(ctx: Context, reaction_role_id: int) -> No
 
 
 @cmd_reactionrole.group(name='list', brief='List reaction roles', invoke_without_command=True)
-async def cmd_reactionrole_list(ctx: Context, include_messages: bool) -> None:
+async def cmd_reactionrole_list(ctx: Context, include_messages: bool = False) -> None:
     reaction_roles = list(VIVI.reaction_roles[ctx.guild.id])
     if reaction_roles:
         outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
@@ -434,7 +440,7 @@ async def cmd_reactionrole_list(ctx: Context, include_messages: bool) -> None:
 
 
 @cmd_reactionrole_list.command(name='active', brief='List reaction roles', invoke_without_command=True)
-async def cmd_reactionrole_list_active(ctx: Context, include_messages: str) -> None:
+async def cmd_reactionrole_list_active(ctx: Context, include_messages: bool = False) -> None:
     reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if reaction_role.is_active]
     if reaction_roles:
         outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
@@ -446,7 +452,7 @@ async def cmd_reactionrole_list_active(ctx: Context, include_messages: str) -> N
 
 
 @cmd_reactionrole_list.command(name='inactive', brief='List reaction roles', invoke_without_command=True)
-async def cmd_reactionrole_list_inactive(ctx: Context, include_messages: str) -> None:
+async def cmd_reactionrole_list_inactive(ctx: Context, include_messages: bool = False) -> None:
     reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if not reaction_role.is_active]
     if reaction_roles:
         outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]

@@ -55,8 +55,10 @@ class ViViBot():
         reaction_roles.sort(key=lambda rr: rr.id)
         result = {}
         for reaction_role in reaction_roles:
-            reaction_role.update_changes(changes[reaction_role.id])
-            reaction_role.update_requirements(requirements[reaction_role.id])
+            if reaction_role.id in changes:
+                reaction_role.update_changes(changes[reaction_role.id])
+            if reaction_role.id in requirements:
+                reaction_role.update_requirements(requirements[reaction_role.id])
             result.setdefault(reaction_role.guild_id, []).append(reaction_role)
 
         return result

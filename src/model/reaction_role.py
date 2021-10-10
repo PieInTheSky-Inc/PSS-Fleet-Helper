@@ -12,9 +12,10 @@ class ReactionRole(_database.DatabaseRowBase):
     TABLE_NAME: str = 'reaction_role'
     ID_COLUMN_NAME: str = 'reaction_role_id'
 
-    def __init__(self, reaction_role_id: int, guild_id: int, message_id: int, name: str, reaction: str, is_active: bool) -> None:
+    def __init__(self, reaction_role_id: int, guild_id: int, channel_id: int, message_id: int, name: str, reaction: str, is_active: bool) -> None:
         super().__init__(reaction_role_id)
         self.__guild_id: int = guild_id
+        self.__channel_id: int = channel_id
         self.__message_id: int = message_id
         self.__name: str = name
         self.__reaction: str = reaction
@@ -26,7 +27,12 @@ class ReactionRole(_database.DatabaseRowBase):
 
 
     @property
-    def guild_id(self) -> bool:
+    def channel_id(self) -> int:
+        super()._assert_not_deleted()
+        return self.__channel_id
+
+    @property
+    def guild_id(self) -> int:
         super()._assert_not_deleted()
         return self.__guild_id
 
@@ -36,17 +42,17 @@ class ReactionRole(_database.DatabaseRowBase):
         return self.__is_active
 
     @property
-    def message_id(self) -> bool:
+    def message_id(self) -> int:
         super()._assert_not_deleted()
         return self.__message_id
 
     @property
-    def name(self) -> bool:
+    def name(self) -> str:
         super()._assert_not_deleted()
         return self.__name
 
     @property
-    def reaction(self) -> bool:
+    def reaction(self) -> str:
         super()._assert_not_deleted()
         return self.__reaction
 
@@ -185,18 +191,19 @@ class ReactionRole(_database.DatabaseRowBase):
 
 
     @staticmethod
-    async def create(guild_id: int, message_id: int, name: str, reaction: str, is_active: bool = False) -> _Optional['ReactionRole']:
+    async def create(guild_id: int, reaction_channel_id: int, message_id: int, name: str, reaction: str, is_active: bool = False) -> _Optional['ReactionRole']:
         record = await _database.insert_row(
             ReactionRole.TABLE_NAME,
             ReactionRole.ID_COLUMN_NAME,
             guild_id=guild_id,
+            channel_id=reaction_channel_id,
             message_id=message_id,
             name=name,
             reaction=reaction,
             is_active=is_active,
         )
         if record:
-            return ReactionRole(record[0], guild_id, message_id, name, reaction, is_active)
+            return ReactionRole(record[0], guild_id, reaction_channel_id, message_id, name, reaction, is_active)
         return None
 
 
@@ -444,7 +451,7 @@ async def _db_update_reaction_role_requirement(reaction_role_requirement_id: int
 async def test() -> bool:
     await _database.init()
     try:
-        rr = await ReactionRole.create(896010670909304863, 'RR1234', '🙂')
+        rr = await ReactionRole.create(896010670909304863, 896010670909304863, 896010670909304863, 'RR1234', '🙂')
     except Exception as e:
         return False
 

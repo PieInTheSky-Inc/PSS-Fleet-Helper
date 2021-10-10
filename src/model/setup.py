@@ -38,6 +38,7 @@ async def __update_db_schema_0_2_0() -> bool:
         ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('guild_id', 'BIGINT', False, True, None),
+        ('channel_id', 'BIGINT', False, True, None),
         ('message_id', 'BIGINT', False, True, None),
         ('name', 'TEXT', False, True, None),
         ('reaction', 'TEXT', False, True, None),
