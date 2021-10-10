@@ -26,7 +26,8 @@ class ReactionRoleConverter():
         if self.__text is not None:
             return self.__text
 
-        details = [f'Name = {self.__reaction_role.name}',
+        details = [f'ID = {self.__reaction_role.id}',
+            f'Name = {self.__reaction_role.name}',
             f'Message ID = {self.__reaction_role.message_id}',
             f'Emoji = {self.__reaction_role.reaction}',
             f'Is active = {self.__reaction_role.is_active}',
