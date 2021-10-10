@@ -7,8 +7,8 @@ from threading import Lock as _Lock
 
 import asyncpg as _asyncpg
 
-import app_settings as _app_settings
-import utils as _utils
+from . import model_settings as _model_settings
+from . import utils as _utils
 
 
 # ---------- Typehints ----------
@@ -70,7 +70,7 @@ async def connect() -> bool:
         global __CONNECTION_POOL
         if is_connected(__CONNECTION_POOL) is False:
             try:
-                __CONNECTION_POOL = await _asyncpg.create_pool(dsn=_app_settings.DATABASE_URL)
+                __CONNECTION_POOL = await _asyncpg.create_pool(dsn=_model_settings.DATABASE_URL)
                 return True
             except Exception as error:
                 error_name = error.__class__.__name__
@@ -360,7 +360,7 @@ def print_db_query_error(function_name: str, query: str, args: _List[_Any], erro
 
 
 def __log_db_function_enter(function_name: str, **kwargs) -> None:
-    if _app_settings.PRINT_DEBUG_DB:
+    if _model_settings.PRINT_DEBUG_DB:
         params = ', '.join([f'{k}={v}' for k, v in kwargs.items()])
         print(f'+ {function_name}({params})')
 

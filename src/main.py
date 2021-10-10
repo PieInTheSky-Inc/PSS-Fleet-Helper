@@ -7,23 +7,21 @@ from typing import Tuple as _Tuple
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
-from discord.ext.commands.core import bot_has_guild_permissions, check
+from discord.ext.commands.core import bot_has_guild_permissions
 
 import app_settings
 from confirmator import Confirmator
-import database
-import init
-from vivibot import ViViBot as _ViViBot
-from reaction_role import ReactionRole as _ReactionRole
+import model
+from vm_converter import ReactionRoleConverter as _ReactionRoleConverter
 
 
 # ---------- Setup ----------
 
-BOT = _ViViBot(
-    command_prefix=commands.when_mentioned_or('vivi '),
-    intents=discord.Intents.all(),
-    activity=discord.activity.Activity(type=discord.ActivityType.playing, name='vivi help')
-)
+VIVI = model.ViViBot(commands.Bot(
+        command_prefix=commands.when_mentioned_or('vivi '),
+        intents=discord.Intents.all(),
+        activity=discord.activity.Activity(type=discord.ActivityType.playing, name='vivi help')
+    ))
 
 
 
@@ -31,7 +29,7 @@ BOT = _ViViBot(
 
 # ---------- Event handlers ----------
 
-@BOT.event
+@VIVI.bot.event
 async def on_command_error(ctx: Context, err: Exception) -> None:
     if app_settings.THROW_COMMAND_ERRORS:
         raise err
@@ -47,9 +45,9 @@ async def on_command_error(ctx: Context, err: Exception) -> None:
     await ctx.reply(f'{msg}', mention_author=False)
 
 
-@BOT.event
+@VIVI.bot.event
 async def on_ready() -> None:
-    print(f'Bot logged in as {BOT.user.name} ({BOT.user.id})')
+    print(f'Bot logged in as {VIVI.bot.user.name} ({VIVI.bot.user.id})')
     print(f'Bot version: {app_settings.VERSION}')
 
 
@@ -58,7 +56,7 @@ async def on_ready() -> None:
 
 # ---------- Basic role management ----------
 
-@BOT.group(name='role', brief='Role management', invoke_without_command=True)
+@VIVI.bot.group(name='role', brief='Role management', invoke_without_command=True)
 async def cmd_role(ctx: Context) -> None:
     await ctx.send_help('role')
 
@@ -132,18 +130,18 @@ async def cmd_role_remove(ctx: Context, role: discord.Role, *, user_ids: str) ->
 
 # ---------- Bot management ----------
 
-@BOT.command(name='about', brief='General info about the bot')
+@VIVI.bot.command(name='about', brief='General info about the bot')
 async def cmd_about(ctx: Context) -> None:
     info = {
-        'Server count': len(BOT.guilds),
-        'Member count': sum([guild.member_count for guild in BOT.guilds]),
+        'Server count': len(VIVI.bot.guilds),
+        'Member count': sum([guild.member_count for guild in VIVI.bot.guilds]),
         'Version': app_settings.VERSION,
         'Github': '<https://github.com/PieInTheSky-Inc/ViViBot>',
     }
     await ctx.reply('\n'.join([f'{key}: {value}' for key, value in info.items()]), mention_author=False)
 
 
-@BOT.command(name='invite', brief='Produce invite link')
+@VIVI.bot.command(name='invite', brief='Produce invite link')
 async def cmd_invite(ctx: Context) -> None:
     await ctx.reply('https://discordapp.com/oauth2/authorize?scope=bot&permissions=139519798336&client_id=895959886834331658', mention_author=False)
 
@@ -153,7 +151,7 @@ async def cmd_invite(ctx: Context) -> None:
 
 # ---------- Reaction Roles ----------
 
-@BOT.group(name='reactionrole', aliases=['rr'], brief='Set up reaction roles', invoke_without_command=True)
+@VIVI.bot.group(name='reactionrole', aliases=['rr'], brief='Set up reaction roles', invoke_without_command=True)
 async def cmd_reactionrole(ctx: Context) -> None:
     ctx.send_help('reactionrole')
 
@@ -376,20 +374,42 @@ async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, messa
     if finish_setup is None:
         return
 
-    reaction_role_definition = await _ReactionRole.create(reaction_message.id, name, emoji)
+    reaction_role_definition = await model.ReactionRole.create(ctx.guild.id, reaction_message.id, name, emoji)
     for role, add, allow_toggle, message_channel, message_text in role_reaction_changes:
         await reaction_role_definition.add_change(
             role.id,
             add,
             allow_toggle,
-            message_channel.id if message_channel else None,
             message_text if message_channel else None,
+            message_channel.id if message_channel else None,
         )
     for role in role_reaction_requirements:
         await reaction_role_definition.add_requirement(role.id)
 
+    VIVI.reaction_roles.setdefault(ctx.guild.id, []).append(reaction_role_definition)
     await welcome_message.delete()
     await ctx.reply('Successfully set up a Reaction Role.', mention_author=False)
+
+
+@cmd_reactionrole.group(name='list', brief='List reaction roles', invoke_without_command=True)
+async def cmd_reactionrole_list(ctx: Context, include_messages: bool) -> None:
+    reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id]]
+    outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
+    for output in outputs:
+        for post in output:
+            await ctx.reply(post, mention_author=False)
+
+
+@cmd_reactionrole_list.command(name='active', brief='List reaction roles', invoke_without_command=True)
+async def cmd_reactionrole_list_active(ctx: Context, include_messages: str) -> None:
+    reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if reaction_role.is_active]
+    pass
+
+
+@cmd_reactionrole_list.command(name='inactive', brief='List reaction roles', invoke_without_command=True)
+async def cmd_reactionrole_list_inactive(ctx: Context, include_messages: str) -> None:
+    reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if not reaction_role.is_active]
+    pass
 
 
 
@@ -447,9 +467,11 @@ async def _wait_for_reply(ctx: Context, check: _Callable, timeout: float = 60.0,
 # ---------- Module init ----------
 
 async def __initialize() -> None:
-    await init.init()
+    await model.setup_model()
+    await VIVI.initialize()
+
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(__initialize())
-    BOT.run(app_settings.DISCORD_BOT_TOKEN)
+    VIVI.bot.run(app_settings.DISCORD_BOT_TOKEN)

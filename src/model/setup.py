@@ -1,18 +1,18 @@
 import asyncio as _asyncio
 from typing import Callable as _Callable
 
-import database as _database
-from reaction_role import ReactionRole as _ReactionRole
-from reaction_role import ReactionRoleChange as _ReactionRoleChange
-from reaction_role import ReactionRoleRequirement as _ReactionRoleRequirement
-import utils as _utils
+from . import database as _database
+from .reaction_role import ReactionRole as _ReactionRole
+from .reaction_role import ReactionRoleChange as _ReactionRoleChange
+from .reaction_role import ReactionRoleRequirement as _ReactionRoleRequirement
+from . import utils as _utils
 
 
 # ---------- Initialization ----------
 
-async def init() -> None:
+async def setup() -> None:
     await _database.init()
-    await __init_db_schema()
+    await __setup_db_schema()
 
 
 
@@ -20,7 +20,7 @@ async def init() -> None:
 
 # ---------- DB Schema ----------
 
-async def __init_db_schema() -> None:
+async def __setup_db_schema() -> None:
     init_functions = [
         ('0.1.0', __create_db_schema),
         ('0.2.0', __update_db_schema_0_2_0),
@@ -37,6 +37,7 @@ async def __update_db_schema_0_2_0() -> bool:
         (_ReactionRole.ID_COLUMN_NAME, 'SERIAL', True, True, None),
         ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
+        ('guild_id', 'BIGINT', False, True, None),
         ('message_id', 'BIGINT', False, True, None),
         ('name', 'TEXT', False, True, None),
         ('reaction', 'TEXT', False, True, None),
@@ -139,7 +140,7 @@ async def __update_schema(version: str, update_function: _Callable) -> bool:
 
 async def test() -> bool:
     await _database.init()
-    await init()
+    await setup()
 
 
 if __name__ == '__main__':
