@@ -3,12 +3,13 @@ from typing import Dict
 
 import discord
 from discord.ext import commands
-from discord.ext.commands.core import bot_has_guild_permissions, bot_has_permissions
+from discord.ext.commands import Context
+from discord.ext.commands.core import bot_has_guild_permissions
 
 import app_settings
 from confirmator import Confirmator
 import database
-
+import init
 
 
 # ---------- Setup ----------
@@ -26,7 +27,7 @@ BOT = commands.Bot(
 # ---------- Event handlers ----------
 
 @BOT.event
-async def on_command_error(ctx: commands.Context, err: Exception) -> None:
+async def on_command_error(ctx: Context, err: Exception) -> None:
     if app_settings.THROW_COMMAND_ERRORS:
         raise err
 
@@ -53,14 +54,14 @@ async def on_ready() -> None:
 # ---------- Basic role management ----------
 
 @BOT.group(name='role', brief='Role management', invoke_without_command=True)
-async def cmd_role(ctx: commands.Context) -> None:
+async def cmd_role(ctx: Context) -> None:
     await ctx.send_help('role')
 
 
 @bot_has_guild_permissions(manage_roles=True)
 @commands.has_guild_permissions(manage_roles=True)
 @cmd_role.command(name='add', brief='Add a role to specified members')
-async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: str) -> None:
+async def cmd_role_add(ctx: Context, role: discord.Role, *, user_ids: str) -> None:
     """
     Add one role to multiple members.
     """
@@ -81,7 +82,7 @@ async def cmd_role_add(ctx: commands.Context, role: discord.Role, *, user_ids: s
 @bot_has_guild_permissions(manage_roles=True)
 @commands.has_guild_permissions(manage_roles=True)
 @cmd_role.command(name='clear', brief='Remove a role from all members')
-async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
+async def cmd_role_clear(ctx: Context, role: discord.Role) -> None:
     """
     Remove a specific role from all members.
     """
@@ -104,7 +105,7 @@ async def cmd_role_clear(ctx: commands.Context, role: discord.Role) -> None:
 @bot_has_guild_permissions(manage_roles=True)
 @commands.has_guild_permissions(manage_roles=True)
 @cmd_role.command(name='remove', brief='Remove a role from specified members')
-async def cmd_role_remove(ctx: commands.Context, role: discord.Role, *, user_ids: str) -> None:
+async def cmd_role_remove(ctx: Context, role: discord.Role, *, user_ids: str) -> None:
     """
     Remove one role from multiple members.
     """
@@ -127,7 +128,7 @@ async def cmd_role_remove(ctx: commands.Context, role: discord.Role, *, user_ids
 # ---------- Bot management ----------
 
 @BOT.command(name='about', brief='General info about the bot')
-async def cmd_about(ctx: commands.Context) -> None:
+async def cmd_about(ctx: Context) -> None:
     info = {
         'Server count': len(BOT.guilds),
         'Member count': sum([guild.member_count for guild in BOT.guilds]),
@@ -138,8 +139,28 @@ async def cmd_about(ctx: commands.Context) -> None:
 
 
 @BOT.command(name='invite', brief='Produce invite link')
-async def cmd_invite(ctx: commands.Context) -> None:
+async def cmd_invite(ctx: Context) -> None:
     await ctx.reply('https://discordapp.com/oauth2/authorize?scope=bot&permissions=139519798336&client_id=895959886834331658', mention_author=False)
+
+
+
+
+
+# ---------- Reaction Roles ----------
+
+@BOT.group(name='reactionrole', aliases=['rr'], brief='Set up reaction roles', invoke_without_command=True)
+async def cmd_reactionrole(ctx: Context) -> None:
+    ctx.send_help('reactionrole')
+
+
+@cmd_reactionrole.command(name='add', brief='Add a reaction role')
+async def cmd_reactionrole_add(ctx: Context, message_id: int, emoji: str) -> None:
+    """
+    Assistant for adding reaction roles
+    """
+
+
+
 
 
 
@@ -154,7 +175,7 @@ async def cmd_invite(ctx: commands.Context) -> None:
 # ---------- Module init ----------
 
 async def __initialize() -> None:
-    await database.init()
+    await init.init()
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
