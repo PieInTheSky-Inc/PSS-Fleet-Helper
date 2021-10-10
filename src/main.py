@@ -167,6 +167,7 @@ async def cmd_role_remove(ctx: Context, role: discord.Role, *, user_ids: str) ->
 
 
 
+
 # ---------- Bot management ----------
 
 @VIVI.bot.command(name='about', brief='General info about the bot')
@@ -464,6 +465,20 @@ async def cmd_reactionrole_deactivate(ctx: Context, reaction_role_id: int) -> No
             raise Exception(f'Failed to deactivate Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}`.')
     else:
         raise Exception(f'There is no Reaction Role configured on this server having the ID `{reaction_role_id}`.')
+
+
+@cmd_reactionrole.command(name='edit', brief='Edit a Reaction Role')
+async def cmd_reactionrole_edit(ctx: Context, reaction_role_id: int) -> None:
+    """
+    Edit deactivated Reaction Roles.
+    """
+    reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if reaction_role.id == reaction_role_id]
+    if reaction_roles:
+        reaction_role = reaction_roles[0]
+        if reaction_role.is_active:
+            raise Exception(f'Cannot edit the active Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}')
+
+
 
 
 @cmd_reactionrole.group(name='list', brief='List reaction roles', invoke_without_command=True)
