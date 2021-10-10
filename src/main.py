@@ -394,22 +394,37 @@ async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, messa
 @cmd_reactionrole.group(name='list', brief='List reaction roles', invoke_without_command=True)
 async def cmd_reactionrole_list(ctx: Context, include_messages: bool) -> None:
     reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id]]
-    outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
-    for output in outputs:
-        for post in output:
-            await ctx.reply(post, mention_author=False)
+    if reaction_roles:
+        outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
+        for output in outputs:
+            for post in output:
+                await ctx.reply(post, mention_author=False)
+    else:
+        await ctx.reply('There are no Reaction Roles configured for this server.')
 
 
 @cmd_reactionrole_list.command(name='active', brief='List reaction roles', invoke_without_command=True)
 async def cmd_reactionrole_list_active(ctx: Context, include_messages: str) -> None:
     reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if reaction_role.is_active]
-    pass
+    if reaction_roles:
+        outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
+        for output in outputs:
+            for post in output:
+                await ctx.reply(post, mention_author=False)
+    else:
+        await ctx.reply('There are no active Reaction Roles configured for this server.')
 
 
 @cmd_reactionrole_list.command(name='inactive', brief='List reaction roles', invoke_without_command=True)
 async def cmd_reactionrole_list_inactive(ctx: Context, include_messages: str) -> None:
     reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if not reaction_role.is_active]
-    pass
+    if reaction_roles:
+        outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
+        for output in outputs:
+            for post in output:
+                await ctx.reply(post, mention_author=False)
+    else:
+        await ctx.reply('There are no inactive Reaction Roles configured for this server.')
 
 
 
