@@ -174,15 +174,16 @@ class ReactionRole(_database.DatabaseRowBase):
             return success
 
 
-    async def update(self, message_id: int = None, name: str = None, reaction: str = None, is_active: bool = None) -> bool:
+    async def update(self, channel_id: int, message_id: int = None, name: str = None, reaction: str = None, is_active: bool = None) -> bool:
         super()._assert_not_deleted()
         if message_id is None and name is None and reaction is None and is_active is None:
             return True
+        channel_id = channel_id or self.channel_id
         message_id = message_id or self.message_id
         name = name or self.name
         reaction = reaction or self.reaction
         is_active = self.is_active if is_active is None else is_active
-        updated = await _db_update_reaction_role(self.id, message_id, name, reaction, is_active)
+        updated = await _db_update_reaction_role(self.id, channel_id, message_id, name, reaction, is_active)
         if updated:
             self.__message_id = message_id
             self.__name = name
@@ -393,11 +394,12 @@ async def _db_delete_reaction_role(reaction_role_id: int) -> bool:
     return bool(result)
 
 
-async def _db_update_reaction_role(reaction_role_id: int, message_id: int, name: str, reaction: str, is_active: bool) -> bool:
+async def _db_update_reaction_role(reaction_role_id: int, channel_id: int, message_id: int, name: str, reaction: str, is_active: bool) -> bool:
     result = await _database.update_row(
         ReactionRole.TABLE_NAME,
         ReactionRole.ID_COLUMN_NAME,
         reaction_role_id,
+        channel_id=channel_id,
         message_id=message_id,
         name=name,
         reaction=reaction,

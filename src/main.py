@@ -1,4 +1,5 @@
 import asyncio
+import re as _re
 from typing import Callable as _Callable
 from typing import List as _List
 from typing import Optional as _Optional
@@ -8,10 +9,12 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Context
 from discord.ext.commands.core import bot_has_guild_permissions
+import emoji as _emoji
 
 import app_settings
 from confirmator import Confirmator
 import model
+from selector import Selector
 from vm_converter import ReactionRoleConverter as _ReactionRoleConverter
 
 
@@ -210,6 +213,13 @@ async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, messa
 
     if reaction_message.guild != ctx.guild:
         raise Exception(f'You need to select a message from this server.')
+
+    if _emoji.emoji_count(emoji) == 1:
+        pass
+    else:
+        match = _re.match('<:\w+:(\d+)>', emoji)
+        if not match:
+            raise Exception(f'You need to select a valid emoji.')
 
     abort_message = 'Aborted. No reaction role has been created.'
 
@@ -473,10 +483,126 @@ async def cmd_reactionrole_edit(ctx: Context, reaction_role_id: int) -> None:
     Edit deactivated Reaction Roles.
     """
     reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if reaction_role.id == reaction_role_id]
-    if reaction_roles:
+    while reaction_roles:
         reaction_role = reaction_roles[0]
         if reaction_role.is_active:
-            raise Exception(f'Cannot edit the active Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}')
+            raise Exception(f'Cannot edit the active Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}`.')
+
+        abort_message = f'Aborted. The Reaction Role `{reaction_role.name}` with ID `{reaction_role.id}` has not been edited.'
+        actions = {
+            'Edit details': None,
+            'Edit Role Changes': [
+                'Add new Role Change',
+                'Delete Role Change',
+            ],
+            'Edit Requirement': [
+                'Add new Requirement',
+                'Delete Requirement',
+            ],
+            'Abort': None,
+        }
+
+        selector = Selector(
+            ctx,
+            None,
+            actions,
+            title=f'Editing Reaction Role {reaction_role.name} with ID `{reaction_role.id}`\nPlease select an action:'
+        )
+        reply = await selector.wait_for_option_selection()
+        if reply == 'Abort':
+            raise Exception('Aborted.')
+
+        selections = [reply]
+        if actions[selections[0]]:
+            selector = Selector(
+                ctx,
+                None,
+                actions[selections[0]],
+                title=f'Editing Reaction Role {reaction_role.name} with ID `{reaction_role.id}`\nPlease select an action:'
+            )
+            reply = await selector.wait_for_option_selection()
+            if reply == 'Abort':
+                raise Exception('Aborted.')
+
+            raise NotImplementedError('Need to add support to add/remove changes and requirements.')
+        else:
+            prompt = await ctx.reply(f'Type a new name or `skip` to keep the current name ({reaction_role.name}).', mention_author=False)
+            reply = await _wait_for_reply(ctx, None, abort_message=abort_message)
+            await prompt.delete()
+            if reply is None:
+                return
+
+            content = reply.content.strip()
+            new_name = reply if content.lower() != 'skip' else None
+
+            message_link = f'https://discord.com/channels/{ctx.guild.id}/{reaction_role.channel_id}/{reaction_role.message_id}'
+            prompt = await ctx.reply(f'Type a new message ID; Type `skip` to keep the current message id ({message_link}); Type `abort` to abort.', mention_author=False)
+            reply = await _wait_for_reply(ctx, None, abort_message=abort_message)
+            await prompt.delete()
+            if reply is None:
+                return
+
+            content = reply.content.strip()
+            new_message_id = reply if content.lower() != 'skip' else None
+            new_message = None
+            new_channel_id = None
+            while new_message_id and new_channel_id is None:
+                prompt = await ctx.reply(f'Type the channel ID or mention the channel of the new message; Type `abort` to abort.', mention_author=False)
+                reply = await _wait_for_reply(ctx, None, abort_message=abort_message)
+                await prompt.delete()
+                if reply is None:
+                    return
+
+                content = reply.content.strip()
+                if len(reply.channel_mentions) > 1:
+                    new_channel_id = reply.channel_mentions[0].id
+                else:
+                    try:
+                        new_channel_id = int(reply)
+                    except:
+                        new_channel_id = None
+                    if new_channel_id:
+                        new_channel = ctx.guild.get_channel(new_channel_id)
+                        if new_channel:
+                            new_message = await new_channel.fetch_message(new_message_id)
+                            if not new_message:
+                                await reply.reply(f'A message with ID `{new_message_id}` could not be found in {new_channel.mention}.')
+                        else:
+                            await reply.reply(f'This is not a valid channel id or mention.')
+                            new_channel_id = None
+
+            new_emoji = None
+            while new_emoji is None:
+                prompt = await ctx.reply(f'Type a new emoji; Type `skip` to keep the current emoji ({reaction_role.reaction}); Type `abort` to abort.', mention_author=False)
+                reply = await _wait_for_reply(ctx, None, abort_message=abort_message)
+                await prompt.delete()
+                if reply is None:
+                    return
+
+                content = reply.content.strip()
+                new_emoji = reply if content.lower() != 'skip' else None
+                if _emoji.emoji_count(new_emoji) == 1:
+                    pass
+                else:
+                    match = _re.match('<:\w+:(\d+)>', new_emoji)
+                    if not match:
+                        await reply.reply(f'This is not a valid emoji.')
+                        new_emoji is None
+
+            change_log_lines = [f'__Reaction Role with ID `{reaction_role.id}` has been updated.__']
+            if new_name:
+                change_log_lines.append(f'New name: `{new_name}`')
+            if new_message_id:
+                change_log_lines.append(f'New message: ID `{new_message_id}` in channel {new_channel.mention} (https://discord.com/channels/{ctx.guild.id}/{reaction_role.channel_id}/{reaction_role.message_id})')
+            if new_emoji:
+                change_log_lines.append(f'New emoji: `{new_emoji}`')
+
+            if new_name or new_message_id or new_emoji:
+                await reaction_role.update(channel_id=new_channel_id, message_id=new_message_id, name=new_name, reaction=new_emoji)
+
+            await ctx.reply('\n'.join(change_log_lines))
+
+
 
 
 
