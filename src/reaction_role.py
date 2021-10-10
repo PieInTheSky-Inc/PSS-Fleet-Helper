@@ -147,7 +147,7 @@ class ReactionRole(_database.DatabaseRowBase):
 
 
     @staticmethod
-    async def create(message_id: int, name: str, reaction: str, is_active: bool = True) -> _Optional['ReactionRole']:
+    async def create(message_id: int, name: str, reaction: str, is_active: bool = False) -> _Optional['ReactionRole']:
         record = await _database.insert_row(
             ReactionRole.TABLE_NAME,
             ReactionRole.ID_COLUMN_NAME,
@@ -383,25 +383,25 @@ async def _db_update_reaction_role_requirement(reaction_role_requirement_id: int
 async def test() -> bool:
     await _database.init()
     try:
-        rr = await ReactionRole.create(1234, 'RR1234', '🙂')
+        rr = await ReactionRole.create(896010670909304863, 'RR1234', '🙂')
     except Exception as e:
         return False
 
     try:
-        await rr.update(message_id=1345, name='RR1345', reaction='🙃', is_active=False)
+        await rr.update(message_id=896806211058532452, name='RR1345', reaction='🙃', is_active=False)
     except Exception as e:
         await rr.delete()
         return False
 
     try:
-        ch_1 = await rr.add_change(2345, True, False)
+        ch_1 = await rr.add_change(680621105853242345, True, False)
     except Exception as e:
         await rr.delete()
         rr = None
         return False
 
     try:
-        await ch_1.update(role_id=2456, add=False, allow_toggle=True, message_channel_id=3456, message_content='Test')
+        await ch_1.update(role_id=680621105853242456, add=False, allow_toggle=True, message_channel_id=3456, message_content='Test')
     except Exception as e:
         await ch_1._delete()
         await rr.delete()
@@ -416,14 +416,14 @@ async def test() -> bool:
         return False
 
     try:
-        req_1 = await rr.add_requirement(6789)
+        req_1 = await rr.add_requirement(76211058532452)
     except Exception as e:
         await rr.delete()
         rr = None
         return False
 
     try:
-        await req_1.update(role_id=6890)
+        await req_1.update(role_id=76211050000000)
     except Exception as e:
         await req_1._delete()
         await rr.delete()

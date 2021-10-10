@@ -37,28 +37,28 @@ async def __update_db_schema_0_2_0() -> bool:
         (_ReactionRole.ID_COLUMN_NAME, 'SERIAL', True, True, None),
         ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        ('message_id', 'INT', False, True, None),
+        ('message_id', 'BIGINT', False, True, None),
         ('name', 'TEXT', False, True, None),
         ('reaction', 'TEXT', False, True, None),
-        ('is_active', 'BOOLEAN', False, True, True),
+        ('is_active', 'BOOLEAN', False, True, False),
     ]
     column_definitions_reaction_role_change = [
         (_ReactionRoleChange.ID_COLUMN_NAME, 'SERIAL', True, True, None),
         ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         (_ReactionRole.ID_COLUMN_NAME, 'INT', False, True, None),
-        ('role_id', 'INT', False, True, None),
+        ('role_id', 'BIGINT', False, True, None),
         ('add', 'BOOLEAN', False, True, True), # True to add, False to remove
         ('allow_toggle', 'BOOLEAN', False, True, False),
         ('message_content', 'TEXT', False, False, None),
-        ('message_channel_id', 'INT', False, False, None),
+        ('message_channel_id', 'BIGINT', False, False, None),
     ]
     column_definitions_reaction_role_requirement = [
         (_ReactionRoleRequirement.ID_COLUMN_NAME, 'SERIAL', True, True, None),
         ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         (_ReactionRole.ID_COLUMN_NAME, 'INT', False, True, None),
-        ('role_id', 'INT', False, True, None),
+        ('role_id', 'BIGINT', False, True, None),
     ]
 
     schema_version = await _database.get_schema_version()
