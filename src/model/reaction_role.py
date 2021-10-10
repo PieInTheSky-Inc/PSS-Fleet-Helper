@@ -3,6 +3,10 @@ from threading import Lock as _Lock
 from typing import List as _List
 from typing import Optional as _Optional
 
+from discord import Member as _Member
+from discord import NotFound as _NotFound
+from discord.ext.commands import Bot as _Bot
+
 from . import database as _database
 
 
@@ -89,6 +93,35 @@ class ReactionRole(_database.DatabaseRowBase):
             result = await _db_create_reaction_role_requirement(self.id, required_role_id)
             self.__role_requirements.append(result)
             return result
+
+
+    async def apply_add(self, member: _Member) -> None:
+        roles_to_add = []
+        roles_to_remove = []
+        for change in self.role_changes:
+            role = member.guild.get_role(change.role_id)
+            if role:
+                if change.add:
+                    roles_to_add.append(role)
+                else:
+                    roles_to_remove.append(role)
+        await member.add_roles(*roles_to_add)
+        await member.remove_roles(*roles_to_remove)
+
+
+    async def apply_remove(self, member: _Member) -> None:
+        roles_to_add = []
+        roles_to_remove = []
+        for change in self.role_changes:
+            if change.allow_toggle:
+                role = member.guild.get_role(change.role_id)
+                if role:
+                    if change.add:
+                        roles_to_remove.append(role)
+                    else:
+                        roles_to_add.append(role)
+        await member.add_roles(*roles_to_add)
+        await member.remove_roles(*roles_to_remove)
 
 
     async def delete(self) -> bool:

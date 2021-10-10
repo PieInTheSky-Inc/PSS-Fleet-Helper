@@ -46,6 +46,45 @@ async def on_command_error(ctx: Context, err: Exception) -> None:
 
 
 @VIVI.bot.event
+async def on_raw_reaction_add(payload: discord.RawReactionActionEvent) -> None:
+    if payload.member.guild.me == payload.member:
+        return
+
+    reaction_roles: _List[model.ReactionRole] = VIVI.reaction_roles.get(payload.guild_id, [])
+    member_roles_ids = [role.id for role in payload.member.roles]
+    for reaction_role in reaction_roles:
+        is_active = reaction_role.is_active
+        message_id_match = reaction_role.message_id == payload.message_id
+        emoji_match = reaction_role.reaction == payload.emoji.name
+        if is_active and message_id_match and emoji_match:
+            member_meets_requirements = all(requirement.role_id in member_roles_ids for requirement in reaction_role.role_requirements)
+            if member_meets_requirements:
+                await reaction_role.apply_add(payload.member)
+
+
+@VIVI.bot.event
+async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent) -> None:
+    guild = VIVI.bot.get_guild(payload.guild_id)
+    if not guild:
+        return
+
+    member = guild.get_member(payload.user_id)
+    if not member or member == guild.me:
+        return
+
+    reaction_roles: _List[model.ReactionRole] = VIVI.reaction_roles.get(payload.guild_id, [])
+    member_roles_ids = [role.id for role in member.roles]
+    for reaction_role in reaction_roles:
+        is_active = reaction_role.is_active
+        message_id_match = reaction_role.message_id == payload.message_id
+        emoji_match = reaction_role.reaction == payload.emoji.name
+        if is_active and message_id_match and emoji_match:
+            member_meets_requirements = all(requirement.role_id in member_roles_ids for requirement in reaction_role.role_requirements)
+            if member_meets_requirements:
+                await reaction_role.apply_remove(member)
+
+
+@VIVI.bot.event
 async def on_ready() -> None:
     print(f'Bot logged in as {VIVI.bot.user.name} ({VIVI.bot.user.id})')
     print(f'Bot version: {app_settings.VERSION}')
