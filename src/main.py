@@ -8,7 +8,7 @@ from typing import Tuple as _Tuple
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
-from discord.ext.commands.core import bot_has_guild_permissions
+from discord.ext.commands.core import bot_has_guild_permissions, has_guild_permissions
 import emoji as _emoji
 
 import app_settings
@@ -201,12 +201,15 @@ async def cmd_reactionrole(ctx: Context) -> None:
     await ctx.send_help('reactionrole')
 
 
+@bot_has_guild_permissions(manage_roles=True)
+@commands.has_guild_permissions(manage_roles=True)
 @cmd_reactionrole.command(name='add', brief='Add a reaction role')
 async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, message_id: int, emoji: str, *, name: str) -> None:
     """
     Assistant for adding reaction roles
 
     [message_id] must be of a message in [channel]
+    [name] may contain whitespace
     """
     try:
         reaction_message = await channel.fetch_message(message_id)
@@ -304,6 +307,8 @@ async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, messa
     await ctx.reply('Successfully set up a Reaction Role.', mention_author=False)
 
 
+@bot_has_guild_permissions(manage_roles=True)
+@commands.has_guild_permissions(manage_roles=True)
 @cmd_reactionrole.group(name='activate', brief='Activate a Reaction Role', invoke_without_command=True)
 async def cmd_reactionrole_activate(ctx: Context, reaction_role_id: int) -> None:
     reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if reaction_role.id == reaction_role_id]
@@ -319,6 +324,8 @@ async def cmd_reactionrole_activate(ctx: Context, reaction_role_id: int) -> None
         raise Exception(f'There is no Reaction Role configured on this server having the ID `{reaction_role_id}`.')
 
 
+@bot_has_guild_permissions(manage_roles=True)
+@commands.has_guild_permissions(manage_roles=True)
 @cmd_reactionrole_activate.command(name='all', brief='Activate all Reaction Roles')
 async def cmd_reactionrole_activate_all(ctx: Context) -> None:
     reaction_roles = list(VIVI.reaction_roles[ctx.guild.id])
@@ -337,6 +344,8 @@ async def cmd_reactionrole_activate_all(ctx: Context) -> None:
         raise Exception(f'There are no Reaction Role configured on this server.')
 
 
+@bot_has_guild_permissions(manage_roles=True)
+@commands.has_guild_permissions(manage_roles=True)
 @cmd_reactionrole.group(name='deactivate', brief='Deactivate a Reaction Role', invoke_without_command=True)
 async def cmd_reactionrole_deactivate(ctx: Context, reaction_role_id: int) -> None:
     reaction_roles = [reaction_role for reaction_role in VIVI.reaction_roles[ctx.guild.id] if reaction_role.id == reaction_role_id]
@@ -352,6 +361,8 @@ async def cmd_reactionrole_deactivate(ctx: Context, reaction_role_id: int) -> No
         raise Exception(f'There is no Reaction Role configured on this server having the ID `{reaction_role_id}`.')
 
 
+@bot_has_guild_permissions(manage_roles=True)
+@commands.has_guild_permissions(manage_roles=True)
 @cmd_reactionrole_deactivate.command(name='all', brief='Deactivate all Reaction Roles')
 async def cmd_reactionrole_deactivate_all(ctx: Context) -> None:
     reaction_roles = list(VIVI.reaction_roles[ctx.guild.id])
@@ -363,6 +374,8 @@ async def cmd_reactionrole_deactivate_all(ctx: Context) -> None:
         raise Exception(f'There are no Reaction Role configured on this server.')
 
 
+@bot_has_guild_permissions(manage_roles=True)
+@commands.has_guild_permissions(manage_roles=True)
 @cmd_reactionrole.command(name='edit', brief='Edit a Reaction Role')
 async def cmd_reactionrole_edit(ctx: Context, reaction_role_id: int) -> None:
     """
