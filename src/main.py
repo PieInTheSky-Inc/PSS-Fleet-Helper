@@ -383,7 +383,7 @@ async def cmd_reactionrole_edit(ctx: Context, reaction_role_id: int) -> None:
                 'Add new Role Change',
                 'Delete Role Change',
             ],
-            'Edit Requirement': [
+            'Edit Requirements': [
                 'Add new Requirement',
                 'Delete Requirement',
             ],
@@ -414,7 +414,7 @@ async def cmd_reactionrole_edit(ctx: Context, reaction_role_id: int) -> None:
             await ctx.reply(f'```Selected \'{reply}\'.```', mention_author=False)
             reply = reply.lower()
 
-            if 'add ' in reply:
+            if 'add new' in reply:
                 if 'change' in reply:
                     reaction_role_change = await _inquire_role_change_add(ctx, abort_message)
                     if not reaction_role_change:
