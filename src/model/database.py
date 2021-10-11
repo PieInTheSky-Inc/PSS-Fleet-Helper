@@ -1,6 +1,5 @@
 from datetime import datetime as _datetime
 from typing import Any as _Any
-from typing import Callable as _Callable
 from typing import Dict as _Dict
 from typing import List as _List
 from typing import Tuple as _Tuple
@@ -8,8 +7,8 @@ from threading import Lock as _Lock
 
 import asyncpg as _asyncpg
 
-import app_settings as _app_settings
-import utils as _utils
+from . import model_settings as _model_settings
+from . import utils as _utils
 
 
 # ---------- Typehints ----------
@@ -18,61 +17,46 @@ import utils as _utils
 ColumnDefinition = _Tuple[str, str, bool, bool, _Any]
 
 
+
+
+
 # ---------- Constants ----------
 
 __CONNECTION_POOL: _asyncpg.pool.Pool = None
 __CONNECTION_POOL_LOCK: _Lock = _Lock()
 
-__TABLE_NAME_BOT_SETTINGS: str = 'bot_settings'
+TABLE_NAME_BOT_SETTINGS: str = 'bot_settings'
 
 
 
 
-# ---------- DB Schema ----------
 
-async def init_schema() -> None:
-    init_functions = {
-        '0.1.0': create_schema
-    }
-    for version, callable in init_functions.items():
-        if not (await update_schema(version, callable)):
-            raise Exception('DB initialization failed')
+# ---------- Classes ----------
 
-    print('DB initialization succeeded')
+class DatabaseRowBase():
+    def __init__(self, id: int) -> None:
+        self._id: int = id
+        self._deleted: bool = False
 
 
-async def update_schema(version: str, update_function: _Callable) -> bool:
-    success = await update_function()
-    if not success:
-        print(f'Failed to update database schema to version: {version}.')
-    return success
+    @property
+    def deleted(self) -> bool:
+        return self._deleted
+
+    @property
+    def id(self) -> int:
+        self._assert_not_deleted()
+        return self._id
 
 
-async def create_schema() -> bool:
-    column_definition_bot_settings = [
-        ('setting_name', 'TEXT' , True, True, None),
-        ('modify_date', 'TIMESTAMPTZ', False, True, None),
-        ('setting_boolean', 'BOOLEAN', False, False, None),
-        ('setting_float', 'FLOAT', False, False, None),
-        ('setting_int', 'INT', False, False, None),
-        ('setting_text', 'TEXT', False, False, None),
-        ('setting_timestamp', 'TIMESTAMPTZ', False, False, None),
-    ]
+    def _assert_not_deleted(self) -> bool:
+        if self.deleted:
+            raise Exception(f'This object has been deleted! (ID: {self.id}')
 
-    schema_version = await get_schema_version()
-    if schema_version:
-        compare_010 = _utils.compare_versions(schema_version, '0.1.0')
-        if compare_010:
-            return True
 
-    print(f'[create_schema] Creating database schema v0.1.0')
-
-    success_bot_settings = await try_create_table(__TABLE_NAME_BOT_SETTINGS, column_definition_bot_settings)
-    if not success_bot_settings:
-        print('[create_schema] DB initialization failed upon creating the table \'bot_settings\'.')
-    else:
-        success = await try_set_schema_version('0.1.0')
-    return success
+    def _set_deleted(self) -> None:
+        self._assert_not_deleted()
+        self._deleted = True
 
 
 
@@ -87,7 +71,7 @@ async def connect() -> bool:
         global __CONNECTION_POOL
         if is_connected(__CONNECTION_POOL) is False:
             try:
-                __CONNECTION_POOL = await _asyncpg.create_pool(dsn=_app_settings.DATABASE_URL)
+                __CONNECTION_POOL = await _asyncpg.create_pool(dsn=_model_settings.DATABASE_URL)
                 return True
             except Exception as error:
                 error_name = error.__class__.__name__
@@ -106,15 +90,71 @@ async def disconnect() -> None:
             await __CONNECTION_POOL.close()
 
 
-async def execute(query: str, args: _List = None) -> bool:
+async def delete_rows(table_name: str, id_column_name: str, ids: _List[_Any]) -> bool:
+    __log_db_function_enter('delete_rows', table_name=table_name, id_column_name=id_column_name, ids=ids)
+
+    result = False
+    in_values = ','.join([str(id) for id in ids])
+    query = f'DELETE FROM {table_name} WHERE {id_column_name} IN ({in_values})'
+    result, _ = await try_execute(query)
+    return result
+
+
+async def insert_row(table_name: str, id_column_name: str, **kwargs) -> _asyncpg.Record:
+    __log_db_function_enter('insert_row', table_name=table_name, **kwargs)
+
+    column_names, placeholders, args = __split_kwargs_into_columns_and_values(**kwargs)
+    columns = ', '.join(column_names)
+    value_placeholders = ','.join(placeholders)
+    query = f'INSERT INTO {table_name} ({columns}) VALUES ({value_placeholders}) RETURNING {id_column_name}'
+    results = await execute(query, args)
+    if results:
+        return results[0]
+    raise Exception('Database insertion failed')
+
+
+def __split_kwargs_into_columns_and_values(**kwargs) -> _Tuple[_List[_Any], _List[str], _List[_Any]]:
+    column_names = []
+    placeholders = []
+    args = []
+    for i, (column_name, column_value) in enumerate(kwargs.items(), 1):
+        column_names.append(column_name)
+        placeholders.append(f'${i}')
+        args.append(column_value)
+    return (column_names, placeholders, args)
+
+
+async def update_row(table_name: str, id_column_name: str, id: _Any, **kwargs) -> bool:
+    __log_db_function_enter('delete_rows', table_name=table_name, id_column_name=id_column_name, id=id, **kwargs)
+
+    result = False
+    column_names, _, args = __split_kwargs_into_columns_and_values(**kwargs)
+    set_definition = ', '.join([f'{column_name}=${i}' for i, column_name in enumerate(column_names, 1)])
+    args.append(id)
+    query = f'UPDATE {table_name} SET {set_definition} WHERE {id_column_name} = ${len(args)} RETURNING {id_column_name}'
+    result = await execute(query, args)
+    return bool(result)
+
+
+async def drop_table(table_name: str) -> None:
+    __log_db_function_enter('drop_table', table_name=table_name)
+
+    query = f'DROP TABLE {table_name}'
+    execute(query)
+
+
+async def execute(query: str, args: _List[_Any] = None) -> _List[_asyncpg.Record]:
     __log_db_function_enter('execute', query=f'\'{query}\'', args=args)
 
+    result = None
+    connection: _asyncpg.Connection
     async with __CONNECTION_POOL.acquire() as connection:
         async with connection.transaction():
             if args:
-                await connection.execute(query, *args)
+                result = await connection.fetch(query, *args)
             else:
-                await connection.execute(query)
+                result = await connection.fetch(query)
+    return result
 
 
 async def fetchall(query: str, args: _List = None) -> _List[_asyncpg.Record]:
@@ -182,12 +222,11 @@ async def try_set_schema_version(version: str) -> bool:
     __log_db_function_enter('try_set_schema_version', version=f'\'{version}\'')
 
     prior_version = await get_schema_version()
-    utc_now = _utils.datetime.get_utc_now()
     if not prior_version:
-        query = f'INSERT INTO {__TABLE_NAME_BOT_SETTINGS} (modify_date, setting_text, setting_name) VALUES ($1, $2, $3)'
+        success = bool(await insert_row(TABLE_NAME_BOT_SETTINGS, 'setting_name', setting_name='schema_version', setting_text=version))
     else:
-        query = f'UPDATE {__TABLE_NAME_BOT_SETTINGS} SET modify_date = $1, setting_text = $2 WHERE setting_name = $3'
-    success = await try_execute(query, [utc_now, version, 'schema_version'])
+        utc_now = _utils.datetime.get_utc_now()
+        success = await update_row(TABLE_NAME_BOT_SETTINGS, 'setting_name', 'schema_version', modified_at=utc_now, setting_text=version)
     return success
 
 
@@ -199,7 +238,7 @@ async def try_create_table(table_name: str, column_definitions: _List[ColumnDefi
     success = False
     if await connect():
         try:
-            success = await try_execute(query_create, raise_db_error=True)
+            success, _ = await try_execute(query_create, raise_db_error=True)
         except _asyncpg.exceptions.DuplicateTableError:
             success = True
     else:
@@ -207,17 +246,18 @@ async def try_create_table(table_name: str, column_definitions: _List[ColumnDefi
     return success
 
 
-async def try_execute(query: str, args: _List = None, raise_db_error: bool = False) -> bool:
+async def try_execute(query: str, args: _List = None, raise_db_error: bool = False) -> _Tuple[bool, _List[_asyncpg.Record]]:
     __log_db_function_enter('try_execute', query=f'\'{query}\'', args=args, raise_db_error=raise_db_error)
 
+    results = None
     if query and query[-1] != ';':
         query += ';'
     success = False
     if await connect():
         try:
-            await execute(query, args)
+            results = await execute(query, args)
             success = True
-        except (_asyncpg.exceptions.PostgresError, _asyncpg.PostgresError) as pg_error:
+        except _asyncpg.PostgresError as pg_error:
             if raise_db_error:
                 raise pg_error
             else:
@@ -228,14 +268,14 @@ async def try_execute(query: str, args: _List = None, raise_db_error: bool = Fal
             success = False
     else:
         print('[try_execute] could not connect to db')
-    return success
+    return (success, results)
 
 
 async def get_setting(setting_name: str) -> _Tuple[object, _datetime]:
     __log_db_function_enter('get_setting', setting_name=f'\'{setting_name}\'')
 
     modify_date: _datetime = None
-    query = f'SELECT * FROM {__TABLE_NAME_BOT_SETTINGS} WHERE setting_name = $1'
+    query = f'SELECT * FROM {TABLE_NAME_BOT_SETTINGS} WHERE setting_name = $1'
     args = [setting_name]
     try:
         records = await fetchall(query, args)
@@ -244,9 +284,9 @@ async def get_setting(setting_name: str) -> _Tuple[object, _datetime]:
         records = []
     if records:
         result = records[0]
-        modify_date = result[1]
+        modify_date = result[2]
         value = None
-        for field in result[2:]:
+        for field in result[3:]:
             if field:
                 value = field
                 break
@@ -264,7 +304,7 @@ async def get_settings(setting_names: _List[str] = None) -> _Dict[str, _Tuple[ob
     db_setting_names = setting_names
 
     if not result:
-        query = f'SELECT * FROM {__TABLE_NAME_BOT_SETTINGS}'
+        query = f'SELECT * FROM {TABLE_NAME_BOT_SETTINGS}'
         if db_setting_names:
             where_strings = [f'setting_name = ${i}' for i in range(1, len(db_setting_names) + 1, 1)]
             where_string = ' OR '.join(where_strings)
@@ -288,28 +328,27 @@ async def get_settings(setting_names: _List[str] = None) -> _Dict[str, _Tuple[ob
 async def set_setting(setting_name: str, value: _Any, utc_now: _datetime = None) -> bool:
     __log_db_function_enter('set_setting', setting_name=f'\'{setting_name}\'', value=value, utc_now=utc_now)
 
-    column_name = None
+    kwargs = {
+        'setting_name': setting_name
+    }
     if isinstance(value, bool):
-        column_name = 'setting_boolean'
+        kwargs['setting_boolean'] = value
     elif isinstance(value, int):
-        column_name = 'setting_int'
+        kwargs['setting_int'] = value
     elif isinstance(value, float):
-        column_name = 'setting_float'
+        kwargs['setting_float'] = value
     elif isinstance(value, _datetime):
-        column_name = 'setting_timestamptz'
+        kwargs['setting_timestamptz'] = value
     else:
-        column_name = 'setting_text'
+        kwargs['setting_text'] = value
 
+    setting, _ = await get_setting(setting_name)
     success = True
-    setting, modify_date = await get_setting(setting_name)
-    if utc_now is None:
-        utc_now = _utils.datetime.get_utc_now()
-    query = ''
-    if setting is None and modify_date is None:
-        query = f'INSERT INTO {__TABLE_NAME_BOT_SETTINGS} ({column_name}, modify_date, setting_name) VALUES ($1, $2, $3)'
+    if setting is None:
+        success = bool(await insert_row(TABLE_NAME_BOT_SETTINGS, 'setting_name', **kwargs))
     elif setting != value:
-        query = f'UPDATE {__TABLE_NAME_BOT_SETTINGS} SET {column_name} = $1, modify_date = $2 WHERE setting_name = $3'
-    success = not query or await try_execute(query, [value, utc_now, setting_name])
+        kwargs['modified_at'] = _utils.datetime.get_utc_now()
+        success = await update_row(TABLE_NAME_BOT_SETTINGS, **kwargs)
     return success
 
 
@@ -322,7 +361,7 @@ def print_db_query_error(function_name: str, query: str, args: _List[_Any], erro
 
 
 def __log_db_function_enter(function_name: str, **kwargs) -> None:
-    if _app_settings.PRINT_DEBUG_DB:
+    if _model_settings.PRINT_DEBUG_DB:
         params = ', '.join([f'{k}={v}' for k, v in kwargs.items()])
         print(f'+ {function_name}({params})')
 
@@ -334,4 +373,3 @@ def __log_db_function_enter(function_name: str, **kwargs) -> None:
 
 async def init() -> None:
     await connect()
-    await init_schema()

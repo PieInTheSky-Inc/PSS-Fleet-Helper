@@ -1,3 +1,4 @@
 aiohttp[speedups]
 asyncpg
+emoji
 pycord
