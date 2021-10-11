@@ -1,8 +1,11 @@
 from typing import List as _List
 
 import discord as _discord
+from discord.ext.commands import Context as _Context
 
 from model import ReactionRole as _ReactionRole
+from model import ReactionRoleChange as _ReactionRoleChange
+from model import ReactionRoleRequirement as _ReactionRoleRequirement
 
 
 
@@ -54,4 +57,26 @@ class ReactionRoleConverter():
             result.append(f'__Message for Role Change **\#{role_change_number}** of Reaction Role **{self.__reaction_role.name}**:__\n{msg}')
         self.__text = result
 
+        return result
+
+
+class ReactionRoleChangeConverter():
+    @staticmethod
+    def to_text(ctx: _Context, reaction_role_change: _ReactionRoleChange) -> str:
+        role = ctx.guild.get_role(reaction_role_change.role_id)
+        add_text = 'add' if reaction_role_change.add else 'remove'
+        send_message_str = ''
+        if  reaction_role_change.message_channel_id:
+            message_channel = ctx.guild.get_channel(reaction_role_change.message_channel_id)
+            send_message_str = f' and send a message to #{message_channel.name}'
+        allow_toggle_text = 'toggable' if reaction_role_change.allow_toggle else 'non-toggable'
+        result = f'{add_text} {allow_toggle_text} role `{role.name}`{send_message_str}'
+        return result
+
+
+class ReactionRoleRequirementConverter():
+    @staticmethod
+    def to_text(ctx: _Context, reaction_role_requirement: _ReactionRoleRequirement) -> str:
+        role = ctx.guild.get_role(reaction_role_requirement.role_id)
+        result = role.name
         return result

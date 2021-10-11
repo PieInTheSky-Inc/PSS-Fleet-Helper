@@ -2,10 +2,11 @@ import asyncio as _asyncio
 from threading import Lock as _Lock
 from typing import List as _List
 from typing import Optional as _Optional
+from typing import Tuple as _Tuple
 
+from discord import TextChannel as _TextChannel
 from discord import Member as _Member
-from discord import NotFound as _NotFound
-from discord.ext.commands import Bot as _Bot
+from discord.ext.commands import Context as _Context
 
 from . import database as _database
 
@@ -98,15 +99,25 @@ class ReactionRole(_database.DatabaseRowBase):
     async def apply_add(self, member: _Member) -> None:
         roles_to_add = []
         roles_to_remove = []
+        messages_to_post: _List[_Tuple[_TextChannel, str]] = []
         for change in self.role_changes:
             role = member.guild.get_role(change.role_id)
             if role:
-                if change.add:
+                role_change = False
+                if change.add and role not in member.roles:
                     roles_to_add.append(role)
-                else:
+                    role_change = True
+                elif not change.add and role in member.roles:
                     roles_to_remove.append(role)
+                    role_change = True
+                if role_change and change.message_channel_id and change.message_content:
+                    channel = member.guild.get_channel(change.message_channel_id)
+                    messages_to_post.append((channel, change.message_content))
         await member.add_roles(*roles_to_add)
         await member.remove_roles(*roles_to_remove)
+        for channel, msg in messages_to_post:
+            msg = msg.replace('{user}', member.mention)
+            await channel.send(msg)
 
 
     async def apply_remove(self, member: _Member) -> None:
@@ -174,9 +185,31 @@ class ReactionRole(_database.DatabaseRowBase):
             return success
 
 
-    async def update(self, channel_id: int, message_id: int = None, name: str = None, reaction: str = None, is_active: bool = None) -> bool:
+    async def try_activate(self, ctx: _Context) -> bool:
+        try:
+            reaction_message = await ctx.guild.get_channel(self.channel_id).fetch_message(self.message_id)
+            await reaction_message.add_reaction(self.reaction)
+            result = True
+        except:
+            result = False
+        if result:
+            result = await self.update(is_active=True)
+        return result
+
+
+    async def try_deactivate(self, ctx: _Context) -> bool:
+        result = await self.update(is_active=False)
+        try:
+            reaction_message = await ctx.guild.get_channel(self.channel_id).fetch_message(self.message_id)
+            await reaction_message.remove_reaction(self.reaction, ctx.guild.me)
+        except:
+            pass
+        return result
+
+
+    async def update(self, channel_id: int = None, message_id: int = None, name: str = None, reaction: str = None, is_active: bool = None) -> bool:
         super()._assert_not_deleted()
-        if message_id is None and name is None and reaction is None and is_active is None:
+        if channel_id is None and message_id is None and name is None and reaction is None and is_active is None:
             return True
         channel_id = channel_id or self.channel_id
         message_id = message_id or self.message_id
@@ -416,11 +449,11 @@ async def _db_create_reaction_role_change(reaction_role_id: int, role_id: int, a
         role_id=role_id,
         add=add,
         allow_toggle=allow_toggle,
-        message_channel_id=message_channel_id,
         message_content=message_content,
+        message_channel_id=message_channel_id,
     )
     if record:
-        return ReactionRoleChange(record[0], reaction_role_id, role_id, add, allow_toggle, message_channel_id, message_content)
+        return ReactionRoleChange(record[0], reaction_role_id, role_id, add, allow_toggle, message_content, message_channel_id)
     return None
 
 
@@ -441,8 +474,8 @@ async def _db_update_reaction_role_change(reaction_role_change_id: int, role_id:
         role_id=role_id,
         add=add,
         allow_toggle=allow_toggle,
-        message_channel_id=message_channel_id,
         message_content=message_content,
+        message_channel_id=message_channel_id,
     )
     return bool(result)
 

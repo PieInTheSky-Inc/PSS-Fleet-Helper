@@ -4,6 +4,7 @@ import os as _os
 ACCESS_TOKEN: str = _os.environ.get('PSS_ACCESS_TOKEN')
 
 
+DISCORD_BOT_CLIENT_ID: str = _os.environ.get('VIVIBOT_DISCORD_BOT_CLIENT_ID')
 DISCORD_BOT_TOKEN: str = _os.environ.get('VIVIBOT_DISCORD_BOT_TOKEN')
 
 

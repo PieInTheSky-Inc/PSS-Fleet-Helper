@@ -44,7 +44,7 @@ class DatabaseRowBase():
         return self._deleted
 
     @property
-    def id(self) -> bool:
+    def id(self) -> int:
         self._assert_not_deleted()
         return self._id
 
@@ -54,7 +54,8 @@ class DatabaseRowBase():
             raise Exception(f'This object has been deleted! (ID: {self.id}')
 
 
-    def _set_deleted(self) -> bool:
+    def _set_deleted(self) -> None:
+        self._assert_not_deleted()
         self._deleted = True
 
 
