@@ -248,11 +248,11 @@ async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, messa
             return
         role_reaction_changes.append(role_reaction_change)
 
-        add_role_change = await _request_for_yes_no(ctx, 'Do you want to add another **Role Change**?')
+        add_role_change = await _request_for_yes_no(ctx, 'Do you want to add another >Role Change<?')
         if add_role_change is None:
             return
 
-    add_role_requirement = await _request_for_yes_no(ctx, 'Do you want to add a **Role Requirement** (a role required to trigger this Reaction Role)?')
+    add_role_requirement = await _request_for_yes_no(ctx, 'Do you want to add a >Role Requirement<\n(A role required to trigger this Reaction Role)?')
     if add_role_requirement is None:
         return
 
@@ -262,7 +262,7 @@ async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, messa
             return
         role_reaction_requirements.append(role_id)
 
-        add_role_requirement = await _request_for_yes_no(ctx, 'Do you want to add another **Role Requirement**?')
+        add_role_requirement = await _request_for_yes_no(ctx, 'Do you want to add another >Role Requirement<?')
         if add_role_requirement is None:
             return
 
@@ -272,7 +272,7 @@ async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, messa
         f'Emoji = {emoji}',
     ]
     if role_reaction_requirements:
-        required_roles = ', '.join([role.name for role in role_reaction_requirements])
+        required_roles = ', '.join([ctx.guild.get_role(role_id).name for role_id in role_reaction_requirements])
         confirmation_prompt_lines.append(f'Required role(s) = {required_roles}')
     confirmation_prompt_lines.append(f'_Role Changes_')
     review_messages = []
@@ -556,9 +556,6 @@ async def cmd_reactionrole_edit(ctx: Context, reaction_role_id: int) -> None:
                 keep_editing = False
 
 
-
-
-
 @cmd_reactionrole.group(name='list', brief='List reaction roles', invoke_without_command=True)
 async def cmd_reactionrole_list(ctx: Context, include_messages: bool = False) -> None:
     reaction_roles = list(VIVI.reaction_roles[ctx.guild.id])
@@ -752,7 +749,7 @@ async def _inquire_role_change_add(ctx: Context, abort_message: str) -> _Optiona
 
             role_change_message_text = role_change_message.content
             role_change_message = await ctx.send(role_change_message_text)
-            accept_message = await _request_for_yes_no(ctx, '```Do you want to use this message?```', abort_message=abort_message)
+            accept_message = await _request_for_yes_no(ctx, 'Do you want to use this message?', abort_message=abort_message)
             await role_change_message.delete()
             if accept_message is None:
                 return None
