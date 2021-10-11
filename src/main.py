@@ -276,7 +276,7 @@ async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, messa
         confirmation_prompt_lines.append(f'Required role(s) = {required_roles}')
     confirmation_prompt_lines.append(f'_Role Changes_')
     review_messages = []
-    for i, (role_id, add, allow_toggle, message_channel_id, message_text) in enumerate(role_reaction_changes, 1):
+    for i, (role_id, add, allow_toggle, message_text, message_channel_id) in enumerate(role_reaction_changes, 1):
         role = ctx.guild.get_role(role_id)
         add_text = 'add' if add else 'remove'
         send_message_str = ''
@@ -287,7 +287,7 @@ async def cmd_reactionrole_add(ctx: Context, channel: discord.TextChannel, messa
         confirmation_prompt_lines.append(f'{i} = {add_text} role `{role.name}`{send_message_str}')
     prompts = [await ctx.reply('\n'.join(confirmation_prompt_lines), mention_author=False)]
     for role_change_number, msg in review_messages:
-        prompts.append((await ctx.reply(f'__**Message for Role Change \#{role_change_number}**__\n{msg}', mention_author=False)))
+        prompts.append((await prompts[0].reply(f'__**Message for Role Change \#{role_change_number}**__\n{msg}', mention_author=False)))
 
     finish_setup = await _request_for_yes_no(ctx, 'Do you want to set up the Reaction Role? (selecting _no_ will abort the process)')
     if finish_setup is None:
