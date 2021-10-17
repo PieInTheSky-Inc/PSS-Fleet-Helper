@@ -616,6 +616,7 @@ async def cmd_check(ctx: Context) -> None:
     pass
 
 
+@is_owner()
 @cmd_check.command(name='channel')
 async def cmd_check_channel(ctx: Context, channel: str) -> None:
     result = utils.discord.get_text_channel(ctx, channel)
@@ -625,6 +626,7 @@ async def cmd_check_channel(ctx: Context, channel: str) -> None:
         await ctx.reply(f'This is not a valid channel or I cannot access it:\n{channel}', mention_author=False)
 
 
+@is_owner()
 @cmd_check.command(name='emoji')
 async def cmd_check_emoji(ctx: Context, emoji: str) -> None:
     result = utils.discord.get_emoji(ctx, emoji)
@@ -634,6 +636,7 @@ async def cmd_check_emoji(ctx: Context, emoji: str) -> None:
         await ctx.reply(f'This is not a valid emoji or I cannot access it:\n{emoji}', mention_author=False)
 
 
+@is_owner()
 @cmd_check.command(name='message')
 async def cmd_check_message(ctx: Context, channel: discord.TextChannel, message_id: str) -> None:
     result = await utils.discord.get_message(channel, message_id)
@@ -643,6 +646,7 @@ async def cmd_check_message(ctx: Context, channel: discord.TextChannel, message_
         await ctx.reply(f'This is not a valid message id or I cannot access the channel:\n{channel.mention}\n{message_id}', mention_author=False)
 
 
+@is_owner()
 @cmd_check.command(name='role')
 async def cmd_check_role(ctx: Context, role: str) -> None:
     result = utils.discord.get_role(ctx, role)
