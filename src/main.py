@@ -611,7 +611,16 @@ async def cmd_check(ctx: Context) -> None:
     pass
 
 
-@cmd_check.command(name='emoji', hidden=True)
+@cmd_check.command(name='channel')
+async def cmd_check_channel(ctx: Context, channel: str) -> None:
+    result = utils.discord.get_text_channel(ctx, channel)
+    if result:
+        await ctx.reply(result.mention, mention_author=False)
+    else:
+        await ctx.reply(f'This is not a valid channel or I cannot access it:\n{channel}', mention_author=False)
+
+
+@cmd_check.command(name='emoji')
 async def cmd_check_emoji(ctx: Context, emoji: str) -> None:
     result = utils.discord.get_emoji(ctx, emoji)
     if result:
