@@ -643,6 +643,15 @@ async def cmd_check_message(ctx: Context, channel: discord.TextChannel, message_
         await ctx.reply(f'This is not a valid message id or I cannot access the channel:\n{channel.mention}\n{message_id}', mention_author=False)
 
 
+@cmd_check.command(name='role')
+async def cmd_check_role(ctx: Context, role: str) -> None:
+    result = utils.discord.get_role(ctx, role)
+    if result:
+        await ctx.reply(f'{result.mention}\n{result.position}', mention_author=False)
+    else:
+        await ctx.reply(f'This is not a valid role:\n{role}', mention_author=False)
+
+
 
 
 # ---------- Helper ----------

@@ -4,6 +4,7 @@ from typing import Union as _Union
 
 from discord import Emoji as _Emoji
 from discord import Message as _Message
+from discord import Role as _Role
 from discord import TextChannel as _TextChannel
 from discord.errors import Forbidden as _Forbidden
 from discord.errors import NotFound as _NotFound
@@ -51,6 +52,20 @@ async def get_message(channel: _TextChannel, message_id: str) -> _Optional[_Mess
             return (await channel.fetch_message(message_id))
         except (_Forbidden, _NotFound):
             pass
+    return None
+
+
+def get_role(ctx: _Context, role_id_or_mention: str) -> _Optional[_Role]:
+    try:
+        role_id = int(role_id_or_mention)
+    except:
+        role_id = None
+    if not role_id:
+        match = _re.match('<@&(\d+)>', role_id_or_mention)
+        if match:
+            role_id = int(match.groups()[0])
+    if role_id:
+        return ctx.guild.get_role(role_id)
     return None
 
 
