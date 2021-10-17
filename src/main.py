@@ -605,6 +605,11 @@ async def cmd_reactionrole_list_inactive(ctx: Context, include_messages: bool = 
         raise Exception('There are no inactive Reaction Roles configured for this server.')
 
 
+
+
+
+# ---------- Check commands ----------
+
 @is_owner()
 @VIVI.bot.group(name='check', hidden=True, invoke_without_command=False)
 async def cmd_check(ctx: Context) -> None:
