@@ -634,6 +634,15 @@ async def cmd_check_emoji(ctx: Context, emoji: str) -> None:
         await ctx.reply(f'This is not a valid emoji or I cannot access it:\n{emoji}', mention_author=False)
 
 
+@cmd_check.command(name='message')
+async def cmd_check_message(ctx: Context, channel: discord.TextChannel, message_id: str) -> None:
+    result = await utils.discord.get_message(channel, message_id)
+    if result:
+        await ctx.reply(f'{result.content}\nBy {result.author.mention}', mention_author=False)
+    else:
+        await ctx.reply(f'This is not a valid message id or I cannot access the channel:\n{channel.mention}\n{message_id}', mention_author=False)
+
+
 
 
 # ---------- Helper ----------
