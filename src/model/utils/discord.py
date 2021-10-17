@@ -13,13 +13,13 @@ import emoji as _emoji
 
 
 
-def get_channel(ctx: _Context, s: str) -> _Optional[_Messageable]:
+def get_channel(ctx: _Context, channel_id_or_mention: str) -> _Optional[_Messageable]:
     try:
-        channel_id = int(s)
+        channel_id = int(channel_id_or_mention)
     except:
         channel_id = None
     if channel_id is None:
-        match = _re.match('<#(\d+)>', s)
+        match = _re.match('<#(\d+)>', channel_id_or_mention)
         if match:
             channel_id = int(match.groups()[0])
     if channel_id:
@@ -54,8 +54,8 @@ async def get_message(channel: _TextChannel, message_id: str) -> _Optional[_Mess
     return None
 
 
-def get_text_channel(ctx: _Context, s: str) -> _Optional[_TextChannel]:
-    result: _TextChannel = get_channel(ctx, s)
+def get_text_channel(ctx: _Context, channel_id_or_mention: str) -> _Optional[_TextChannel]:
+    result: _TextChannel = get_channel(ctx, channel_id_or_mention)
     if isinstance(result, _TextChannel) and result.permissions_for(ctx.guild.me).view_channel:
         return result
     return None
