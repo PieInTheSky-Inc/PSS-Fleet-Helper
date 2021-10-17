@@ -637,6 +637,16 @@ async def cmd_check_emoji(ctx: Context, emoji: str) -> None:
 
 
 @is_owner()
+@cmd_check.command(name='member')
+async def cmd_check_member(ctx: Context, *, member: str) -> None:
+    result = utils.discord.get_member(ctx, member)
+    if result:
+        await ctx.reply(result.mention, mention_author=False)
+    else:
+        await ctx.reply(f'This is not a valid member of this guild:\n{member}', mention_author=False)
+
+
+@is_owner()
 @cmd_check.command(name='message')
 async def cmd_check_message(ctx: Context, channel: discord.TextChannel, message_id: str) -> None:
     result = await utils.discord.get_message(channel, message_id)

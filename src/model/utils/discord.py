@@ -76,5 +76,22 @@ def get_text_channel(ctx: _Context, channel_id_or_mention: str) -> _Optional[_Te
     return None
 
 
+def get_member(ctx: _Context, member_id_mention_or_name: str) -> _Optional[_Role]:
+    result = None
+    try:
+        member_id = int(member_id_mention_or_name)
+    except:
+        member_id = None
+    if not member_id:
+        match = _re.match('<@\!?(\d+)>', member_id_mention_or_name)
+        if match:
+            member_id = int(match.groups()[0])
+    if member_id:
+        result = ctx.guild.get_member(member_id)
+    if not result:
+        result = ctx.guild.get_member_named(member_id_mention_or_name)
+    return result
+
+
 async def inquire_for_emoji(ctx) -> _Optional[_Union[str, _Emoji]]:
     pass
