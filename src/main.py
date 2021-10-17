@@ -8,12 +8,13 @@ from typing import Tuple as _Tuple
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
-from discord.ext.commands.core import bot_has_guild_permissions, has_guild_permissions
+from discord.ext.commands.core import bot_has_guild_permissions, has_guild_permissions, is_owner
 import emoji as _emoji
 
 import app_settings
 from confirmator import Confirmator
 import model
+from model import utils
 from selector import Selector
 from vm_converter import ReactionRoleChangeConverter as _ReactionRoleChangeConverter
 from vm_converter import ReactionRoleConverter as _ReactionRoleConverter
@@ -376,6 +377,16 @@ async def cmd_reactionrole_deactivate_all(ctx: Context) -> None:
 
 @bot_has_guild_permissions(manage_roles=True)
 @commands.has_guild_permissions(manage_roles=True)
+@cmd_reactionrole.group(name='delete', aliases=['remove'], brief='Delete a Reaction Role')
+async def cmd_reactionrole_delete(ctx: Context, reaction_role_id: int) -> None:
+    """
+    Delete a Reaction Role
+    """
+    pass
+
+
+@bot_has_guild_permissions(manage_roles=True)
+@commands.has_guild_permissions(manage_roles=True)
 @cmd_reactionrole.command(name='edit', brief='Edit a Reaction Role')
 async def cmd_reactionrole_edit(ctx: Context, reaction_role_id: int) -> None:
     """
@@ -536,20 +547,9 @@ async def cmd_reactionrole_edit(ctx: Context, reaction_role_id: int) -> None:
                 if content.lower() == 'skip':
                     break
 
-                new_emoji = content
-                if _emoji.emoji_count(new_emoji) == 1:
-                    pass
-                else:
-                    match = _re.match('<:\w+:(\d+)>', new_emoji)
-                    if match:
-                        emoji_id = int(match.groups()[0])
-                        emoji = VIVI.bot.get_emoji(emoji_id)
-                        if not emoji:
-                            await reply.reply(f'```I cannot use this emoji.```', mention_author=False)
-                            new_emoji = None
-                    else:
-                        await reply.reply(f'```This is not a valid emoji.```', mention_author=False)
-                        new_emoji = None
+                new_emoji = utils.discord.get_emoji(ctx, content)
+                if new_emoji is None:
+                    await reply.reply(f'```This is not a valid emoji or I cannot use this emoji.```', mention_author=False)
 
             change_log_lines = [f'> Reaction Role with ID `{reaction_role.id}` has been updated.']
             if new_name:
@@ -604,6 +604,20 @@ async def cmd_reactionrole_list_inactive(ctx: Context, include_messages: bool = 
     else:
         raise Exception('There are no inactive Reaction Roles configured for this server.')
 
+
+@is_owner()
+@VIVI.bot.group(name='check', hidden=True, invoke_without_command=False)
+async def cmd_check(ctx: Context) -> None:
+    pass
+
+
+@cmd_check.command(name='emoji', hidden=True)
+async def cmd_check_emoji(ctx: Context, emoji: str) -> None:
+    result = utils.discord.get_emoji(ctx, emoji)
+    if result:
+        await ctx.reply(result, mention_author=False)
+    else:
+        await ctx.reply(f'This is not a valid emoji or I cannot access it:\n{emoji}', mention_author=False)
 
 
 
