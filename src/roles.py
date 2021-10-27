@@ -85,3 +85,7 @@ class RolesCog(_Cog):
             user_list = '\n'.join(sorted(users_removed))
 
             await ctx.reply(f'Removed role {role} from members:\n{user_list}', mention_author=False)
+
+
+def setup(bot: _Bot):
+    bot.add_cog(RolesCog(bot))

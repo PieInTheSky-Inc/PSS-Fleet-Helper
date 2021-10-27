@@ -25,8 +25,6 @@ BOT = commands.Bot(
 
 
 
-
-
 # ---------- Event handlers ----------
 
 @BOT.event
@@ -49,41 +47,8 @@ async def on_command_error(ctx: Context, err: Exception) -> None:
 async def on_ready() -> None:
     print(f'Bot logged in as {BOT.user.name} ({BOT.user.id})')
     print(f'Bot version: {app_settings.VERSION}')
-
-
-
-
-
-# ---------- Basic role management ----------
-
-
-
-
-
-# ---------- Bot management ----------
-
-@BOT.command(name='about', brief='General info about the bot')
-async def cmd_about(ctx: Context) -> None:
-    info = {
-        'Server count': len(BOT.guilds),
-        'Member count': sum([guild.member_count for guild in BOT.guilds]),
-        'Version': app_settings.VERSION,
-        'Github': '<https://github.com/PieInTheSky-Inc/ViViBot>',
-    }
-    await ctx.reply('\n'.join([f'{key}: {value}' for key, value in info.items()]), mention_author=False)
-
-
-@BOT.command(name='invite', brief='Produce invite link')
-async def cmd_invite(ctx: Context) -> None:
-    await ctx.reply(f'https://discordapp.com/oauth2/authorize?scope=bot&permissions=139519798336&client_id={app_settings.DISCORD_BOT_CLIENT_ID}', mention_author=False)
-
-
-
-
-
-# ---------- Helper ----------
-
-
+    extensions = '\n'.join(f'- {key}' for key in BOT.extensions.keys())
+    print(f'Loaded extensions:\n{extensions}')
 
 
 
@@ -91,7 +56,9 @@ async def cmd_invite(ctx: Context) -> None:
 
 async def __initialize() -> None:
     await model.setup_model()
+    BOT.load_extension('about')
     BOT.load_extension('checks')
+    BOT.load_extension('roles')
     BOT.load_extension('reactionroles')
 
 

@@ -70,3 +70,7 @@ class ChecksCog(_Cog):
             await ctx.reply(f'{result.mention}\n{result.position}', mention_author=False)
         else:
             await ctx.reply(f'This is not a valid role:\n{role}', mention_author=False)
+
+
+def setup(bot: _Bot):
+    bot.add_cog(ChecksCog(bot))
