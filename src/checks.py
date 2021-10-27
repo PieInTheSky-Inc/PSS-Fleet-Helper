@@ -3,7 +3,7 @@ from discord.ext.commands import Bot as _Bot
 from discord.ext.commands import Cog as _Cog
 from discord.ext.commands import Context as _Context
 from discord.ext.commands import is_owner as _is_owner
-from discord.ext.commands import group as _group
+from discord.ext.commands import group as _command_group
 
 from model import utils as _utils
 
@@ -17,7 +17,7 @@ class ChecksCog(_Cog):
 
 
     @_is_owner()
-    @_group(name='check', hidden=True, invoke_without_command=False)
+    @_command_group(name='check', hidden=True, invoke_without_command=False)
     async def base(self, ctx: _Context) -> None:
         pass
 
