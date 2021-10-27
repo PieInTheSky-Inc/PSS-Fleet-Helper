@@ -2,7 +2,7 @@ from discord import Role as _Role
 from discord.ext.commands import Bot as _Bot
 from discord.ext.commands import Cog as _Cog
 from discord.ext.commands import Context as _Context
-from discord.ext.commands import group as command_group
+from discord.ext.commands import group as _command_group
 from discord.ext.commands import bot_has_guild_permissions as _bot_has_guild_permissions
 from discord.ext.commands import has_guild_permissions as _has_guild_permissions
 
@@ -17,7 +17,7 @@ class RolesCog(_Cog):
         self.__bot = bot
 
 
-    @command_group(name='role', brief='Role management', invoke_without_command=True)
+    @_command_group(name='role', brief='Role management', invoke_without_command=True)
     async def base(ctx: _Context) -> None:
         await ctx.send_help('role')
 
