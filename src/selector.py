@@ -1,3 +1,4 @@
+from typing import Any as _Any
 from typing import Callable as _Callable
 from typing import Dict as _Dict
 from typing import Generic as _Generic
@@ -5,6 +6,7 @@ from typing import List as _List
 from typing import Optional as _Optional
 from typing import Tuple as _Tuple
 from typing import TypeVar as _TypeVar
+from typing import Union as _Union
 
 import asyncio as _asyncio
 from discord import Message as _Message
@@ -16,13 +18,14 @@ T = _TypeVar('T')
 # ---------- Classes ----------
 
 class Selector(_Generic[T]):
-    def __init__(self, ctx: _Context, search_term: str, available_options: _List[T], short_text_function: _Optional[_Callable[[T], str]] = None, title: _Optional[str] = None, timeout: float = 60.0) -> None:
-        self.__available_options: _List[T] = list(available_options)
+    def __init__(self, ctx: _Context, search_term: str, available_options: _Union[_List[T], _Dict[_Any, T]], short_text_function: _Optional[_Callable[[T], str]] = None, title: _Optional[str] = None, timeout: float = 60.0) -> None:
+        self.__got_options_dict: bool = isinstance(available_options, dict)
+        self.__available_options: _Union[_List[T], _Dict[_Any, T]] = dict(available_options) if self.__got_options_dict else list(available_options)
         self.__context: _Context = ctx
         self.__search_term: str = search_term
         self.__short_text_function: _Callable[[T], str] = short_text_function
         self.__timeout: int = timeout
-        self.__current_options: _Dict[str, T] = {i: option for i, option in enumerate(self.__available_options, 1)}
+        self.__current_options: _Dict[_Any, T] = self.__available_options if self.__got_options_dict else {i: option for i, option in enumerate(self.__available_options, 1)}
         self.__message: _Message = None
         self.__title: str = title or Selector.__get_title(self.__search_term)
 

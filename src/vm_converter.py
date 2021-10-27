@@ -1,11 +1,12 @@
 from typing import List as _List
 
-import discord as _discord
+from discord import Guild as _Guild
 from discord.ext.commands import Context as _Context
 
 from model import ReactionRole as _ReactionRole
 from model import ReactionRoleChange as _ReactionRoleChange
 from model import ReactionRoleRequirement as _ReactionRoleRequirement
+from model import utils as _utils
 
 
 
@@ -25,13 +26,12 @@ class ReactionRoleConverter():
         self.__text: _List[str] = None
 
 
-    async def to_text(self, guild: _discord.Guild, include_messages: bool) -> _List[str]:
+    async def to_text(self, guild: _Guild, include_messages: bool) -> _List[str]:
         if self.__text is not None:
             return self.__text
 
-        details = [f'ID = {self.__reaction_role.id}',
-            f'Name = {self.__reaction_role.name}',
-            f'Message ID = {self.__reaction_role.message_id}',
+        details = [f'**Reaction Role {self.__reaction_role}**',
+            f'Message ID = {self.__reaction_role.message_id} {_utils.discord.create_discord_link(guild.id, self.__reaction_role.channel_id, self.__reaction_role.message_id)}',
             f'Emoji = {self.__reaction_role.reaction}',
             f'Is active = {self.__reaction_role.is_active}',
         ]
@@ -70,7 +70,7 @@ class ReactionRoleChangeConverter():
             message_channel = ctx.guild.get_channel(reaction_role_change.message_channel_id)
             send_message_str = f' and send a message to #{message_channel.name}'
         allow_toggle_text = 'toggable' if reaction_role_change.allow_toggle else 'non-toggable'
-        result = f'{add_text} {allow_toggle_text} role `{role.name}`{send_message_str}'
+        result = f'{add_text} {allow_toggle_text} role \'{role.name}\' (ID: {role.id}){send_message_str}'
         return result
 
 

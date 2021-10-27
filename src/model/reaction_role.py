@@ -31,6 +31,15 @@ class ReactionRole(_database.DatabaseRowBase):
         self.__edit_requirements_lock: _Lock = _Lock()
 
 
+    def __repr__(self) -> str:
+        deleted_text = ' - deleted' if self.deleted else ''
+        return f'Reaction Role \'{self.__name}\' (ID: {super().id}){deleted_text}'
+
+
+    def __str__(self) -> str:
+        return f'\'{self.__name}\' (ID: {super().id})'
+
+
     @property
     def channel_id(self) -> int:
         super()._assert_not_deleted()

@@ -45,7 +45,6 @@ class DatabaseRowBase():
 
     @property
     def id(self) -> int:
-        self._assert_not_deleted()
         return self._id
 
 
