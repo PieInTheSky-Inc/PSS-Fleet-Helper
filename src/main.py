@@ -150,67 +150,6 @@ async def cmd_invite(ctx: Context) -> None:
 
 
 
-# ---------- Check commands ----------
-
-@is_owner()
-@BOT.group(name='check', hidden=True, invoke_without_command=False)
-async def cmd_check(ctx: Context) -> None:
-    pass
-
-
-@is_owner()
-@cmd_check.command(name='channel')
-async def cmd_check_channel(ctx: Context, channel: str) -> None:
-    result = utils.discord.get_text_channel(ctx, channel)
-    if result:
-        await ctx.reply(result.mention, mention_author=False)
-    else:
-        await ctx.reply(f'This is not a valid channel or I cannot access it:\n{channel}', mention_author=False)
-
-
-@is_owner()
-@cmd_check.command(name='emoji')
-async def cmd_check_emoji(ctx: Context, emoji: str) -> None:
-    result = utils.discord.get_emoji(ctx, emoji)
-    if result:
-        await ctx.reply(result, mention_author=False)
-    else:
-        await ctx.reply(f'This is not a valid emoji or I cannot access it:\n{emoji}', mention_author=False)
-
-
-@is_owner()
-@cmd_check.command(name='member')
-async def cmd_check_member(ctx: Context, *, member: str) -> None:
-    result = utils.discord.get_member(ctx, member)
-    if result:
-        await ctx.reply(result.mention, mention_author=False)
-    else:
-        await ctx.reply(f'This is not a valid member of this guild:\n{member}', mention_author=False)
-
-
-@is_owner()
-@cmd_check.command(name='message')
-async def cmd_check_message(ctx: Context, channel: discord.TextChannel, message_id: str) -> None:
-    result = await utils.discord.fetch_message(channel, message_id)
-    if result:
-        await ctx.reply(f'{result.content}\nBy {result.author.mention}', mention_author=False)
-    else:
-        await ctx.reply(f'This is not a valid message id or I cannot access the channel:\n{channel.mention}\n{message_id}', mention_author=False)
-
-
-@is_owner()
-@cmd_check.command(name='role')
-async def cmd_check_role(ctx: Context, role: str) -> None:
-    result = utils.discord.get_role(ctx, role)
-    if result:
-        await ctx.reply(f'{result.mention}\n{result.position}', mention_author=False)
-    else:
-        await ctx.reply(f'This is not a valid role:\n{role}', mention_author=False)
-
-
-
-
-
 # ---------- Helper ----------
 
 
@@ -221,6 +160,7 @@ async def cmd_check_role(ctx: Context, role: str) -> None:
 
 async def __initialize() -> None:
     await model.setup_model()
+    BOT.load_extension('checks')
     BOT.load_extension('reactionroles')
 
 
