@@ -18,13 +18,13 @@ class ChecksCog(_Cog):
 
     @_is_owner()
     @_group(name='check', hidden=True, invoke_without_command=False)
-    async def base(ctx: _Context) -> None:
+    async def base(self, ctx: _Context) -> None:
         pass
 
 
     @_is_owner()
     @base.command(name='channel')
-    async def channel(ctx: _Context, channel: str) -> None:
+    async def channel(self, ctx: _Context, channel: str) -> None:
         result = _utils.discord.get_text_channel(ctx, channel)
         if result:
             await ctx.reply(result.mention, mention_author=False)
@@ -34,7 +34,7 @@ class ChecksCog(_Cog):
 
     @_is_owner()
     @base.command(name='emoji')
-    async def emoji(ctx: _Context, emoji: str) -> None:
+    async def emoji(self, ctx: _Context, emoji: str) -> None:
         result = _utils.discord.get_emoji(ctx, emoji)
         if result:
             await ctx.reply(result, mention_author=False)
@@ -44,7 +44,7 @@ class ChecksCog(_Cog):
 
     @_is_owner()
     @base.command(name='member')
-    async def member(ctx: _Context, *, member: str) -> None:
+    async def member(self, ctx: _Context, *, member: str) -> None:
         result = _utils.discord.get_member(ctx, member)
         if result:
             await ctx.reply(result.mention, mention_author=False)
@@ -54,7 +54,7 @@ class ChecksCog(_Cog):
 
     @_is_owner()
     @base.command(name='message')
-    async def message(ctx: _Context, channel: _TextChannel, message_id: str) -> None:
+    async def message(self, ctx: _Context, channel: _TextChannel, message_id: str) -> None:
         result = await _utils.discord.fetch_message(channel, message_id)
         if result:
             await ctx.reply(f'{result.content}\nBy {result.author.mention}', mention_author=False)
@@ -64,7 +64,7 @@ class ChecksCog(_Cog):
 
     @_is_owner()
     @base.command(name='role')
-    async def role(ctx: _Context, role: str) -> None:
+    async def role(self, ctx: _Context, role: str) -> None:
         result = _utils.discord.get_role(ctx, role)
         if result:
             await ctx.reply(f'{result.mention}\n{result.position}', mention_author=False)
