@@ -54,50 +54,6 @@ async def on_ready() -> None:
     print(f'Loaded extensions:\n{extensions}')
 
 
-@BOT.command(name='embed')
-async def cmd_embed(ctx: _Context, *, definition_or_url: str = None) -> None:
-    """
-    Test the look of an embed.
-    Create and edit embed definitions: https://leovoel.github.io/embed-visualizer/
-
-    How to use:
-     - Go to https://leovoel.github.io/embed-visualizer/
-     - Create an embed as you like it
-     - Copy the code on the left starting with the curled opening brackets right next to 'embed:' ending with the second to last curled closing bracket.
-     - Paste the code as parameter 'definition_or_url'
-
-    You can also copy the code into a file and attach that file instead, if the definition would be too long to send otherwise.
-    You can also copy the code onto pastebin.com and type the url to that file instead.
-    You can also type the link to any file on the web containing an embed definition.
-    """
-    embeds: _List[_Embed] = []
-    if definition_or_url:
-        try:
-            embeds.append(json.loads(definition_or_url, cls=_utils.discord.EmbedLeovoelDecoder))
-            url_definition = None
-        except json.JSONDecodeError:
-            if 'pastebin.com' in definition_or_url:
-                url = _utils.web.get_raw_pastebin(definition_or_url)
-            else:
-                url = definition_or_url
-            url_definition = await _utils.web.get_data_from_url(url)
-
-        if url_definition:
-            try:
-                embeds.append(json.loads(url_definition, cls=_utils.discord.EmbedLeovoelDecoder))
-            except json.JSONDecodeError:
-                raise Exception('This is not a valid embed definition or this url points to a file not containing a valid embed definition.')
-    elif ctx.message.attachments:
-        for attachment in ctx.message.attachments:
-            attachment_content = (await attachment.read()).decode('utf-8')
-            if attachment_content:
-                embeds.append(json.loads(attachment_content, cls=_utils.discord.EmbedLeovoelDecoder))
-    else:
-        raise Exception('You need to specify a definition or upload a file containing a definition!')
-    for embed in embeds:
-        await ctx.reply(embed=embed, mention_author=False)
-
-
 
 # ---------- Module init ----------
 
@@ -105,6 +61,7 @@ async def __initialize() -> None:
     await model.setup_model()
     BOT.load_extension('about')
     BOT.load_extension('checks')
+    BOT.load_extension('embed')
     BOT.load_extension('roles')
     BOT.load_extension('reactionroles')
 
