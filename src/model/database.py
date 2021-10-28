@@ -2,6 +2,7 @@ from datetime import datetime as _datetime
 from typing import Any as _Any
 from typing import Dict as _Dict
 from typing import List as _List
+from typing import Optional as _Optional
 from typing import Tuple as _Tuple
 from threading import Lock as _Lock
 
@@ -215,6 +216,17 @@ def is_connected(pool: _asyncpg.pool.Pool) -> bool:
     if pool:
         return not (pool._closed or pool._closing)
     return False
+
+
+async def try_add_column(table_name: str, column_name: str, column_type: str, is_primary: bool, not_null: bool, default: _Optional[_Any] = None) -> bool:
+    __log_db_function_enter('try_add_column', table_name=f'\'{table_name}\'', column_name=f'\'{column_name}\'', column_type=f'\'{column_type}\'', is_primary=is_primary, not_null=not_null, default=default)
+
+    is_primary_str = ' PRIMARY KEY' if is_primary else ''
+    not_null_str = ' NOT NULL' if not_null else ''
+    default_str = f' DEFAULT {default}' if default else ''
+    query = f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type.upper()}{is_primary_str}{not_null_str}{default_str}'
+    success, _ = await try_execute(query)
+    return success
 
 
 async def try_set_schema_version(version: str) -> bool:

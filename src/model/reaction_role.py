@@ -81,14 +81,14 @@ class ReactionRole(_database.DatabaseRowBase):
         return list(self.__role_requirements)
 
 
-    async def add_change(self, role_id: int, add: bool, allow_toggle: bool, message_content: str = None, message_channel_id: int = None) -> 'ReactionRoleChange':
+    async def add_change(self, role_id: int, add: bool, allow_toggle: bool, message_content: str = None, message_channel_id: int = None, message_embed: str = None) -> 'ReactionRoleChange':
         super()._assert_not_deleted()
         with self.__edit_changes_lock:
             for change in self.role_requirements:
                 if change.id == role_id:
                     return change
 
-            result = await _db_create_reaction_role_change(self.id, role_id, add, allow_toggle, message_content, message_channel_id)
+            result = await _db_create_reaction_role_change(self.id, role_id, add, allow_toggle, message_content, message_channel_id, message_embed)
             self.__role_changes.append(result)
             return result
 
@@ -290,7 +290,7 @@ class ReactionRoleChange(_database.DatabaseRowBase):
     TABLE_NAME: str = 'reaction_role_change'
     ID_COLUMN_NAME: str = 'reaction_role_change_id'
 
-    def __init__(self, reaction_role_change_id: int, reaction_role_id: int, role_id: int, add: bool, allow_toggle: bool, message_content: str, message_channel_id: int) -> None:
+    def __init__(self, reaction_role_change_id: int, reaction_role_id: int, role_id: int, add: bool, allow_toggle: bool, message_content: str, message_channel_id: int, message_embed: str) -> None:
         super().__init__(reaction_role_change_id)
         self.__reaction_role: ReactionRole = None
         self.__reaction_role_id: int = reaction_role_id
@@ -298,7 +298,8 @@ class ReactionRoleChange(_database.DatabaseRowBase):
         self.__add: bool = add
         self.__allow_toggle: bool = allow_toggle
         self.__message_channel_id: int = message_channel_id
-        self.__message_content: int = message_content
+        self.__message_content: str = message_content
+        self.__message_embed: str = message_embed
 
 
     @property
@@ -320,6 +321,11 @@ class ReactionRoleChange(_database.DatabaseRowBase):
     def message_content(self) -> str:
         super()._assert_not_deleted()
         return self.__message_content
+
+    @property
+    def message_embed(self) -> str:
+        super()._assert_not_deleted()
+        return self.__message_embed
 
     @property
     def reaction_role(self) -> _Optional[ReactionRole]:
@@ -345,7 +351,7 @@ class ReactionRoleChange(_database.DatabaseRowBase):
         return result
 
 
-    async def update(self, role_id: int = None, add: bool = None, allow_toggle: bool = None, message_content: str = None, message_channel_id: int = None) -> bool:
+    async def update(self, role_id: int = None, add: bool = None, allow_toggle: bool = None, message_content: str = None, message_channel_id: int = None, message_embed: str = None) -> bool:
         super()._assert_not_deleted()
         if role_id is None and add is None and allow_toggle is None and message_channel_id is None and message_content is None:
             return True
@@ -354,7 +360,8 @@ class ReactionRoleChange(_database.DatabaseRowBase):
         allow_toggle = self.allow_toggle if allow_toggle is None else allow_toggle
         message_channel_id = message_channel_id or self.message_channel_id
         message_content = message_content or self.message_content
-        updated = await _db_update_reaction_role_change(self.id, role_id, add, allow_toggle, message_content, message_channel_id)
+        message_content = message_embed or self.message_embed
+        updated = await _db_update_reaction_role_change(self.id, role_id, add, allow_toggle, message_content, message_channel_id, message_embed)
         if updated:
             self._role_id = role_id
             self.__add = add
@@ -450,7 +457,7 @@ async def _db_update_reaction_role(reaction_role_id: int, channel_id: int, messa
     return bool(result)
 
 
-async def _db_create_reaction_role_change(reaction_role_id: int, role_id: int, add: bool, allow_toggle: bool, message_content: str, message_channel_id: int) -> 'ReactionRoleChange':
+async def _db_create_reaction_role_change(reaction_role_id: int, role_id: int, add: bool, allow_toggle: bool, message_content: str, message_channel_id: int, message_embed: str) -> 'ReactionRoleChange':
     record = await _database.insert_row(
         ReactionRoleChange.TABLE_NAME,
         ReactionRoleChange.ID_COLUMN_NAME,
@@ -460,6 +467,7 @@ async def _db_create_reaction_role_change(reaction_role_id: int, role_id: int, a
         allow_toggle=allow_toggle,
         message_content=message_content,
         message_channel_id=message_channel_id,
+        message_embed=message_embed,
     )
     if record:
         return ReactionRoleChange(record[0], reaction_role_id, role_id, add, allow_toggle, message_content, message_channel_id)
@@ -475,7 +483,7 @@ async def _db_delete_reaction_role_change(reaction_role_change_id: int) -> bool:
     return bool(result)
 
 
-async def _db_update_reaction_role_change(reaction_role_change_id: int, role_id: int, add: bool, allow_toggle: bool, message_content: str, message_channel_id: int) -> bool:
+async def _db_update_reaction_role_change(reaction_role_change_id: int, role_id: int, add: bool, allow_toggle: bool, message_content: str, message_channel_id: int, message_embed: str) -> bool:
     result = await _database.update_row(
         ReactionRoleChange.TABLE_NAME,
         ReactionRoleChange.ID_COLUMN_NAME,
@@ -485,6 +493,7 @@ async def _db_update_reaction_role_change(reaction_role_change_id: int, role_id:
         allow_toggle=allow_toggle,
         message_content=message_content,
         message_channel_id=message_channel_id,
+        message_embed=message_embed,
     )
     return bool(result)
 

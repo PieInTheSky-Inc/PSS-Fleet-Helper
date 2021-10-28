@@ -24,12 +24,33 @@ async def __setup_db_schema() -> None:
     init_functions = [
         ('0.1.0', __create_db_schema),
         ('0.2.0', __update_db_schema_0_2_0),
+        ('0.3.0', __update_db_schema_0_3_0),
     ]
     for version, callable in init_functions:
         if not (await __update_schema(version, callable)):
             raise Exception('DB initialization failed')
 
     print('DB initialization succeeded')
+
+
+async def __update_db_schema_0_3_0() -> bool:
+    column_definition = ('message_embed', 'TEXT', False, False, None)
+
+    schema_version = await _database.get_schema_version()
+    if schema_version:
+        compare_0_3_0 = _utils.compare_versions(schema_version, '0.3.0')
+        if compare_0_3_0 < 1:
+            return True
+
+    print(f'[update_schema_0_3_0] Updating to database schema v0.3.0')
+
+    success_reaction_role = await _database.try_add_column(_ReactionRoleChange.TABLE_NAME, *column_definition)
+    if not success_reaction_role:
+        print(f'[update_schema_0_3_0] Could not add column \'{column_definition[0]}\' to table \'{_ReactionRoleChange.TABLE_NAME}\'')
+        return False
+
+    success = await _database.try_set_schema_version('0.3.0')
+    return success
 
 
 async def __update_db_schema_0_2_0() -> bool:
