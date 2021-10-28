@@ -22,7 +22,7 @@ class EmbedCog(_Cog):
 
 
     @_command_group(name='embed', invoke_without_command=True)
-    async def cmd_embed(self, ctx: _Context, *, definition_or_url: str = None) -> None:
+    async def base(self, ctx: _Context, *, definition_or_url: str = None) -> None:
         """
         Test the look of an embed.
         Create and edit embed definitions: https://leovoel.github.io/embed-visualizer/
@@ -39,21 +39,7 @@ class EmbedCog(_Cog):
         """
         embeds: _List[_Embed] = []
         if definition_or_url:
-            try:
-                embeds.append(_json.loads(definition_or_url, cls=_utils.discord.EmbedLeovoelDecoder))
-                url_definition = None
-            except _json.JSONDecodeError:
-                if 'pastebin.com' in definition_or_url:
-                    url = _utils.web.get_raw_pastebin(definition_or_url)
-                else:
-                    url = definition_or_url
-                url_definition = await _utils.web.get_data_from_url(url)
-
-            if url_definition:
-                try:
-                    embeds.append(_json.loads(url_definition, cls=_utils.discord.EmbedLeovoelDecoder))
-                except _json.JSONDecodeError:
-                    raise Exception('This is not a valid embed definition or this url points to a file not containing a valid embed definition.')
+            embeds.append((await get_embed_from_definition_or_url(definition_or_url)))
         elif ctx.message.attachments:
             for attachment in ctx.message.attachments:
                 attachment_content = (await attachment.read()).decode('utf-8')
@@ -65,5 +51,23 @@ class EmbedCog(_Cog):
             await ctx.reply(embed=embed, mention_author=False)
 
 
+async def get_embed_from_definition_or_url(definition_or_url: str) -> _Embed:
+    try:
+        return _json.loads(definition_or_url, cls=_utils.discord.EmbedLeovoelDecoder)
+    except _json.JSONDecodeError:
+        if 'pastebin.com' in definition_or_url:
+            url = _utils.web.get_raw_pastebin(definition_or_url)
+        else:
+            url = definition_or_url
+        url_definition = await _utils.web.get_data_from_url(url)
+
+    try:
+        return _json.loads(url_definition, cls=_utils.discord.EmbedLeovoelDecoder)
+    except _json.JSONDecodeError:
+        raise Exception('This is not a valid embed definition or this url points to a file not containing a valid embed definition.')
+
+
 def setup(bot: _Bot):
     bot.add_cog(EmbedCog(bot))
+
+
