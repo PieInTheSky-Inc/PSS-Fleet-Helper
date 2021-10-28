@@ -1,6 +1,9 @@
 from asyncio import TimeoutError as _TimeoutError
 from datetime import timedelta as _timedelta
+from json import dumps as _json_dumps
+from json import loads as _json_loads
 from json import JSONEncoder as _JSONEncoder
+from json import JSONDecodeError as _JSONDecodeError
 from json import JSONDecoder as _JSONDecoder
 import re as _re
 from typing import Any as _Any
@@ -22,6 +25,7 @@ from discord.abc import Messageable as _Messageable
 from discord.ext.commands import Context as _Context
 import emoji as _emoji
 
+from . import web as _web
 from .datetime import get_utc_now as _get_utc_now
 from .datetime import utc_from_timestamp as _utc_from_timestamp
 from .datetime import utc_to_timestamp as _utc_to_timestamp
@@ -46,6 +50,7 @@ DEFAULT_INQUIRE_TIMEOUT: float = 120.0
 
 __RX_CHANNEL_MENTION: _re.Pattern = _re.compile('<#(\d+)>')
 __RX_EMOJI: _re.Pattern = _re.compile('<:\w+:(\d+)>')
+__RX_MESSAGE_LINK: _re.Pattern = _re.compile('https://discord.com/channels/(\d+)/(\d+)/(\d+)/?')
 __RX_ROLE_MENTION: _re.Pattern = _re.compile('<@&(\d+)>')
 __RX_USER_MENTION: _re.Pattern = _re.compile('<@\!?(\d+)>')
 
@@ -236,6 +241,17 @@ def check_for_message_id(message_content: str,
         or (allow_skip and content_lower == 'skip')
 
 
+def check_for_message_link(message_content: str,
+                            allow_abort: bool = True,
+                            allow_skip: bool = False
+                        ) -> bool:
+    if __RX_MESSAGE_LINK.match(message_content):
+        return True
+    content_lower = message_content.lower()
+    return (allow_abort and content_lower == 'abort') \
+        or (allow_skip and content_lower == 'skip')
+
+
 def check_for_role_id_or_mention(message_content: str,
                                     allow_abort: bool,
                                     allow_skip: bool
@@ -302,6 +318,22 @@ def get_channel(ctx: _Context,
     return None
 
 
+async def get_embed_from_definition_or_url(definition_or_url: str) -> _Embed:
+    try:
+        return _json_loads(definition_or_url, cls=EmbedLeovoelDecoder)
+    except _JSONDecodeError:
+        if 'pastebin.com' in definition_or_url:
+            url = _web.get_raw_pastebin(definition_or_url)
+        else:
+            url = definition_or_url
+        url_definition = await _web.get_data_from_url(url)
+
+    try:
+        return _json_loads(url_definition, cls=EmbedLeovoelDecoder)
+    except _JSONDecodeError:
+        raise Exception('This is not a valid embed definition or this url points to a file not containing a valid embed definition.')
+
+
 def get_emoji(ctx: _Context,
                 emoji: str
             ) -> _Optional[str]:
@@ -320,6 +352,43 @@ def get_emoji(ctx: _Context,
             if result and ctx.guild == result.guild:
                 return f'<:{result.name}:{result.id}>'
     return None
+
+
+async def get_channel_and_message_from_message_link(ctx: _Context,
+                                                        message_link: str
+                                                    ) -> _Tuple[_Optional[_TextChannel], _Optional[_Message]]:
+    channel = None
+    message = None
+    match = __RX_MESSAGE_LINK.match(message_link)
+    if match:
+        channel_id = int(match.groups()[1])
+        message_id = int(match.groups()[2])
+        channel = get_channel(ctx, channel_id)
+        if channel:
+            message = await fetch_message(channel, message_id)
+    return channel, message
+
+
+def get_member(ctx: _Context,
+                member_id_mention_or_name: str
+            ) -> _Optional[_Role]:
+    """
+    Attempts to obtain a member on the guild, `ctx` originates from.
+    """
+    result = None
+    try:
+        member_id = int(member_id_mention_or_name)
+    except:
+        member_id = None
+    if not member_id:
+        match = __RX_USER_MENTION.match(member_id_mention_or_name)
+        if match:
+            member_id = int(match.groups()[0])
+    if member_id:
+        result = ctx.guild.get_member(member_id)
+    if not result:
+        result = ctx.guild.get_member_named(member_id_mention_or_name)
+    return result
 
 
 def get_role(ctx: _Context,
@@ -354,28 +423,6 @@ def get_text_channel(ctx: _Context,
     return None
 
 
-def get_member(ctx: _Context,
-                member_id_mention_or_name: str
-            ) -> _Optional[_Role]:
-    """
-    Attempts to obtain a member on the guild, `ctx` originates from.
-    """
-    result = None
-    try:
-        member_id = int(member_id_mention_or_name)
-    except:
-        member_id = None
-    if not member_id:
-        match = __RX_USER_MENTION.match(member_id_mention_or_name)
-        if match:
-            member_id = int(match.groups()[0])
-    if member_id:
-        result = ctx.guild.get_member(member_id)
-    if not result:
-        result = ctx.guild.get_member_named(member_id_mention_or_name)
-    return result
-
-
 async def inquire_for_add_remove(ctx: _Context,
                                     prompt_message: str,
                                     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
@@ -397,8 +444,8 @@ async def inquire_for_boolean(ctx: _Context,
                                 respond_to_message: _Optional[_Message] = None
                             ) -> _Tuple[_Optional[bool], bool, bool]:
     f"""
-    `true_values` defaults to {', '.join(__DEFAULT_TRUE_VALUES)} if `None` or empty.
-    `false_values` defaults to {', '.join(__DEFAULT_FALSE_VALUES)} if `None` or empty.
+    `true_values` defaults to `.model.utils.discord.__DEFAULT_TRUE_VALUES` if `None` or empty.
+    `false_values` defaults to `.model.utils.discord.__DEFAULT_FALSE_VALUES` if `None` or empty.
 
     Returns (result: `Optional[discord.Role]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -423,9 +470,41 @@ async def inquire_for_boolean(ctx: _Context,
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, true_values, false_values, check=check_for_boolean_string, timeout=timeout)
     if user_reply:
         content_lower = user_reply.content.strip().lower()
-        aborted, skipped = __check_for_abort_or_skip(content_lower, allow_abort, allow_skip)
+        aborted, skipped = await __check_for_abort_or_skip(content_lower, allow_abort, allow_skip)
         if not (aborted or skipped):
             result = content_lower in true_values_lower or not (content_lower in false_values_lower)
+    else:
+        aborted = True
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
+    return result, aborted, skipped
+
+
+async def inquire_for_embed_definition(ctx: _Context,
+                                        prompt_text: str,
+                                        timeout: float = DEFAULT_INQUIRE_TIMEOUT,
+                                        abort_text: _Optional[str] = None,
+                                        skip_text: _Optional[str] = None
+                                    ) -> _Tuple[_Optional[str], bool, bool]:
+    """
+    Returns (embed_definition: `Optional[str]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
+    """
+    allow_abort = bool(abort_text)
+    allow_skip = bool(skip_text)
+    result = None
+    aborted = False
+    skipped = False
+
+    full_prompt_text = get_prompt_text(prompt_text, 'an embed definition as JSON as plain text, a hyperlink to a web resource containing a definition or a file uploaded containing a definition', allow_abort, allow_skip)
+    prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
+    if user_reply:
+        content = user_reply.content.strip()
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
+        if not (aborted or skipped):
+            if not content and user_reply.attachments:
+                content = (await user_reply.attachments[0].read()).decode('utf-8')
+            embed = await get_embed_from_definition_or_url(content)
+            result = _json_dumps(embed, cls=EmbedLeovoelEncoder, separators=(',', ':')) if embed and content else None
     else:
         aborted = True
     await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
@@ -449,17 +528,16 @@ async def inquire_for_emoji(ctx: _Context,
 
     full_prompt_text = get_prompt_text(prompt_text, 'an emoji', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
-    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, False, timeout=timeout)
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             result = get_emoji(ctx, content)
     else:
         aborted = True
     await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return result, aborted, skipped
-
 
 
 async def inquire_for_integer(ctx: _Context,
@@ -479,10 +557,10 @@ async def inquire_for_integer(ctx: _Context,
 
     full_prompt_text = get_prompt_text(prompt_text, 'an integer', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
-    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, False, check=check_for_integer, timeout=timeout)
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_integer, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             result = int(content)
     else:
@@ -508,10 +586,10 @@ async def inquire_for_member(ctx: _Context,
 
     full_prompt_text = get_prompt_text(prompt_text, 'a member mention, name or ID', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
-    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, False, check=check_for_member_id_name_or_mention, timeout=timeout)
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_member_id_name_or_mention, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             member = get_member(content)
     else:
@@ -551,16 +629,45 @@ async def inquire_for_message_id(ctx: _Context,
 
     full_prompt_text = get_prompt_text(prompt_text, 'a message ID', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
-    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, False, check=check_for_message_id, timeout=timeout)
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_message_id, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             message = await fetch_message(channel, content)
     else:
         aborted = True
     await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return message, aborted, skipped
+
+
+async def inquire_for_message_link(ctx: _Context,
+                                    prompt_text: str,
+                                    timeout: float = DEFAULT_INQUIRE_TIMEOUT,
+                                    abort_text: _Optional[str] = None,
+                                    skip_text: _Optional[str] = None
+                                ) -> _Tuple[_Optional[str], bool, bool]:
+    """
+    Returns (message_link: `Optional[str]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
+    """
+    allow_abort = bool(abort_text)
+    allow_skip = bool(skip_text)
+    result = None
+    aborted = False
+    skipped = False
+
+    full_prompt_text = get_prompt_text(prompt_text, 'an full link to a Discord message', allow_abort, allow_skip)
+    prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_message_link, timeout=timeout)
+    if user_reply:
+        content = user_reply.content.strip()
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
+        if not (aborted or skipped):
+            result = content
+    else:
+        aborted = True
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
+    return result, aborted, skipped
 
 
 async def inquire_for_role(ctx: _Context,
@@ -580,10 +687,10 @@ async def inquire_for_role(ctx: _Context,
 
     full_prompt_text = get_prompt_text(prompt_text, 'a role mention or ID', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
-    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, False, check=check_for_role_id_or_mention, timeout=timeout)
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_role_id_or_mention, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             role = get_role(ctx, content)
     else:
@@ -609,10 +716,10 @@ async def inquire_for_text(ctx: _Context,
 
     full_prompt_text = get_prompt_text(prompt_text, None, allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
-    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, False, check=check_for_integer, timeout=timeout)
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             result = content
     else:
@@ -638,12 +745,12 @@ async def inquire_for_text_channel(ctx: _Context,
 
     full_prompt_text = get_prompt_text(prompt_text, 'a channel mention or ID', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
-    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, False, check=check_for_channel_id_or_mention, timeout=timeout)
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_channel_id_or_mention, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
-            channel = get_channel(content)
+            channel = get_channel(ctx, content)
     else:
         aborted = True
     await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
@@ -673,6 +780,21 @@ async def try_delete_message(message: _Message) -> bool:
         return False
 
 
+def update_embed_definition(embed_definition: str, replacements: _Optional[_Dict[str, _Any]]) -> str:
+    if not replacements:
+        return embed_definition
+
+    embed_dct = _json_loads(embed_definition)
+
+    for key, value in replacements.items():
+        embed_dct['title'] = embed_dct.get('title', '').replace(key, value)
+        embed_dct['description'] = embed_dct.get('description', '').replace(key, value)
+        for field in embed_dct.get('fields', []):
+            field['name'] = field.get('name', '').replace(key, value)
+            field['value'] = field.get('value', '').replace(key, value)
+    return _json_dumps(embed_dct, separators=(',', ':'))
+
+
 async def wait_for_message(ctx: _Context,
                             allow_abort: bool,
                             allow_skip: bool,
@@ -687,7 +809,7 @@ async def wait_for_message(ctx: _Context,
         while True:
             user_reply = await ctx.bot.wait_for('message', timeout=timeout)
             content = user_reply.content.strip()
-            if check(content, allow_abort, allow_skip, *check_args, **check_kwargs):
+            if not check or check(content, allow_abort, allow_skip, *check_args, **check_kwargs):
                 return user_reply
             timeout = (end_inquiry - _get_utc_now()).total_seconds()
     except _TimeoutError:
@@ -725,10 +847,10 @@ def get_prompt_text(prompt_text: str,
     if allow_skip:
         options.append('send \'skip\' to skip')
     options_hint = '; '.join(options)
-    result = '\n'.join(
+    result = '\n'.join((
         prompt_text,
         f'(Send {options_hint}.)'
-    )
+    ))
     return f'```{result}```'
 
 

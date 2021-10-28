@@ -1,14 +1,17 @@
 import asyncio as _asyncio
+import json as _json
 from threading import Lock as _Lock
 from typing import List as _List
 from typing import Optional as _Optional
 from typing import Tuple as _Tuple
 
-from discord import TextChannel as _TextChannel
+from discord import Embed as _Embed
 from discord import Member as _Member
+from discord import TextChannel as _TextChannel
 from discord.ext.commands import Context as _Context
 
 from . import database as _database
+from . import utils as _utils
 
 
 
@@ -119,14 +122,21 @@ class ReactionRole(_database.DatabaseRowBase):
                 elif not change.add and role in member.roles:
                     roles_to_remove.append(role)
                     role_change = True
-                if role_change and change.message_channel_id and change.message_content:
+                if role_change and change.message_channel_id and (change.message_content or change.message_embed):
                     channel = member.guild.get_channel(change.message_channel_id)
-                    messages_to_post.append((channel, change.message_content))
+                    messages_to_post.append((channel, change.message_content, change.message_embed))
         await member.add_roles(*roles_to_add)
         await member.remove_roles(*roles_to_remove)
-        for channel, msg in messages_to_post:
-            msg = msg.replace('{user}', member.mention)
-            await channel.send(msg)
+        for channel, text, embed_definition in messages_to_post:
+            if text:
+                text = text.replace('{user}', member.mention)
+            if embed_definition:
+                replacements = {'{user}': member.mention}
+                embed_definition = _utils.discord.update_embed_definition(embed_definition, replacements)
+                embed = await _utils.discord.get_embed_from_definition_or_url(embed_definition)
+            else:
+                embed = None
+            await channel.send(text, embed=embed)
 
 
     async def apply_remove(self, member: _Member) -> None:
@@ -432,6 +442,7 @@ class ReactionRoleRequirement(_database.DatabaseRowBase):
 
 
 
+
 # ---------- Static functions ----------
 
 async def _db_delete_reaction_role(reaction_role_id: int) -> bool:
@@ -470,7 +481,7 @@ async def _db_create_reaction_role_change(reaction_role_id: int, role_id: int, a
         message_embed=message_embed,
     )
     if record:
-        return ReactionRoleChange(record[0], reaction_role_id, role_id, add, allow_toggle, message_content, message_channel_id)
+        return ReactionRoleChange(record[0], reaction_role_id, role_id, add, allow_toggle, message_content, message_channel_id, message_embed)
     return None
 
 

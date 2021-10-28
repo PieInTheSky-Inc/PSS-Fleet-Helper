@@ -1,3 +1,4 @@
+import json as _json
 from typing import Callable as _Callable
 from typing import Dict as _Dict
 from typing import List as _List
@@ -174,8 +175,8 @@ class ReactionRoleCog(_Cog):
 
         add_role_change = True
         while add_role_change:
-            role_reaction_change = await inquire_for_role_change_add(ctx, abort_text)
-            if not role_reaction_change:
+            role_reaction_change, aborted = await inquire_for_role_change_add(ctx, abort_text)
+            if aborted:
                 return
             role_reaction_changes.append(role_reaction_change)
 
@@ -188,8 +189,8 @@ class ReactionRoleCog(_Cog):
             return
 
         while add_role_requirement:
-            role_id = await inquire_for_role_requirement_add(ctx, abort_text)
-            if not role_id:
+            role_id, aborted = await inquire_for_role_requirement_add(ctx, abort_text)
+            if aborted:
                 return
             role_reaction_requirements.append(role_id)
 
@@ -207,7 +208,7 @@ class ReactionRoleCog(_Cog):
             confirmation_prompt_lines.append(f'Required role(s) = {required_roles}')
         confirmation_prompt_lines.append(f'_Role Changes_')
         review_messages = []
-        for i, (role_id, add, allow_toggle, message_text, message_channel_id) in enumerate(role_reaction_changes, 1):
+        for i, (role_id, add, allow_toggle, message_text, message_channel_id, message_embed) in enumerate(role_reaction_changes, 1):
             role = ctx.guild.get_role(role_id)
             add_text = 'add' if add else 'remove'
             send_message_str = ''
@@ -293,6 +294,7 @@ class ReactionRoleCog(_Cog):
             await ctx.reply(f'Aborted. The Reaction Role {reaction_role} has not been deleted.', mention_author=True)
             return
         if result:
+            self.__reaction_roles[ctx.guild.id] = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id] if not reaction_role.deleted]
             await ctx.reply(f'Success. The Reaction Role {reaction_role} has been deleted.', mention_author=True)
         else:
             await ctx.reply(f'Failed. The Reaction Role {reaction_role} has not been deleted.', mention_author=True)
@@ -301,7 +303,7 @@ class ReactionRoleCog(_Cog):
     @_guild_only()
     @_bot_has_guild_permissions(manage_roles=True)
     @_has_guild_permissions(manage_roles=True)
-    @deactivate.command(name='edit', brief='Edit a Reaction Role')
+    @base.command(name='edit', brief='Edit a Reaction Role')
     async def edit(self, ctx: _Context, reaction_role_id: int) -> None:
         """
         Edit deactivated Reaction Roles.
@@ -338,28 +340,37 @@ class ReactionRoleCog(_Cog):
                     list(current_actions.keys()),
                     title=f'Editing Reaction Role {reaction_role}\nPlease select an action:'
                 )
-                selected_action, reply = await selector.wait_for_option_selection()
-                if not selected_action or reply is None:
+                selected, selected_action = await selector.wait_for_option_selection()
+                if not selected or selected_action is None:
                     await ctx.reply(abort_text, mention_author=False)
+                    return
 
-                if isinstance(selected_action, dict):
-                    current_actions = selected_action
+                action = current_actions[selected_action]
+
+                if isinstance(action, dict):
+                    current_actions = action
                 else:
                     current_actions = None
 
-            await selected_action(reaction_role, ctx, abort_text)
+            success, aborted = await action(reaction_role, ctx, abort_text)
+            if not success and not aborted:
+                await ctx.reply(f'Failed to make changes to the Reaction Role {reaction_role}.')
 
-            keep_editing = await _utils.discord.inquire_for_true_false(ctx, f'Do you want to make more changes to the Reaction Role \'{reaction_role.name}\'?')
+            if aborted:
+                keep_editing = False
+            else:
+                keep_editing, _, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you want to make more changes to the Reaction Role \'{reaction_role.name}\'?')
             if not keep_editing:
                 keep_editing = False
+        await ctx.reply(f'```Finished editing Reaction Role {reaction_role}.```', mention_author=False)
 
 
     @_guild_only()
     @base.group(name='list', brief='List reaction roles', invoke_without_command=True)
     async def list(self, ctx: _Context, include_messages: bool = False) -> None:
-        reaction_roles = list(self.__reaction_roles[ctx.guild.id])
+        reaction_roles: _List[_ReactionRole] = list(self.__reaction_roles[ctx.guild.id])
         if reaction_roles:
-            outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
+            outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles if not reaction_role.deleted]
             for output in outputs:
                 for post in output:
                     await ctx.reply(post, mention_author=False)
@@ -370,7 +381,7 @@ class ReactionRoleCog(_Cog):
     @_guild_only()
     @list.command(name='active', aliases=['enabled', 'on'], brief='List active reaction roles', invoke_without_command=True)
     async def list_active(self, ctx: _Context, include_messages: bool = False) -> None:
-        reaction_roles = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id] if reaction_role.is_active]
+        reaction_roles = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id] if reaction_role.is_active and not reaction_role.deleted]
         if reaction_roles:
             outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
             for output in outputs:
@@ -383,7 +394,7 @@ class ReactionRoleCog(_Cog):
     @_guild_only()
     @list.command(name='inactive', aliases=['disabled', 'off'], brief='List inactive reaction roles', invoke_without_command=True)
     async def list_inactive(self, ctx: _Context, include_messages: bool = False) -> None:
-        reaction_roles = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id] if not reaction_role.is_active]
+        reaction_roles = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id] if not reaction_role.is_active and not reaction_role.deleted]
         if reaction_roles:
             outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
             for output in outputs:
@@ -428,36 +439,46 @@ class ReactionRoleCog(_Cog):
 
 
 
-async def add_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_text: str) -> None:
+async def add_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_text: str) -> _Tuple[bool, bool]:
+    """
+    Returns: (success: bool, aborted: bool)
+    """
     role_change_definition, aborted = await inquire_for_role_change_add(ctx, abort_text)
     if aborted:
-        return
+        return False, aborted
 
     role_change = await reaction_role.add_change(*role_change_definition)
     await ctx.reply(f'```Added role change with ID \'{role_change.id}\' to Reaction Role {reaction_role}.```', mention_author=False)
+    return True, aborted
 
 
-async def add_role_requirement(reaction_role: _ReactionRole, ctx: _Context, abort_text: str) -> None:
+async def add_role_requirement(reaction_role: _ReactionRole, ctx: _Context, abort_text: str) -> _Tuple[bool, bool]:
+    """
+    Returns: (success: bool, aborted: bool)
+    """
     required_role_id, aborted = await inquire_for_role_requirement_add(ctx, abort_text)
     if aborted:
-        return
+        return False, aborted
 
     role_requirement = await reaction_role.add_requirement(required_role_id)
     await ctx.reply(f'```Added role requirement with ID \'{role_requirement.id}\' to Reaction Role {reaction_role}.```', mention_author=False)
+    return True, aborted
 
 
 async def edit_details(reaction_role: _ReactionRole, ctx: _Context, abort_text: str) -> _Tuple[bool, bool]:
     """
     Returns: (success: bool, aborted: bool)
     """
-    details, aborted, _ = await inquire_for_reaction_role_details(ctx, abort_text, reaction_role)
+    details, aborted = await inquire_for_reaction_role_details(ctx, abort_text, reaction_role)
     if aborted:
-        return
+        return False, aborted
 
     if details:
         name, emoji, channel_id, message_id = details
         if (await reaction_role.update(channel_id, message_id, name, emoji)):
             await ctx.reply(f'```Updated details of Reaction Role {reaction_role}.```')
+            return True, False
+    return False, aborted
 
 
 async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reaction_role: _Optional[_ReactionRole] = None) -> _Tuple[_Optional[_Tuple[str, str, int, int]], bool]:
@@ -483,10 +504,11 @@ async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reac
     name: str = None
     if reaction_role:
         await ctx.send(f'> Current name is \'{reaction_role.name}\'.')
+    prompt_lines = [f'What should be the {new_str}name for the reaction role?']
     while not name:
-        name, aborted, skipped = await _utils.discord.inquire_for_text(ctx, f'What should be the {new_str}name for the reaction role?', abort_text=abort_text, skip_text=skip_text)
+        name, aborted, skipped = await _utils.discord.inquire_for_text(ctx, '\n'.join(prompt_lines), abort_text=abort_text, skip_text=skip_text)
         if aborted:
-            return None, True
+            return None, aborted
         if skipped:
             name = None
             break
@@ -494,55 +516,52 @@ async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reac
     emoji: str = None
     if reaction_role:
         await ctx.send(f'> Current emoji is \'{reaction_role.reaction}\'.')
+    prompt_base_lines = [f'Specify the {new_str}emoji to be used as the reaction.']
+    prompt_lines = []
     while not emoji:
-        emoji, aborted, _ = await _utils.discord.inquire_for_emoji(ctx, f'Specify the {new_str}emoji to be used as the reaction.', abort_text=abort_text, skip_text=skip_text)
+        prompt_lines.extend(prompt_base_lines)
+        emoji, aborted, skipped = await _utils.discord.inquire_for_emoji(ctx, '\n'.join(prompt_lines), abort_text=abort_text, skip_text=skip_text)
+        prompt_lines = []
         if aborted:
-            return None, True
+            return None, aborted
         if skipped:
             emoji = None
             break
 
         if not emoji:
-            await ctx.send('This is not a valid emoji or I cannot use this emoji.')
+            prompt_lines = ['This is not a valid emoji or I cannot use this emoji.']
 
     channel_id: int = None
+    message_id: int = None
     if reaction_role:
-        await ctx.send(f'> Current channel is <@#{reaction_role.channel_id}>.')
-    while not channel_id:
-        channel, aborted, _ = await _utils.discord.inquire_for_text_channel(ctx, f'Specify the {new_str}channel in which the message is that the reaction shall be added to.', abort_text=abort_text, skip_text=skip_text)
+        await ctx.send(f'> Current channel is <#{reaction_role.channel_id}>.\n> Current message is {_utils.discord.create_discord_link(ctx.guild.id, reaction_role.channel_id, reaction_role.message_id)}')
+    prompt_base_lines = [f'Specify the full link to the {new_str} message, which the reaction shall be added to.']
+    prompt_lines = []
+    while not channel_id and not message_id:
+        prompt_lines.extend(prompt_base_lines)
+        message_link, aborted, skipped = await _utils.discord.inquire_for_message_link(ctx, '\n'.join(prompt_lines), abort_text=abort_text, skip_text=skip_text)
+        prompt_lines = []
         if aborted:
-            return None, True
+            return None, aborted
         if skipped:
-            channel = None
+            message_link = None
             channel_id = None
+            message_id = None
             break
 
-        if channel:
-            channel_id = channel.id
-        else:
-            await ctx.send('This is not a valid channel ID or mention or the channel is not in this server.')
-
-    message_id: _Message = None
-    if channel:
-        if reaction_role:
-            await ctx.send(f'> Current message ID is \'{reaction_role.message_id}\' ({_utils.discord.create_discord_link(ctx.guild.id, channel_id, reaction_role.message_id)}).')
-        while not message_id:
-            message, aborted, _ = await _utils.discord.inquire_for_message_id(ctx, channel, f'Specify the ID of the {new_str}message to which the reaction shall be added to.', abort_text=abort_text)
-            if aborted:
-                return None, True
-            if skipped:
-                channel = None
-                channel_id = None
-                message = None
-                message_id = None
-                break
-
-            if message:
-                message_id = message_id
+        if message_link:
+            channel, message = await _utils.discord.get_channel_and_message_from_message_link(ctx, message_link)
+            if not channel:
+                prompt_lines = ['This link points to a channel that is not on this server or that I cannot access.']
+            elif not message:
+                prompt_lines = ['This link points to a message that does not exist or that I cannot access.']
             else:
-                await ctx.send(f'This is not a valid message ID or not an ID of a message in {channel.mention}.')
+                channel_id = channel.id
+                message_id = message.id
+        else:
+            prompt_lines = ['This is not a valid message link.']
 
-    return (name, emoji, channel_id, message_id), False
+    return (name, emoji, channel_id, message_id), aborted
 
 
 async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[_Optional[_Tuple[int, bool, bool, _Optional[str], _Optional[int]]], bool]:
@@ -555,7 +574,8 @@ async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[
                 add: bool,
                 allow_toggle: bool,
                 message_text: _Optional[str],
-                message_channel_id: _Optional[int]
+                message_channel_id: _Optional[int],
+                message_embed: _Optional[str]
             ]
         ],
         aborted: bool
@@ -566,10 +586,11 @@ async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[
     allow_toggle: bool = None
     role_change_message_text: str = None
     role_change_message_channel_id: int = None
+    role_change_message_embed: str = None
 
     add, aborted, _ = await _utils.discord.inquire_for_add_remove(ctx, 'Do you want to add or to remove a role?', abort_text=abort_text)
     if aborted:
-        return None, True
+        return None, aborted
 
     add_text = 'add' if add else 'remove'
     not_add_text = 'remove' if add else 'add'
@@ -582,7 +603,7 @@ async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[
         prompt_text_lines.extend(prompt_text_lines_base)
         role, aborted, _ = await _utils.discord.inquire_for_role(ctx, '\n'.join(prompt_text_lines), abort_text=abort_text)
         if aborted:
-            return None, True
+            return None, aborted
 
         prompt_text_lines = []
         if role:
@@ -594,11 +615,11 @@ async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[
 
     allow_toggle, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you want to the role to be toggable? Removing one\'s reaction would then {not_add_text} the role again.', abort_text=abort_text)
     if aborted:
-        return None, True
+        return None, aborted
 
     add_message, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you want to add a message that should be posted to a text channel, when a user gets the role `{role.name}` {add_text}ed?', abort_text=abort_text)
     if aborted:
-        return None, True
+        return None, aborted
 
     if add_message:
         prompt_text_lines_base = [
@@ -610,7 +631,7 @@ async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[
             prompt_text_lines.extend(prompt_text_lines_base)
             role_change_message_channel, aborted, _ = await _utils.discord.inquire_for_text_channel(ctx, '\n'.join(prompt_text_lines), abort_text=abort_text)
             if aborted:
-                return None, True
+                return None, aborted
 
             prompt_text_lines = []
             if role_change_message_channel:
@@ -621,46 +642,63 @@ async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[
             else:
                 prompt_text_lines.append('This is not a valid channel mention or a channel ID.')
 
-        while role_change_message_text is None:
+        while role_change_message_text is None and role_change_message_embed is None:
             prompt_text = '\n'.join((
                     'Please type a message to be sent. The following variables are available:',
                     '{user}: mentions the user who reacted',
                 ))
-            role_change_message_text, aborted, _ = await _utils.discord.inquire_for_text(ctx, prompt_text, abort_text=abort_text)
+            role_change_message_text, aborted, _ = await _utils.discord.inquire_for_text(ctx, prompt_text, abort_text=abort_text, skip_text='Skipped.')
             if aborted:
-                return None, True
+                return None, aborted
 
-            if role_change_message_text:
+            prompt_text = '\n'.join((
+                    'Please type a definition of an embed to be sent. The following variables are available:',
+                    '{user}: mentions the user who reacted',
+                ))
+            role_change_message_embed, aborted, _ = await _utils.discord.inquire_for_embed_definition(ctx, prompt_text, abort_text=abort_text, skip_text='Skipped.')
+            if aborted:
+                return None, aborted
+            if role_change_message_embed:
+                embed = _json.loads(role_change_message_embed, cls=_utils.discord.EmbedLeovoelDecoder)
+            else:
+                embed = None
+
+            if role_change_message_text or role_change_message_embed:
+                await ctx.send(role_change_message_text, embed=embed)
                 accept_message, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, 'Do you want to use this message?', abort_text=abort_text)
                 if aborted:
-                    return None, True
+                    return None, aborted
 
                 if not accept_message:
                     role_change_message_text = None
+                    role_change_message_embed = None
 
     return (
         role.id,
         add,
         allow_toggle,
         role_change_message_text,
-        role_change_message_channel_id
-    )
+        role_change_message_channel_id,
+        role_change_message_embed,
+    ), aborted
 
 
 async def inquire_for_role_change_remove(ctx: _Context, reaction_role_changes: _List[_ReactionRoleChange], abort_text: str) -> _Optional[_ReactionRoleChange]:
-    current_role_changes = list(reaction_role_changes)
-    options = {change.id: _ReactionRoleChangeConverter.to_text(ctx, change) for change in current_role_changes}
+    current_role_changes = {change.id: change for change in reaction_role_changes}
+    options = {change_id: _ReactionRoleChangeConverter.to_text(ctx, change) for change_id, change in current_role_changes.items()}
     selector = _Selector[str](ctx, None, options)
-    selected, reply = await selector.wait_for_option_selection()
-    if not selected or reply is None:
+    selected, selected_id = await selector.wait_for_option_selection()
+    if not selected or selected_id is None:
         await ctx.reply(abort_text, mention_author=False)
         return None
 
-    selected_index = options.index(reply)
-    return current_role_changes[selected_index]
+    return current_role_changes[selected_id]
 
 
-async def inquire_for_role_requirement_add(ctx: _Context, abort_text: str) -> _Optional[int]:
+async def inquire_for_role_requirement_add(ctx: _Context, abort_text: str) -> _Tuple[_Optional[int], bool]:
+    """
+    Returns: (role_id: Optional[int], aborted: bool)
+    """
     role = None
     prompt_text_lines_base = [
         f'Which role do you want to require?',
@@ -670,41 +708,50 @@ async def inquire_for_role_requirement_add(ctx: _Context, abort_text: str) -> _O
         prompt_text_lines.extend(prompt_text_lines_base)
         role, aborted, _ = await _utils.discord.inquire_for_role(ctx, '\n'.join(prompt_text_lines), abort_text=abort_text)
         if aborted:
-            return None
+            return None, aborted
 
         prompt_text_lines = ['This is not a valid role mention or ID.']
-    return role.id
+    return role.id, aborted
 
 
 async def inquire_for_role_requirement_remove(ctx: _Context, reaction_role_requirements: _List[_ReactionRoleRequirement], abort_text: str) -> int:
-    current_role_requirements = list(reaction_role_requirements)
-    options = {change.id: _ReactionRoleRequirementConverter.to_text(ctx, change) for change in current_role_requirements}
+    current_role_requirements = {requirement.id: requirement for requirement in reaction_role_requirements}
+    options = {requirement_id: _ReactionRoleRequirementConverter.to_text(ctx, requirement) for requirement_id, requirement in current_role_requirements.items()}
     selector = _Selector[str](ctx, None, options)
-    selected, reply = await selector.wait_for_option_selection()
-    if not selected or reply is None:
+    selected, selected_id = await selector.wait_for_option_selection()
+    if not selected or selected_id is None:
         await ctx.reply(abort_text, mention_author=False)
         return None
 
-    selected_index = options.index(reply)
-    return current_role_requirements[selected_index]
+    return current_role_requirements[selected_id]
 
 
-async def remove_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_text: str) -> None:
-    role_change = await inquire_for_role_change_remove(ctx, reaction_role, abort_text)
+async def remove_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_text: str) -> _Tuple[bool, bool]:
+    """
+    Returns: (success: bool, aborted: bool)
+    """
+    role_change = await inquire_for_role_change_remove(ctx, reaction_role.role_changes, abort_text)
     if role_change:
         role_change_id = role_change.id
         role = ctx.guild.get_role(role_change.role_id)
         await reaction_role.remove_change(role_change_id)
         await ctx.reply(f'Removed role change (ID: {role_change_id}) for role \'{role.name}\' (ID: {role.id}).', mention_author=False)
+        return True, False
+    return False, True
 
 
-async def remove_role_requirement(reaction_role: _ReactionRole, ctx: _Context, abort_text: str) -> None:
-    role_requirement = await inquire_for_role_change_remove(ctx, reaction_role, abort_text)
+async def remove_role_requirement(reaction_role: _ReactionRole, ctx: _Context, abort_text: str) -> _Tuple[bool, bool]:
+    """
+    Returns: (success: bool, aborted: bool)
+    """
+    role_requirement = await inquire_for_role_requirement_remove(ctx, reaction_role.role_requirements, abort_text)
     if role_requirement:
         role_requirement_id = role_requirement.id
         role = ctx.guild.get_role(role_requirement.role_id)
         await reaction_role.remove_requirement(role_requirement_id)
         await ctx.reply(f'Removed role requirement (ID: {role_requirement_id}) for role \'{role.name}\' (ID: {role.id}).', mention_author=False)
+        return True, False
+    return False, True
 
 
 def setup(bot: _Bot):

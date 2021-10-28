@@ -61,7 +61,10 @@ class Selector(_Generic[T]):
                     else:
                         if selection in self.__current_options.keys():
                             await self.__message.delete()
-                            return True, self.__current_options[selection]
+                            if self.__got_options_dict:
+                                return True, selection
+                            else:
+                                return True, self.__current_options[selection]
 
 
     async def __post_options(self) -> None:
@@ -72,9 +75,14 @@ class Selector(_Generic[T]):
 
 
     @staticmethod
-    async def __get_options_display(options: _List[T], short_text_function: _Callable[[T], str]) -> str:
+    async def __get_options_display(options: _Union[_Dict[_Any, T], _List[T]], short_text_function: _Callable[[T], str]) -> str:
         lines = []
-        for i, option in enumerate(options, 1):
+        if isinstance(options, list):
+            iterable = enumerate(options, 1)
+        elif isinstance(options, dict):
+            iterable = options.items()
+
+        for i, option in iterable:
             number = str(i)
             if short_text_function:
                 short_text = short_text_function(option)
