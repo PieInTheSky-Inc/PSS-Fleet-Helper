@@ -1,0 +1,29 @@
+{
+    "title": "title ~~(did you know you can have markdown here too?)~~",
+    "description": "this supports [named links](https://discordapp.com) on top of the previously shown subset of markdown. ```\nyes, even code blocks```",
+    "url": "https://discordapp.com",
+    "color": 2452315,
+    "timestamp": "2021-10-27T21:10:26.123Z",
+    "footer": {
+        "icon_url": "https://cdn.discordapp.com/embed/avatars/0.png",
+        "text": "footer text"
+    },
+        "thumbnail": {
+        "url": "https://cdn.discordapp.com/embed/avatars/0.png"
+        },
+    "author": {
+        "name": "author name",
+        "url": "https://discordapp.com",
+        "icon_url": "https://cdn.discordapp.com/embed/avatars/0.png"
+        },
+    "fields": [
+        {
+            "name": "🤔",
+            "value": "some of these properties have certain limits..."
+        },
+        {
+            "name": "😱",
+            "value": "try exceeding some of them!"
+        }
+    ]
+}

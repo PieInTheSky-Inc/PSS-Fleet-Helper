@@ -1,5 +1,7 @@
+import aiohttp
 import asyncio
 import json
+from typing import List as _List
 
 import discord
 from discord import Embed as _Embed
@@ -53,9 +55,33 @@ async def on_ready() -> None:
 
 
 @BOT.command(name='embed', hidden=True)
-async def cmd_embed(ctx: _Context, *, definition: str) -> None:
-    embed: _Embed = json.loads(definition, cls=_utils.discord.EmbedLeovoelDecoder)
-    await ctx.reply(embed=embed, mention_author=False)
+async def cmd_embed(ctx: _Context, *, definition_or_url: str = None) -> None:
+    """
+    Create and edit embed definitions: https://leovoel.github.io/embed-visualizer/
+    """
+    embeds: _List[_Embed] = []
+    if definition_or_url:
+        try:
+            embeds.append(json.loads(definition_or_url, cls=_utils.discord.EmbedLeovoelDecoder))
+            url_definition = None
+        except json.JSONDecodeError:
+            pastebin_url = _utils.web.get_raw_pastebin(definition_or_url)
+            url_definition = await _utils.web.get_data_from_url(pastebin_url)
+
+        if url_definition:
+            try:
+                embeds.append(json.loads(url_definition, cls=_utils.discord.EmbedLeovoelDecoder))
+            except json.JSONDecodeError:
+                raise Exception('This is not a valid embed definition or this url points to a file not containing a valid embed definition.')
+    elif ctx.message.attachments:
+        for attachment in ctx.message.attachments:
+            attachment_content = (await attachment.read()).decode('utf-8')
+            if attachment_content:
+                embeds.append(json.loads(attachment_content, cls=_utils.discord.EmbedLeovoelDecoder))
+    else:
+        raise Exception('You need to specify a definition or upload a file containing a definition!')
+    for embed in embeds:
+        await ctx.reply(embed=embed, mention_author=False)
 
 
 # ---------- Module init ----------
