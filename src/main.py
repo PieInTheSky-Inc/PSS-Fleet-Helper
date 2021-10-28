@@ -1,6 +1,8 @@
 import asyncio
+import json
 
 import discord
+from discord import Embed as _Embed
 from discord.ext.commands import Bot as _Bot
 from discord.ext.commands import Context as _Context
 from discord.ext.commands.errors import CommandInvokeError as _CommandInvokeError
@@ -8,6 +10,8 @@ from discord.ext.commands import when_mentioned_or as _when_mentioned_or
 
 import app_settings
 import model
+from model import utils as _utils
+
 
 
 # ---------- Setup ----------
@@ -47,6 +51,11 @@ async def on_ready() -> None:
     extensions = '\n'.join(f'- {key}' for key in BOT.extensions.keys())
     print(f'Loaded extensions:\n{extensions}')
 
+
+@BOT.command(name='embed', hidden=True)
+async def cmd_embed(ctx: _Context, *, definition: str) -> None:
+    embed: _Embed = json.loads(definition, cls=_utils.discord.EmbedLeovoelDecoder)
+    await ctx.reply(embed=embed, mention_author=False)
 
 
 # ---------- Module init ----------

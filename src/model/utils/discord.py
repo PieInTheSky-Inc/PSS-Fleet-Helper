@@ -1,12 +1,18 @@
 from asyncio import TimeoutError as _TimeoutError
 from datetime import timedelta as _timedelta
+from json import JSONEncoder as _JSONEncoder
+from json import JSONDecoder as _JSONDecoder
 import re as _re
 from typing import Any as _Any
+from typing import Dict as _Dict
 from typing import List as _List
 from typing import Optional as _Optional
 from typing import Protocol as _Protocol
 from typing import Tuple as _Tuple
+from typing import Union as _Union
 
+from discord import Colour as _Colour
+from discord import Embed as _Embed
 from discord import Message as _Message
 from discord import Role as _Role
 from discord import TextChannel as _TextChannel
@@ -17,6 +23,8 @@ from discord.ext.commands import Context as _Context
 import emoji as _emoji
 
 from .datetime import get_utc_now as _get_utc_now
+from .datetime import utc_from_timestamp as _utc_from_timestamp
+from .datetime import utc_to_timestamp as _utc_to_timestamp
 
 
 
@@ -40,6 +48,102 @@ __RX_CHANNEL_MENTION: _re.Pattern = _re.compile('<#(\d+)>')
 __RX_EMOJI: _re.Pattern = _re.compile('<:\w+:(\d+)>')
 __RX_ROLE_MENTION: _re.Pattern = _re.compile('<@&(\d+)>')
 __RX_USER_MENTION: _re.Pattern = _re.compile('<@\!?(\d+)>')
+
+
+
+
+
+# ---------- JSON De- & Encoding ----------
+
+class EmbedLeovoelEncoder(_JSONEncoder):
+    """
+    Tool at: https://leovoel.github.io/embed-visualizer/
+    """
+    def default(self, obj):
+        if isinstance(obj, _Embed):
+            embed: _Embed = obj
+            result = {}
+            if embed.title:
+                result['title'] = embed.title
+            if embed.description:
+                result['description'] = embed.description
+            if embed.url:
+                result['url'] = embed.url
+            if embed.color:
+                r, g, b = embed.color.to_rgb()
+                result['color'] = (r << 16) + (g << 8) + b
+            if embed.timestamp:
+                result['timestamp'] = _utc_to_timestamp(embed.timestamp)
+            if embed.footer:
+                if embed.footer.icon_url:
+                    result.setdefault('footer', {})['icon_url'] = embed.footer.icon_url
+                if embed.footer.text:
+                    result.setdefault('footer', {})['text'] = embed.footer.text
+            if embed.thumbnail and embed.thumbnail.url:
+                result.setdefault('thumbnail', {})['url'] = embed.thumbnail.url
+            if embed.image and embed.image.url:
+                result.setdefault('image', {})['url'] = embed.image.url
+            if embed.author:
+                if embed.author.icon_url:
+                    result.setdefault('author', {})['icon_url'] = embed.footer.icon_url
+                if embed.author.name:
+                    result.setdefault('author', {})['name'] = embed.footer.name
+                if embed.author.url:
+                    result.setdefault('author', {})['url'] = embed.footer.url
+            if embed.fields:
+                for field in embed.fields:
+                    result.setdefault('fields', []).append({
+                        'inline': field.inline,
+                        'name': field.name,
+                        'value': field.value
+                    })
+            return result
+        else:
+            # call base class implementation which takes care of
+            # raising exceptions for unsupported types
+            return _JSONEncoder.default(self, obj)
+
+
+class EmbedLeovoelDecoder(_JSONDecoder):
+    """
+    Tool at: https://leovoel.github.io/embed-visualizer/
+    """
+    __EMBED_PROP_NAMES = ['author', 'color', 'description', 'footer', 'image', 'timestamp', 'title', 'url', 'thumbnail', 'fields']
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, dct: _Dict) -> _Union[_Dict, _Embed]:
+        if any(prop in dct.keys() for prop in EmbedLeovoelDecoder.__EMBED_PROP_NAMES):
+            title = dct.get('title', _Embed.Empty)
+            color = dct.get('color', dct.get('colour', _Embed.Empty))
+            url = dct.get('url', _Embed.Empty)
+            description = dct.get('description', _Embed.Empty)
+            timestamp = dct.get('timestamp', _Embed.Empty)
+            if color is not _Embed.Empty:
+                color = _Colour(color)
+            if timestamp is not _Embed.Empty:
+                timestamp = _utc_from_timestamp(timestamp)
+            result = _Embed(title=title, color=color, url=url, description=description, timestamp=timestamp)
+            author_info = dct.get('author')
+            if author_info:
+                result.set_author(author_info.get('name'), url=author_info.get('url', _Embed.Empty), icon_url=author_info.get('icon_url', _Embed.Empty))
+            footer_info = dct.get('footer')
+            if footer_info:
+                result.set_footer(text=footer_info.get('text', _Embed.Empty), icon_url=footer_info.get('icon_url', _Embed.Empty))
+            image_info = dct.get('image')
+            if image_info:
+                result.set_image(image_info.get('url'))
+            thumbnail_info = dct.get('thumbnail')
+            if thumbnail_info:
+                result.set_thumbnail(thumbnail_info.get('url'))
+            for field in dct.get('fields', []):
+                result.add_field(name=field.get('name'), value=field.get('value'), inline=field.get('inline', True))
+            return result
+        else:
+            return dct
+
+
 
 
 
