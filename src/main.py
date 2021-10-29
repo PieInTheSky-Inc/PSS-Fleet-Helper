@@ -1,17 +1,13 @@
-import aiohttp
-import asyncio
-import json
-from typing import List as _List
+import asyncio as _asyncio
 
-import discord
-from discord import Embed as _Embed
+import discord as _discord
 from discord.ext.commands import Bot as _Bot
 from discord.ext.commands import Context as _Context
 from discord.ext.commands.errors import CommandInvokeError as _CommandInvokeError
 from discord.ext.commands import when_mentioned_or as _when_mentioned_or
 
-import app_settings
-import model
+import app_settings as _app_settings
+from model import setup_model as _setup_model
 from model import utils as _utils
 
 
@@ -20,8 +16,8 @@ from model import utils as _utils
 
 BOT = _Bot(
     _when_mentioned_or('vivi '),
-    intents=discord.Intents.all(),
-    activity=discord.activity.Activity(type=discord.ActivityType.playing, name='vivi help')
+    intents=_discord.Intents.all(),
+    activity=_discord.activity.Activity(type=_discord.ActivityType.playing, name='vivi help')
 )
 
 
@@ -32,7 +28,7 @@ BOT = _Bot(
 async def on_command_error(ctx: _Context,
                             err: Exception
                         ) -> None:
-    if app_settings.THROW_COMMAND_ERRORS:
+    if _app_settings.THROW_COMMAND_ERRORS:
         raise err
 
     if isinstance(err, _CommandInvokeError):
@@ -49,7 +45,7 @@ async def on_command_error(ctx: _Context,
 @BOT.event
 async def on_ready() -> None:
     print(f'Bot logged in as {BOT.user.name} ({BOT.user.id})')
-    print(f'Bot version: {app_settings.VERSION}')
+    print(f'Bot version: {_app_settings.VERSION}')
     extensions = '\n'.join(f'- {key}' for key in BOT.extensions.keys())
     print(f'Loaded extensions:\n{extensions}')
 
@@ -58,7 +54,7 @@ async def on_ready() -> None:
 # ---------- Module init ----------
 
 async def __initialize() -> None:
-    await model.setup_model()
+    await _setup_model()
     BOT.load_extension('about')
     BOT.load_extension('checks')
     BOT.load_extension('embed')
@@ -67,6 +63,6 @@ async def __initialize() -> None:
 
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
+    loop = _asyncio.get_event_loop()
     loop.run_until_complete(__initialize())
-    BOT.run(app_settings.DISCORD_BOT_TOKEN)
+    BOT.run(_app_settings.DISCORD_BOT_TOKEN)
