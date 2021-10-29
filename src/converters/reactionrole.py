@@ -3,20 +3,11 @@ from typing import List as _List
 from discord import Guild as _Guild
 from discord.ext.commands import Context as _Context
 
-from model import ReactionRole as _ReactionRole
-from model import ReactionRoleChange as _ReactionRoleChange
-from model import ReactionRoleRequirement as _ReactionRoleRequirement
-from model import utils as _utils
+from .. import utils as _utils
+from ..model import ReactionRole as _ReactionRole
+from ..model import ReactionRoleChange as _ReactionRoleChange
+from ..model import ReactionRoleRequirement as _ReactionRoleRequirement
 
-
-
-class ConverterBase():
-    def __init__(self) -> None:
-        pass
-
-
-    def to_text(self) -> str:
-        pass
 
 
 class ReactionRoleConverter():

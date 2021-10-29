@@ -17,15 +17,14 @@ from discord.ext.commands import guild_only as _guild_only
 from discord.ext.commands import has_guild_permissions as _has_guild_permissions
 from discord.ext.commands.core import bot_has_guild_permissions as _bot_has_guild_permissions
 
-from model import database as _database
-from model.reaction_role import ReactionRole as _ReactionRole
-from model.reaction_role import ReactionRoleChange as _ReactionRoleChange
-from model.reaction_role import ReactionRoleRequirement as _ReactionRoleRequirement
-import model.utils as _utils
-from selector import Selector as _Selector
-from vm_converter import ReactionRoleConverter as _ReactionRoleConverter
-from vm_converter import ReactionRoleChangeConverter as _ReactionRoleChangeConverter
-from vm_converter import ReactionRoleRequirementConverter as _ReactionRoleRequirementConverter
+from .. import utils as _utils
+from ..converters import ReactionRoleConverter as _ReactionRoleConverter
+from ..converters import ReactionRoleChangeConverter as _ReactionRoleChangeConverter
+from ..converters import ReactionRoleRequirementConverter as _ReactionRoleRequirementConverter
+from ..model import database as _database
+from ..model.reaction_role import ReactionRole as _ReactionRole
+from ..model.reaction_role import ReactionRoleChange as _ReactionRoleChange
+from ..model.reaction_role import ReactionRoleRequirement as _ReactionRoleRequirement
 
 
 
@@ -334,7 +333,7 @@ class ReactionRoleCog(_Cog):
             current_actions = dict(actions)
             selected_action: _Callable = None
             while current_actions:
-                selector = _Selector(
+                selector = _utils.Selector(
                     ctx,
                     None,
                     list(current_actions.keys()),
@@ -686,7 +685,7 @@ async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[
 async def inquire_for_role_change_remove(ctx: _Context, reaction_role_changes: _List[_ReactionRoleChange], abort_text: str) -> _Optional[_ReactionRoleChange]:
     current_role_changes = {change.id: change for change in reaction_role_changes}
     options = {change_id: _ReactionRoleChangeConverter.to_text(ctx, change) for change_id, change in current_role_changes.items()}
-    selector = _Selector[str](ctx, None, options)
+    selector = _utils.Selector[str](ctx, None, options)
     selected, selected_id = await selector.wait_for_option_selection()
     if not selected or selected_id is None:
         await ctx.reply(abort_text, mention_author=False)
@@ -717,7 +716,7 @@ async def inquire_for_role_requirement_add(ctx: _Context, abort_text: str) -> _T
 async def inquire_for_role_requirement_remove(ctx: _Context, reaction_role_requirements: _List[_ReactionRoleRequirement], abort_text: str) -> int:
     current_role_requirements = {requirement.id: requirement for requirement in reaction_role_requirements}
     options = {requirement_id: _ReactionRoleRequirementConverter.to_text(ctx, requirement) for requirement_id, requirement in current_role_requirements.items()}
-    selector = _Selector[str](ctx, None, options)
+    selector = _utils.Selector[str](ctx, None, options)
     selected, selected_id = await selector.wait_for_option_selection()
     if not selected or selected_id is None:
         await ctx.reply(abort_text, mention_author=False)

@@ -9,7 +9,7 @@ from threading import Lock as _Lock
 import asyncpg as _asyncpg
 
 from . import model_settings as _model_settings
-from . import utils as _utils
+from .. import utils as _utils
 
 
 # ---------- Typehints ----------

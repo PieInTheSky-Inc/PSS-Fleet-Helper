@@ -6,7 +6,7 @@ from discord.ext.commands import group as _command_group
 from discord.ext.commands import bot_has_guild_permissions as _bot_has_guild_permissions
 from discord.ext.commands import has_guild_permissions as _has_guild_permissions
 
-from confirmator import Confirmator as _Confirmator
+from ..utils import Confirmator as _Confirmator
 
 
 
@@ -14,6 +14,8 @@ from confirmator import Confirmator as _Confirmator
 
 class RolesCog(_Cog):
     def __init__(self, bot: _Bot) -> None:
+        if not bot:
+            raise ValueError('Parameter \'bot\' must not be None.')
         self.__bot = bot
 
 

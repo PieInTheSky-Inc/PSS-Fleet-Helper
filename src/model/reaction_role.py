@@ -11,7 +11,7 @@ from discord import TextChannel as _TextChannel
 from discord.ext.commands import Context as _Context
 
 from . import database as _database
-from . import utils as _utils
+from .. import utils as _utils
 
 
 

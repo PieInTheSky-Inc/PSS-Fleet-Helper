@@ -11,6 +11,7 @@ from typing import Union as _Union
 import asyncio as _asyncio
 from discord import Message as _Message
 from discord.ext.commands import Context as _Context
+from .discord import DEFAULT_INQUIRE_TIMEOUT as _DEFAULT_INQUIRE_TIMEOUT
 
 T = _TypeVar('T')
 
@@ -18,7 +19,7 @@ T = _TypeVar('T')
 # ---------- Classes ----------
 
 class Selector(_Generic[T]):
-    def __init__(self, ctx: _Context, search_term: str, available_options: _Union[_List[T], _Dict[_Any, T]], short_text_function: _Optional[_Callable[[T], str]] = None, title: _Optional[str] = None, timeout: float = 60.0) -> None:
+    def __init__(self, ctx: _Context, search_term: str, available_options: _Union[_List[T], _Dict[_Any, T]], short_text_function: _Optional[_Callable[[T], str]] = None, title: _Optional[str] = None, timeout: float = _DEFAULT_INQUIRE_TIMEOUT) -> None:
         self.__got_options_dict: bool = isinstance(available_options, dict)
         self.__available_options: _Union[_List[T], _Dict[_Any, T]] = dict(available_options) if self.__got_options_dict else list(available_options)
         self.__context: _Context = ctx
