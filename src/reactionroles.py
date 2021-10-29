@@ -233,7 +233,7 @@ class ReactionRoleCog(_Cog):
             await reaction_role.add_requirement(role_id)
 
         self.__reaction_roles.setdefault(ctx.guild.id, []).append(reaction_role)
-        await ctx.reply(f'Successfully set up a Reaction Role {reaction_role}.', mention_author=False)
+        await ctx.reply(f'Successfully set up a Reaction Role {reaction_role}.\nDon\'t forget to activate it!', mention_author=False)
 
 
     @_guild_only()
