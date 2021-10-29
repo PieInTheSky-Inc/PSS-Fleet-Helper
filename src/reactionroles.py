@@ -124,7 +124,7 @@ class ReactionRoleCog(_Cog):
             for reaction_role in reaction_roles:
                 if not (await reaction_role.try_activate(ctx)):
                     failed_reaction_roles.append(reaction_role)
-            response_lines = [f'Activated {len(failed_reaction_roles) - len(reaction_roles)} of {len(reaction_roles)} Reaction Roles on this server.']
+            response_lines = [f'Activated {len(reaction_roles) - len(failed_reaction_roles)} of {len(reaction_roles)} Reaction Roles on this server.']
             if failed_reaction_roles:
                 response_lines.append('Could not activate the following roles:')
                 for failed_reaction_role in failed_reaction_roles:
