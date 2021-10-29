@@ -17,8 +17,13 @@ class RolesCog(_Cog):
         self.__bot = bot
 
 
+    @property
+    def bot(self) -> _Bot:
+        return self.__bot
+
+
     @_command_group(name='role', brief='Role management', invoke_without_command=True)
-    async def base(ctx: _Context) -> None:
+    async def base(self, ctx: _Context) -> None:
         await ctx.send_help('role')
 
 

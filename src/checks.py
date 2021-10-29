@@ -16,6 +16,11 @@ class ChecksCog(_Cog):
         self.__bot = bot
 
 
+    @property
+    def bot(self) -> _Bot:
+        return self.__bot
+
+
     @_is_owner()
     @_command_group(name='check', hidden=True, invoke_without_command=False)
     async def base(self, ctx: _Context) -> None:
