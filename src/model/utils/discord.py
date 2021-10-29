@@ -14,11 +14,15 @@ from typing import Protocol as _Protocol
 from typing import Tuple as _Tuple
 from typing import Union as _Union
 
+from discord import Asset as _Asset
 from discord import Colour as _Colour
 from discord import Embed as _Embed
+from discord import Guild as _Guild
+from discord import Member as _Member
 from discord import Message as _Message
 from discord import Role as _Role
 from discord import TextChannel as _TextChannel
+from discord import User as _User
 from discord.errors import Forbidden as _Forbidden
 from discord.errors import NotFound as _NotFound
 from discord.abc import Messageable as _Messageable
@@ -53,6 +57,40 @@ __RX_EMOJI: _re.Pattern = _re.compile('<:\w+:(\d+)>')
 __RX_MESSAGE_LINK: _re.Pattern = _re.compile('https://discord.com/channels/(\d+)/(\d+)/(\d+)/?')
 __RX_ROLE_MENTION: _re.Pattern = _re.compile('<@&(\d+)>')
 __RX_USER_MENTION: _re.Pattern = _re.compile('<@\!?(\d+)>')
+
+PLACEHOLDERS: str = """
+`\{` - `{`
+`\}` - `}`
+
+`{server}` - Guild name
+`{server.iconUrl}` - Guild's icon url
+`{server.id}` - Guild ID
+`{server.memberCount}` - Guild's member count
+`{server.name}` - Guild name
+
+`{channel}` - Channel mention
+`{channel.category}` - Channel category name (empty if not in a category)
+`{channel.category.id}` - Channel category id (empty if not in a category)
+`{channel.category.name}` - Channel category name (empty if not in a category)
+`{channel.mention}` - Channel mention
+`{channel.name}` - Channel name
+
+`{role}` - Role mention (will not notify its members if used in embeds)
+`{role.id}` - Role id
+`{role.memberCount}` - Role member count
+`{role.mention}` - Role mention (will not notify its members if used in embeds)
+`{role.name}` - Role name
+
+`{user}` - User mention (will not notify the user if used in embeds)
+`{user.avatarUrl}` - User's avatar url
+`{user.discriminator}` - User discriminator
+`{user.id}` - User id
+`{user.displayName}` - User nick if set, else user name and discriminator
+`{user.mention}` - User mention (will not notify the user if used in embeds)
+`{user.name}` - User name and discriminator
+`{user.nick}` - User nick if set, else empty
+`{user.username}` - User name
+""".strip()
 
 
 
@@ -281,6 +319,26 @@ def create_discord_link(guild_id: int, channel_id: _Optional[int] = None, messag
     return result
 
 
+def create_prompt_text(prompt_text: str,
+                        options_text: str,
+                        allow_abort: bool,
+                        allow_skip: bool
+                    ) -> str:
+    options = []
+    if options_text:
+        options.append(options_text)
+    if allow_abort:
+        options.append('send \'abort\' to abort')
+    if allow_skip:
+        options.append('send \'skip\' to skip')
+    options_hint = '; '.join(options)
+    result = '\n'.join((
+        prompt_text,
+        f'(Send {options_hint}.)'
+    ))
+    return f'```{result}```'
+
+
 async def fetch_message(channel: _TextChannel,
                         message_id: str
                         ) -> _Optional[_Message]:
@@ -462,7 +520,7 @@ async def inquire_for_boolean(ctx: _Context,
     true_values_lower = [value.lower() for value in true_values]
     false_values_lower = [value.lower() for value in false_values]
 
-    full_prompt_text = get_prompt_text(prompt_text, f'\'{true_values_text}\' or \'{false_values_text}\'', allow_abort, allow_skip)
+    full_prompt_text = create_prompt_text(prompt_text, f'\'{true_values_text}\' or \'{false_values_text}\'', allow_abort, allow_skip)
     if respond_to_message:
         prompt_message = await respond_to_message.reply(full_prompt_text, mention_author=False)
     else:
@@ -494,7 +552,7 @@ async def inquire_for_embed_definition(ctx: _Context,
     aborted = False
     skipped = False
 
-    full_prompt_text = get_prompt_text(prompt_text, 'an embed definition as JSON as plain text, a hyperlink to a web resource containing a definition or a file uploaded containing a definition', allow_abort, allow_skip)
+    full_prompt_text = create_prompt_text(prompt_text, 'an embed definition as JSON as plain text, a hyperlink to a web resource containing a definition or a file uploaded containing a definition', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
@@ -526,7 +584,7 @@ async def inquire_for_emoji(ctx: _Context,
     aborted = False
     skipped = False
 
-    full_prompt_text = get_prompt_text(prompt_text, 'an emoji', allow_abort, allow_skip)
+    full_prompt_text = create_prompt_text(prompt_text, 'an emoji', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
@@ -555,7 +613,7 @@ async def inquire_for_integer(ctx: _Context,
     aborted = False
     skipped = False
 
-    full_prompt_text = get_prompt_text(prompt_text, 'an integer', allow_abort, allow_skip)
+    full_prompt_text = create_prompt_text(prompt_text, 'an integer', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_integer, timeout=timeout)
     if user_reply:
@@ -584,7 +642,7 @@ async def inquire_for_member(ctx: _Context,
     aborted = False
     skipped = False
 
-    full_prompt_text = get_prompt_text(prompt_text, 'a member mention, name or ID', allow_abort, allow_skip)
+    full_prompt_text = create_prompt_text(prompt_text, 'a member mention, name or ID', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_member_id_name_or_mention, timeout=timeout)
     if user_reply:
@@ -627,7 +685,7 @@ async def inquire_for_message_id(ctx: _Context,
     aborted = False
     skipped = False
 
-    full_prompt_text = get_prompt_text(prompt_text, 'a message ID', allow_abort, allow_skip)
+    full_prompt_text = create_prompt_text(prompt_text, 'a message ID', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_message_id, timeout=timeout)
     if user_reply:
@@ -656,7 +714,7 @@ async def inquire_for_message_link(ctx: _Context,
     aborted = False
     skipped = False
 
-    full_prompt_text = get_prompt_text(prompt_text, 'an full link to a Discord message', allow_abort, allow_skip)
+    full_prompt_text = create_prompt_text(prompt_text, 'an full link to a Discord message', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_message_link, timeout=timeout)
     if user_reply:
@@ -685,7 +743,7 @@ async def inquire_for_role(ctx: _Context,
     aborted = False
     skipped = False
 
-    full_prompt_text = get_prompt_text(prompt_text, 'a role mention or ID', allow_abort, allow_skip)
+    full_prompt_text = create_prompt_text(prompt_text, 'a role mention or ID', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_role_id_or_mention, timeout=timeout)
     if user_reply:
@@ -714,7 +772,7 @@ async def inquire_for_text(ctx: _Context,
     aborted = False
     skipped = False
 
-    full_prompt_text = get_prompt_text(prompt_text, None, allow_abort, allow_skip)
+    full_prompt_text = create_prompt_text(prompt_text, None, allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
@@ -743,7 +801,7 @@ async def inquire_for_text_channel(ctx: _Context,
     aborted = False
     skipped = False
 
-    full_prompt_text = get_prompt_text(prompt_text, 'a channel mention or ID', allow_abort, allow_skip)
+    full_prompt_text = create_prompt_text(prompt_text, 'a channel mention or ID', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_channel_id_or_mention, timeout=timeout)
     if user_reply:
@@ -769,6 +827,60 @@ async def inquire_for_true_false(ctx: _Context,
     return (await inquire_for_boolean(ctx, prompt_text, timeout=timeout, abort_text=abort_text, skip_text=skip_text))
 
 
+def create_substitutions(guild: _Guild = None, channel: _TextChannel = None, role: _Role = None, member: _Member = None) -> str:
+    """
+    Creates a dictionary of placeholders and their substitutions based on the provided Assets.
+
+    The following substitutions will be created:
+
+    {PLACEHOLDERS}
+    """
+    replacements = {}
+    if guild:
+        replacements['{server}'] = guild.name
+        replacements['{server.iconUrl}'] = f'{_Asset.BASE}{guild.icon_url._url}' if guild.icon_url._url else ''
+        replacements['{server.id}'] = str(guild.id)
+        replacements['{server.memberCount}'] = str(guild.member_count)
+        replacements['{server.name}'] = guild.name
+    if channel:
+        replacements['{channel}'] = channel.mention
+        replacements['{channel.category}'] = channel.category.name if channel.category else ''
+        replacements['{channel.category.id}'] = str(channel.category.id) if channel.category else ''
+        replacements['{channel.category.name}'] = channel.category.name if channel.category else ''
+        replacements['{channel.id}'] = str(channel.id)
+        replacements['{channel.mention}'] = channel.mention
+        replacements['{channel.name}'] = channel.name
+    if role:
+        replacements['{role}'] = role.mention
+        replacements['{role.id}'] = str(role.id)
+        replacements['{role.memberCount}'] = str(len(role.members))
+        replacements['{role.mention}'] = role.mention
+        replacements['{role.name}'] = role.name
+    if member:
+        user: _User = member._user
+        replacements['{user}'] = member.mention
+        replacements['{user.avatarUrl}'] = f'{_Asset.BASE}{user.avatar_url._url}' if user.avatar_url._url else ''
+        replacements['{user.discriminator}'] = user.discriminator
+        replacements['{user.id}'] = str(user.id)
+        replacements['{user.displayName}'] = member.display_name
+        replacements['{user.name}'] = f'{user.name}#{user.discriminator}'
+        replacements['{user.nick}'] = member.nick or ''
+        replacements['{user.username}'] = user.name
+    replacements['\{'] = '{'
+    replacements['\}'] = '}'
+    return replacements
+
+
+create_substitutions.__doc__ = f"""
+Creates a dictionary of placeholders and their substitutions based on the provided Assets.
+
+The following substitutions will be created:
+
+{PLACEHOLDERS}
+""".strip()
+
+
+
 async def try_delete_message(message: _Message) -> bool:
     if not message:
         return True
@@ -780,18 +892,25 @@ async def try_delete_message(message: _Message) -> bool:
         return False
 
 
-def update_embed_definition(embed_definition: str, replacements: _Optional[_Dict[str, _Any]]) -> str:
-    if not replacements:
-        return embed_definition
-
+def update_embed_definition(embed_definition: str, substitutions: _Optional[_Dict[str, _Any]]) -> str:
     embed_dct = _json_loads(embed_definition)
 
-    for key, value in replacements.items():
+    for key, value in substitutions.items():
         embed_dct['title'] = embed_dct.get('title', '').replace(key, value)
         embed_dct['description'] = embed_dct.get('description', '').replace(key, value)
         for field in embed_dct.get('fields', []):
             field['name'] = field.get('name', '').replace(key, value)
             field['value'] = field.get('value', '').replace(key, value)
+        if 'author' in embed_dct:
+            embed_dct['author']['icon_url'] = embed_dct['author'].get('icon_url').replace(key, value)
+            embed_dct['author']['name'] = embed_dct['author'].get('name').replace(key, value)
+        if 'footer' in embed_dct:
+            embed_dct['footer']['icon_url'] = embed_dct['footer'].get('icon_url').replace(key, value)
+        if 'image' in embed_dct:
+            embed_dct['image']['url'] = embed_dct['image'].get('url').replace(key, value)
+        if 'thumbnail' in embed_dct:
+            embed_dct['thumbnail']['url'] = embed_dct['thumbnail'].get('url').replace(key, value)
+
     return _json_dumps(embed_dct, separators=(',', ':'))
 
 
@@ -832,26 +951,6 @@ async def __check_for_abort_or_skip(message_content: str,
     elif allow_skip and message_content == 'skip':
         skipped = True
     return aborted, skipped
-
-
-def get_prompt_text(prompt_text: str,
-                        options_text: str,
-                        allow_abort: bool,
-                        allow_skip: bool
-                    ) -> str:
-    options = []
-    if options_text:
-        options.append(options_text)
-    if allow_abort:
-        options.append('send \'abort\' to abort')
-    if allow_skip:
-        options.append('send \'skip\' to skip')
-    options_hint = '; '.join(options)
-    result = '\n'.join((
-        prompt_text,
-        f'(Send {options_hint}.)'
-    ))
-    return f'```{result}```'
 
 
 async def __send_aborted_or_skipped(abort_reply_to: _Message,

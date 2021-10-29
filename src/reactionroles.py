@@ -645,7 +645,7 @@ async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[
         while role_change_message_text is None and role_change_message_embed is None:
             prompt_text = '\n'.join((
                     'Please type a message to be sent. The following variables are available:',
-                    '{user}: mentions the user who reacted',
+                    _utils.discord.PLACEHOLDERS.replace('`', '')
                 ))
             role_change_message_text, aborted, _ = await _utils.discord.inquire_for_text(ctx, prompt_text, abort_text=abort_text, skip_text='Skipped.')
             if aborted:
@@ -653,7 +653,7 @@ async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[
 
             prompt_text = '\n'.join((
                     'Please type a definition of an embed to be sent. The following variables are available:',
-                    '{user}: mentions the user who reacted (due to technical reasons, the user will not get a notification)',
+                    _utils.discord.PLACEHOLDERS.replace('`', '')
                 ))
             role_change_message_embed, aborted, _ = await _utils.discord.inquire_for_embed_definition(ctx, prompt_text, abort_text=abort_text, skip_text='Skipped.')
             if aborted:

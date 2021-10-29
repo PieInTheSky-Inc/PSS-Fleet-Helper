@@ -124,15 +124,16 @@ class ReactionRole(_database.DatabaseRowBase):
                     role_change = True
                 if role_change and change.message_channel_id and (change.message_content or change.message_embed):
                     channel = member.guild.get_channel(change.message_channel_id)
-                    messages_to_post.append((channel, change.message_content, change.message_embed))
+                    messages_to_post.append((channel, change.message_content, change.message_embed, role))
         await member.add_roles(*roles_to_add)
         await member.remove_roles(*roles_to_remove)
-        for channel, text, embed_definition in messages_to_post:
+        for channel, text, embed_definition, role in messages_to_post:
+            substitutions = _utils.discord.create_substitutions(guild=member.guild, role=role, member=member)
             if text:
-                text = text.replace('{user}', member.mention)
+                for key, value in substitutions.items():
+                    text = text.replace(key, value)
             if embed_definition:
-                replacements = {'{user}': member.mention}
-                embed_definition = _utils.discord.update_embed_definition(embed_definition, replacements)
+                embed_definition = _utils.discord.update_embed_definition(embed_definition, substitutions)
                 embed = await _utils.discord.get_embed_from_definition_or_url(embed_definition)
             else:
                 embed = None

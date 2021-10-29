@@ -22,7 +22,7 @@ class ChecksCog(_Cog):
 
 
     @_is_owner()
-    @_command_group(name='check', hidden=True, invoke_without_command=False)
+    @_command_group(name='check', hidden=True, invoke_without_command=True)
     async def base(self, ctx: _Context) -> None:
         pass
 
