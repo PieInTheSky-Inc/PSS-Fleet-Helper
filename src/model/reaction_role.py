@@ -16,10 +16,11 @@ from .. import utils as _utils
 
 
 class ReactionRole(_database.DatabaseRowBase):
-    FOREIGN_KEY_COLUMN_NAME: str = 'reaction_role_id'
+    ID_COLUMN_NAME: str = 'reaction_role_id'
     TABLE_NAME: str = 'reaction_role'
     __tablename__ = TABLE_NAME
 
+    id = _db.Column(ID_COLUMN_NAME, _db.Integer, primary_key=True, autoincrement=True, nullable=False)
     channel_id = _db.Column('channel_id', _db.Integer, nullable=False)
     guild_id = _db.Column('guild_id', _db.Integer, nullable=False)
     is_active = _db.Column('is_active', _db.Boolean, nullable=False)
@@ -111,7 +112,7 @@ class ReactionRole(_database.DatabaseRowBase):
     async def create(guild_id: int, reaction_channel_id: int, message_id: int, name: str, reaction: str, is_active: bool = False) -> _Optional['ReactionRole']:
         record = await _database.insert_row(
             ReactionRole.TABLE_NAME,
-            ReactionRole.FOREIGN_KEY_COLUMN_NAME,
+            ReactionRole.ID_COLUMN_NAME,
             guild_id=guild_id,
             channel_id=reaction_channel_id,
             message_id=message_id,
@@ -128,11 +129,12 @@ class ReactionRole(_database.DatabaseRowBase):
 
 
 class ReactionRoleChange(_database.DatabaseRowBase):
-    FOREIGN_KEY_COLUMN_NAME: str = 'reaction_role_change_id'
+    ID_COLUMN_NAME: str = 'reaction_role_change_id'
     TABLE_NAME: str = 'reaction_role_change'
     __tablename__ = TABLE_NAME
 
-    reaction_role_id = _db.Column(ReactionRole.FOREIGN_KEY_COLUMN_NAME, _db.Integer, _db.ForeignKey(f'{ReactionRole.TABLE_NAME}.{_database.DatabaseRowBase.ID_COLUMN_NAME}'), nullable=False)
+    id = _db.Column(ID_COLUMN_NAME, _db.Integer, primary_key=True, autoincrement=True, nullable=False)
+    reaction_role_id = _db.Column(ReactionRole.ID_COLUMN_NAME, _db.Integer, _db.ForeignKey(f'{ReactionRole.TABLE_NAME}.{ReactionRole.ID_COLUMN_NAME}'), nullable=False)
     reaction_role = _db.orm.relationship('ReactionRole', back_populates='role_changes')
 
     add = _db.Column('add', _db.Boolean, nullable=False)
@@ -151,11 +153,12 @@ class ReactionRoleChange(_database.DatabaseRowBase):
 
 
 class ReactionRoleRequirement(_database.DatabaseRowBase):
-    FOREIGN_KEY_COLUMN_NAME: str = 'reaction_role_requirement_id'
+    ID_COLUMN_NAME: str = 'reaction_role_requirement_id'
     TABLE_NAME: str = 'reaction_role_requirement'
     __tablename__ = TABLE_NAME
 
-    reaction_role_id = _db.Column(ReactionRole.FOREIGN_KEY_COLUMN_NAME, _db.Integer, _db.ForeignKey(f'{ReactionRole.TABLE_NAME}.{_database.DatabaseRowBase.ID_COLUMN_NAME}'), nullable=False)
+    id = _db.Column(ID_COLUMN_NAME, _db.Integer, primary_key=True, autoincrement=True, nullable=False)
+    reaction_role_id = _db.Column(ReactionRole.ID_COLUMN_NAME, _db.Integer, _db.ForeignKey(f'{ReactionRole.TABLE_NAME}.{ReactionRole.ID_COLUMN_NAME}'), nullable=False)
     reaction_role = _db.orm.relationship('ReactionRole', back_populates='role_requirements')
     role_id = _db.Column('role_id', _db.Integer, nullable=False)
 

@@ -53,13 +53,11 @@ DB = SQLAlchemy(APP)
 
 
 class DatabaseRowBase(DB.Model):
-    ID_COLUMN_NAME: str = 'id'
     CREATED_AT_COLUMN_NAME: str = 'created_at'
     MODIFIED_AT_COLUMN_NAME: str = 'modified_at'
 
     __abstract__ = True
 
-    id = _sqlalchemy.Column(ID_COLUMN_NAME, _sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False)
     created_at = _sqlalchemy.Column(CREATED_AT_COLUMN_NAME, _sqlalchemy.DateTime, default=_datetime.utcnow)
     modified_at = _sqlalchemy.Column(MODIFIED_AT_COLUMN_NAME, _sqlalchemy.DateTime, default=_datetime.utcnow, onupdate=_datetime.utcnow)
 

@@ -25,47 +25,12 @@ async def __setup_db_schema() -> None:
         ('0.1.0', __create_db_schema),
         ('0.2.0', __update_db_schema_0_2_0),
         ('0.3.0', __update_db_schema_0_3_0),
-        ('0.4.0', __update_db_schema_0_4_0),
     ]
     for version, callable in init_functions:
         if not (await __update_schema(version, callable)):
             raise Exception('DB initialization failed')
 
     print('DB initialization succeeded')
-
-
-async def __update_db_schema_0_4_0() -> bool:
-    alter_column_names = {
-        _ReactionRole.TABLE_NAME: [
-            (_ReactionRole.FOREIGN_KEY_COLUMN_NAME, _database.DatabaseRowBase.ID_COLUMN_NAME)
-        ],
-        _ReactionRoleChange.TABLE_NAME: [
-            (_ReactionRoleChange.FOREIGN_KEY_COLUMN_NAME, _database.DatabaseRowBase.ID_COLUMN_NAME)
-        ],
-        _ReactionRoleRequirement.TABLE_NAME: [
-            (_ReactionRoleRequirement.FOREIGN_KEY_COLUMN_NAME, _database.DatabaseRowBase.ID_COLUMN_NAME)
-        ]
-    }
-
-    schema_version = await _database.get_schema_version()
-    if schema_version:
-        compare_0_4_0 = _utils.compare_versions(schema_version, '0.4.0')
-        if compare_0_4_0 < 1:
-            return True
-
-    print(f'[update_schema_0_4_0] Updating to database schema v0.4.0')
-
-    success = True
-    for table_name, column_name_changes in alter_column_names.items():
-        for old_name, new_name in column_name_changes:
-            success = success and await _database.try_execute(f'ALTER TABLE {table_name} RENAME COLUMN {old_name} TO {new_name};')
-
-    if not success:
-        print(f'[update_schema_0_4_0] Could not alter columns.')
-        return False
-
-    success = await _database.try_set_schema_version('0.4.0')
-    return success
 
 
 async def __update_db_schema_0_3_0() -> bool:
@@ -90,7 +55,7 @@ async def __update_db_schema_0_3_0() -> bool:
 
 async def __update_db_schema_0_2_0() -> bool:
     column_definitions_reaction_role = [
-        (_ReactionRole.FOREIGN_KEY_COLUMN_NAME, 'SERIAL', True, True, None),
+        (_ReactionRole.ID_COLUMN_NAME, 'SERIAL', True, True, None),
         ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('guild_id', 'BIGINT', False, True, None),
@@ -101,10 +66,10 @@ async def __update_db_schema_0_2_0() -> bool:
         ('is_active', 'BOOLEAN', False, True, False),
     ]
     column_definitions_reaction_role_change = [
-        (_ReactionRoleChange.FOREIGN_KEY_COLUMN_NAME, 'SERIAL', True, True, None),
+        (_ReactionRoleChange.ID_COLUMN_NAME, 'SERIAL', True, True, None),
         ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        (_ReactionRole.FOREIGN_KEY_COLUMN_NAME, 'INT', False, True, None),
+        (_ReactionRole.ID_COLUMN_NAME, 'INT', False, True, None),
         ('role_id', 'BIGINT', False, True, None),
         ('add', 'BOOLEAN', False, True, True), # True to add, False to remove
         ('allow_toggle', 'BOOLEAN', False, True, False),
@@ -112,10 +77,10 @@ async def __update_db_schema_0_2_0() -> bool:
         ('message_channel_id', 'BIGINT', False, False, None),
     ]
     column_definitions_reaction_role_requirement = [
-        (_ReactionRoleRequirement.FOREIGN_KEY_COLUMN_NAME, 'SERIAL', True, True, None),
+        (_ReactionRoleRequirement.ID_COLUMN_NAME, 'SERIAL', True, True, None),
         ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        (_ReactionRole.FOREIGN_KEY_COLUMN_NAME, 'INT', False, True, None),
+        (_ReactionRole.ID_COLUMN_NAME, 'INT', False, True, None),
         ('role_id', 'BIGINT', False, True, None),
     ]
 
