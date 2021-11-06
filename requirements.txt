@@ -1,3 +1,5 @@
 asyncpg
 emoji
+Flask
+flask_sqlalchemy
 py-cord

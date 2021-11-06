@@ -8,6 +8,10 @@ from threading import Lock as _Lock
 
 import asyncpg as _asyncpg
 
+from flask import Flask as _Flask
+from flask_sqlalchemy import SQLAlchemy as _SQLAlchemyBase
+import sqlalchemy as _sqlalchemy
+
 from . import model_settings as _model_settings
 from .. import utils as _utils
 
@@ -18,10 +22,10 @@ from .. import utils as _utils
 ColumnDefinition = _Tuple[str, str, bool, bool, _Any]
 
 
-
-
-
 # ---------- Constants ----------
+
+APP = _Flask('ViViBot')
+APP.config['SQLALCHEMY_DATABASE_URI'] = _model_settings.DATABASE_URL
 
 __CONNECTION_POOL: _asyncpg.pool.Pool = None
 __CONNECTION_POOL_LOCK: _Lock = _Lock()
@@ -29,34 +33,35 @@ __CONNECTION_POOL_LOCK: _Lock = _Lock()
 TABLE_NAME_BOT_SETTINGS: str = 'bot_settings'
 
 
-
+DB: 'SQLAlchemy' = None
 
 
 # ---------- Classes ----------
 
-class DatabaseRowBase():
-    def __init__(self, id: int) -> None:
-        self._id: int = id
-        self._deleted: bool = False
+class SQLAlchemy(_SQLAlchemyBase):
+    def apply_pool_defaults(self, app, options):
+            options = super().apply_pool_defaults(app, options)
+
+            if not options:
+                options = {}
+
+            options["pool_pre_ping"] = True
+            return options
 
 
-    @property
-    def deleted(self) -> bool:
-        return self._deleted
-
-    @property
-    def id(self) -> int:
-        return self._id
+DB = SQLAlchemy(APP)
 
 
-    def _assert_not_deleted(self) -> bool:
-        if self.deleted:
-            raise Exception(f'This object has been deleted! (ID: {self.id}')
+class DatabaseRowBase(DB.Model):
+    ID_COLUMN_NAME: str = 'id'
+    CREATED_AT_COLUMN_NAME: str = 'created_at'
+    MODIFIED_AT_COLUMN_NAME: str = 'modified_at'
 
+    __abstract__ = True
 
-    def _set_deleted(self) -> None:
-        self._assert_not_deleted()
-        self._deleted = True
+    id = _sqlalchemy.Column(ID_COLUMN_NAME, _sqlalchemy.Integer, primary_key=True, autoincrement=True, nullable=False)
+    created_at = _sqlalchemy.Column(CREATED_AT_COLUMN_NAME, _sqlalchemy.DateTime, default=_datetime.utcnow)
+    modified_at = _sqlalchemy.Column(MODIFIED_AT_COLUMN_NAME, _sqlalchemy.DateTime, default=_datetime.utcnow, onupdate=_datetime.utcnow)
 
 
 

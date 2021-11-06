@@ -1,14 +1,13 @@
 import asyncio as _asyncio
-import json as _json
-from threading import Lock as _Lock
+from typing import Iterable as _Iterable
 from typing import List as _List
 from typing import Optional as _Optional
 from typing import Tuple as _Tuple
 
-from discord import Embed as _Embed
 from discord import Member as _Member
 from discord import TextChannel as _TextChannel
 from discord.ext.commands import Context as _Context
+import sqlalchemy as _db
 
 from . import database as _database
 from .. import utils as _utils
@@ -17,95 +16,26 @@ from .. import utils as _utils
 
 
 class ReactionRole(_database.DatabaseRowBase):
+    FOREIGN_KEY_COLUMN_NAME: str = 'reaction_role_id'
     TABLE_NAME: str = 'reaction_role'
-    ID_COLUMN_NAME: str = 'reaction_role_id'
+    __tablename__ = TABLE_NAME
 
-    def __init__(self, reaction_role_id: int, guild_id: int, channel_id: int, message_id: int, name: str, reaction: str, is_active: bool) -> None:
-        super().__init__(reaction_role_id)
-        self.__guild_id: int = guild_id
-        self.__channel_id: int = channel_id
-        self.__message_id: int = message_id
-        self.__name: str = name
-        self.__reaction: str = reaction
-        self.__is_active: bool = is_active
-        self.__role_changes: _List['ReactionRoleChange'] = []
-        self.__role_requirements: _List['ReactionRoleRequirement'] = []
-        self.__edit_changes_lock: _Lock = _Lock()
-        self.__edit_requirements_lock: _Lock = _Lock()
+    channel_id = _db.Column('channel_id', _db.Integer, nullable=False)
+    guild_id = _db.Column('guild_id', _db.Integer, nullable=False)
+    is_active = _db.Column('is_active', _db.Boolean, nullable=False)
+    message_id = _db.Column('message_id', _db.Integer, nullable=False)
+    name = _db.Column('name', _db.Text, nullable=False)
+    reaction = _db.Column('reaction', _db.Text, nullable=False)
+    role_changes: _Iterable['ReactionRoleChange'] = _db.orm.relationship('ReactionRoleChange', back_populates='reaction_role', cascade='all, delete')
+    role_requirements: _Iterable['ReactionRoleRequirement'] = _db.orm.relationship('ReactionRoleRequirement', back_populates='reaction_role', cascade='all, delete')
 
 
     def __repr__(self) -> str:
-        deleted_text = ' - deleted' if self.deleted else ''
-        return f'Reaction Role \'{self.__name}\' (ID: {super().id}){deleted_text}'
+        return f'<Reaction Role id={self.id} name={self.name}>'
 
 
     def __str__(self) -> str:
-        return f'\'{self.__name}\' (ID: {super().id})'
-
-
-    @property
-    def channel_id(self) -> int:
-        super()._assert_not_deleted()
-        return self.__channel_id
-
-    @property
-    def guild_id(self) -> int:
-        super()._assert_not_deleted()
-        return self.__guild_id
-
-    @property
-    def is_active(self) -> bool:
-        super()._assert_not_deleted()
-        return self.__is_active
-
-    @property
-    def message_id(self) -> int:
-        super()._assert_not_deleted()
-        return self.__message_id
-
-    @property
-    def name(self) -> str:
-        super()._assert_not_deleted()
-        return self.__name
-
-    @property
-    def reaction(self) -> str:
-        super()._assert_not_deleted()
-        return self.__reaction
-
-    @property
-    def role_changes(self) -> _List['ReactionRoleChange']:
-        super()._assert_not_deleted()
-        return list(self.__role_changes)
-
-    @property
-    def role_requirements(self) -> _List['ReactionRoleRequirement']:
-        super()._assert_not_deleted()
-        return list(self.__role_requirements)
-
-
-    async def add_change(self, role_id: int, add: bool, allow_toggle: bool, message_content: str = None, message_channel_id: int = None, message_embed: str = None) -> 'ReactionRoleChange':
-        super()._assert_not_deleted()
-        with self.__edit_changes_lock:
-            for change in self.role_requirements:
-                if change.id == role_id:
-                    return change
-
-            result = await _db_create_reaction_role_change(self.id, role_id, add, allow_toggle, message_content, message_channel_id, message_embed)
-            self.__role_changes.append(result)
-            return result
-
-
-    async def add_requirement(self, required_role_id: int) -> 'ReactionRoleRequirement':
-        super()._assert_not_deleted()
-        with self.__edit_requirements_lock:
-            for requirement in self.role_requirements:
-                if requirement.id == required_role_id:
-                    return requirement
-
-            result = await _db_create_reaction_role_requirement(self.id, required_role_id)
-            self.__role_requirements.append(result)
-            return result
+        return f'\'{self.name}\' (ID: {self.id})'
 
 
     async def apply_add(self, member: _Member) -> None:
@@ -155,56 +85,6 @@ class ReactionRole(_database.DatabaseRowBase):
         await member.remove_roles(*roles_to_remove)
 
 
-    async def delete(self) -> bool:
-        super()._assert_not_deleted()
-        result = await _db_delete_reaction_role(self.id)
-        if result:
-            for requirement in self.role_requirements:
-                await requirement._delete()
-            self.__role_requirements.clear()
-            for change in self.role_changes:
-                await change._delete()
-            self.__role_changes.clear()
-            super()._set_deleted()
-        return result
-
-
-    async def remove_change(self, reaction_role_change_id: int) -> bool:
-        super()._assert_not_deleted()
-        with self.__edit_changes_lock:
-            change = None
-            found_change = False
-            for change in self.role_changes:
-                if change.id == reaction_role_change_id:
-                    found_change = True
-                    break
-
-            if not found_change:
-                return True
-
-            self.__role_changes.remove(change)
-            success = await change._delete()
-            return success
-
-
-    async def remove_requirement(self, reaction_role_requirement_id: int) -> bool:
-        super()._assert_not_deleted()
-        with self.__edit_requirements_lock:
-            requirement = None
-            found_requirement = False
-            for requirement in self.role_requirements:
-                if requirement.id == reaction_role_requirement_id:
-                    found_requirement = True
-                    break
-
-            if not found_requirement:
-                return True
-
-            self.__role_requirements.remove(requirement)
-            success = await requirement._delete()
-            return success
-
-
     async def try_activate(self, ctx: _Context) -> bool:
         try:
             reaction_message = await ctx.guild.get_channel(self.channel_id).fetch_message(self.message_id)
@@ -227,61 +107,11 @@ class ReactionRole(_database.DatabaseRowBase):
         return result
 
 
-    async def update(self, channel_id: int = None, message_id: int = None, name: str = None, reaction: str = None, is_active: bool = None) -> bool:
-        super()._assert_not_deleted()
-        if channel_id is None and message_id is None and name is None and reaction is None and is_active is None:
-            return True
-        channel_id = channel_id or self.channel_id
-        message_id = message_id or self.message_id
-        name = name or self.name
-        reaction = reaction or self.reaction
-        is_active = self.is_active if is_active is None else is_active
-        updated = await _db_update_reaction_role(self.id, channel_id, message_id, name, reaction, is_active)
-        if updated:
-            self.__message_id = message_id
-            self.__name = name
-            self.__reaction = reaction
-            self.__is_active = is_active
-        return updated
-
-
-    def update_changes(self, reaction_role_changes: _List['ReactionRoleChange']) -> None:
-        if not reaction_role_changes:
-            return
-
-        with self.__edit_changes_lock:
-            existing_changes_ids = [change.id for change in self.role_changes]
-            for reaction_role_change in reaction_role_changes:
-                if reaction_role_change.id in existing_changes_ids:
-                    self.__role_changes = [change for change in self.__role_changes if change.id == reaction_role_change.id]
-                    self.__role_changes.append(reaction_role_change)
-                else:
-                    self.__role_changes.append(reaction_role_change)
-                reaction_role_change.set_reaction_role(self)
-            self.__role_changes.sort(key=lambda change: change.id)
-
-
-    def update_requirements(self, reaction_role_requirements: _List['ReactionRoleRequirement']) -> None:
-        if not reaction_role_requirements:
-            return
-
-        with self.__edit_requirements_lock:
-            existing_requirements_ids = [requirement.id for requirement in self.role_requirements]
-            for reaction_role_requirement in reaction_role_requirements:
-                if reaction_role_requirement.id in existing_requirements_ids:
-                    self.__role_requirements = [requirement for requirement in self.__role_requirements if requirement.id == reaction_role_requirement.id]
-                    self.__role_requirements.append(reaction_role_requirement)
-                else:
-                    self.__role_requirements.append(reaction_role_requirement)
-                reaction_role_requirement.set_reaction_role(self)
-            self.__role_requirements.sort(key=lambda requirement: requirement.id)
-
-
     @staticmethod
     async def create(guild_id: int, reaction_channel_id: int, message_id: int, name: str, reaction: str, is_active: bool = False) -> _Optional['ReactionRole']:
         record = await _database.insert_row(
             ReactionRole.TABLE_NAME,
-            ReactionRole.ID_COLUMN_NAME,
+            ReactionRole.FOREIGN_KEY_COLUMN_NAME,
             guild_id=guild_id,
             channel_id=reaction_channel_id,
             message_id=message_id,
@@ -298,247 +128,40 @@ class ReactionRole(_database.DatabaseRowBase):
 
 
 class ReactionRoleChange(_database.DatabaseRowBase):
+    FOREIGN_KEY_COLUMN_NAME: str = 'reaction_role_change_id'
     TABLE_NAME: str = 'reaction_role_change'
-    ID_COLUMN_NAME: str = 'reaction_role_change_id'
+    __tablename__ = TABLE_NAME
 
-    def __init__(self, reaction_role_change_id: int, reaction_role_id: int, role_id: int, add: bool, allow_toggle: bool, message_content: str, message_channel_id: int, message_embed: str) -> None:
-        super().__init__(reaction_role_change_id)
-        self.__reaction_role: ReactionRole = None
-        self.__reaction_role_id: int = reaction_role_id
-        self.__role_id: int = role_id
-        self.__add: bool = add
-        self.__allow_toggle: bool = allow_toggle
-        self.__message_channel_id: int = message_channel_id
-        self.__message_content: str = message_content
-        self.__message_embed: str = message_embed
+    reaction_role_id = _db.Column(ReactionRole.FOREIGN_KEY_COLUMN_NAME, _db.Integer, _db.ForeignKey(f'{ReactionRole.TABLE_NAME}.{_database.DatabaseRowBase.ID_COLUMN_NAME}'), nullable=False)
+    reaction_role = _db.orm.relationship('ReactionRole', back_populates='role_changes')
 
-
-    @property
-    def add(self) -> bool:
-        super()._assert_not_deleted()
-        return self.__add
-
-    @property
-    def allow_toggle(self) -> bool:
-        super()._assert_not_deleted()
-        return self.__allow_toggle
-
-    @property
-    def message_channel_id(self) -> int:
-        super()._assert_not_deleted()
-        return self.__message_channel_id
-
-    @property
-    def message_content(self) -> str:
-        super()._assert_not_deleted()
-        return self.__message_content
-
-    @property
-    def message_embed(self) -> str:
-        super()._assert_not_deleted()
-        return self.__message_embed
-
-    @property
-    def reaction_role(self) -> _Optional[ReactionRole]:
-        super()._assert_not_deleted()
-        return self.__reaction_role
-
-    @property
-    def reaction_role_id(self) -> int:
-        super()._assert_not_deleted()
-        return self.__reaction_role.id if self.__reaction_role else self.__reaction_role_id
-
-    @property
-    def role_id(self) -> int:
-        super()._assert_not_deleted()
-        return self.__role_id
+    add = _db.Column('add', _db.Boolean, nullable=False)
+    allow_toggle = _db.Column('allow_toggle', _db.Boolean, nullable=False)
+    message_channel_id = _db.Column('message_channel_id', _db.Integer, nullable=True)
+    message_content = _db.Column('message_content', _db.Text, nullable=True)
+    message_embed = _db.Column('message_embed', _db.Text, nullable=True)
+    role_id = _db.Column('role_id', _db.Integer, nullable=False)
 
 
-    async def _delete(self) -> bool:
-        super()._assert_not_deleted()
-        result = await _db_delete_reaction_role_change(self.id)
-        if result:
-            super()._set_deleted()
-        return result
-
-
-    async def update(self, role_id: int = None, add: bool = None, allow_toggle: bool = None, message_content: str = None, message_channel_id: int = None, message_embed: str = None) -> bool:
-        super()._assert_not_deleted()
-        if role_id is None and add is None and allow_toggle is None and message_channel_id is None and message_content is None:
-            return True
-        role_id = role_id or self.role_id
-        add = self.add if add is None else add
-        allow_toggle = self.allow_toggle if allow_toggle is None else allow_toggle
-        message_channel_id = message_channel_id or self.message_channel_id
-        message_content = message_content or self.message_content
-        message_content = message_embed or self.message_embed
-        updated = await _db_update_reaction_role_change(self.id, role_id, add, allow_toggle, message_content, message_channel_id, message_embed)
-        if updated:
-            self._role_id = role_id
-            self.__add = add
-            self.__allow_toggle = allow_toggle
-            self.__message_channel_id = message_channel_id
-            self.__message_content = message_content
-        return updated
-
-
-    def set_reaction_role(self, reaction_role: ReactionRole) -> None:
-        super()._assert_not_deleted()
-        self.__reaction_role = reaction_role
+    def __repr__(self) -> str:
+        return f'<ReactionRoleChange id={self.id} reaction_role_id={self.reaction_role_id}>'
 
 
 
 
 
 class ReactionRoleRequirement(_database.DatabaseRowBase):
+    FOREIGN_KEY_COLUMN_NAME: str = 'reaction_role_requirement_id'
     TABLE_NAME: str = 'reaction_role_requirement'
-    ID_COLUMN_NAME: str = 'reaction_role_requirement_id'
+    __tablename__ = TABLE_NAME
 
-    def __init__(self, reaction_role_requirement_id: int, reaction_role_id: int, role_id: int) -> None:
-        super().__init__(reaction_role_requirement_id)
-        self.__reaction_role: ReactionRole = None
-        self.__reaction_role_id: int = reaction_role_id
-        self.__role_id: int = role_id
+    reaction_role_id = _db.Column(ReactionRole.FOREIGN_KEY_COLUMN_NAME, _db.Integer, _db.ForeignKey(f'{ReactionRole.TABLE_NAME}.{_database.DatabaseRowBase.ID_COLUMN_NAME}'), nullable=False)
+    reaction_role = _db.orm.relationship('ReactionRole', back_populates='role_requirements')
+    role_id = _db.Column('role_id', _db.Integer, nullable=False)
 
 
-    @property
-    def reaction_role(self) -> _Optional[ReactionRole]:
-        super()._assert_not_deleted()
-        return self.__reaction_role
-
-    @property
-    def reaction_role_id(self) -> int:
-        super()._assert_not_deleted()
-        return self.__reaction_role.id if self.__reaction_role else self.__reaction_role_id
-
-    @property
-    def role_id(self) -> int:
-        super()._assert_not_deleted()
-        return self.__role_id
-
-
-    async def _delete(self) -> bool:
-        super()._assert_not_deleted()
-        result = await _db_delete_reaction_role_requirement(self.id)
-        if result:
-            super()._set_deleted()
-        return result
-
-
-    async def update(self, role_id: str = None) -> bool:
-        super()._assert_not_deleted()
-        if role_id is None:
-            return True
-        role_id = role_id or self.role_id
-        updated = await _db_update_reaction_role_requirement(self.id, role_id)
-        if updated:
-            self.__role_id = role_id
-        return updated
-
-
-    def set_reaction_role(self, reaction_role: ReactionRole) -> None:
-        super()._assert_not_deleted()
-        self.__reaction_role = reaction_role
-
-
-
-
-
-# ---------- Static functions ----------
-
-async def _db_delete_reaction_role(reaction_role_id: int) -> bool:
-    result = await _database.delete_rows(
-        ReactionRole.TABLE_NAME,
-        ReactionRole.ID_COLUMN_NAME,
-        [reaction_role_id],
-    )
-    return bool(result)
-
-
-async def _db_update_reaction_role(reaction_role_id: int, channel_id: int, message_id: int, name: str, reaction: str, is_active: bool) -> bool:
-    result = await _database.update_row(
-        ReactionRole.TABLE_NAME,
-        ReactionRole.ID_COLUMN_NAME,
-        reaction_role_id,
-        channel_id=channel_id,
-        message_id=message_id,
-        name=name,
-        reaction=reaction,
-        is_active=is_active,
-    )
-    return bool(result)
-
-
-async def _db_create_reaction_role_change(reaction_role_id: int, role_id: int, add: bool, allow_toggle: bool, message_content: str, message_channel_id: int, message_embed: str) -> 'ReactionRoleChange':
-    record = await _database.insert_row(
-        ReactionRoleChange.TABLE_NAME,
-        ReactionRoleChange.ID_COLUMN_NAME,
-        reaction_role_id=reaction_role_id,
-        role_id=role_id,
-        add=add,
-        allow_toggle=allow_toggle,
-        message_content=message_content,
-        message_channel_id=message_channel_id,
-        message_embed=message_embed,
-    )
-    if record:
-        return ReactionRoleChange(record[0], reaction_role_id, role_id, add, allow_toggle, message_content, message_channel_id, message_embed)
-    return None
-
-
-async def _db_delete_reaction_role_change(reaction_role_change_id: int) -> bool:
-    result = await _database.delete_rows(
-        ReactionRoleChange.TABLE_NAME,
-        ReactionRoleChange.ID_COLUMN_NAME,
-        [reaction_role_change_id],
-    )
-    return bool(result)
-
-
-async def _db_update_reaction_role_change(reaction_role_change_id: int, role_id: int, add: bool, allow_toggle: bool, message_content: str, message_channel_id: int, message_embed: str) -> bool:
-    result = await _database.update_row(
-        ReactionRoleChange.TABLE_NAME,
-        ReactionRoleChange.ID_COLUMN_NAME,
-        reaction_role_change_id,
-        role_id=role_id,
-        add=add,
-        allow_toggle=allow_toggle,
-        message_content=message_content,
-        message_channel_id=message_channel_id,
-        message_embed=message_embed,
-    )
-    return bool(result)
-
-
-async def _db_create_reaction_role_requirement(reaction_role_id: int, role_id: int) -> 'ReactionRoleRequirement':
-    record = await _database.insert_row(
-        ReactionRoleRequirement.TABLE_NAME,
-        ReactionRoleRequirement.ID_COLUMN_NAME,
-        reaction_role_id=reaction_role_id,
-        role_id=role_id,
-    )
-    if record:
-        return ReactionRoleRequirement(record[0], reaction_role_id, role_id)
-    return None
-
-
-async def _db_delete_reaction_role_requirement(reaction_role_requirement_id: int) -> bool:
-    result = await _database.delete_rows(
-        ReactionRoleRequirement.TABLE_NAME,
-        ReactionRoleRequirement.ID_COLUMN_NAME,
-        [reaction_role_requirement_id],
-    )
-    return bool(result)
-
-
-async def _db_update_reaction_role_requirement(reaction_role_requirement_id: int, role_id: int) -> bool:
-    result = await _database.update_row(
-        ReactionRoleRequirement.TABLE_NAME,
-        ReactionRoleRequirement.ID_COLUMN_NAME,
-        reaction_role_requirement_id,
-        role_id=role_id,
-    )
-    return bool(result)
+    def __repr__(self) -> str:
+        return f'<ReactionRoleRequirement id={self.id} reaction_role_id={self.reaction_role_id}>'
 
 
 

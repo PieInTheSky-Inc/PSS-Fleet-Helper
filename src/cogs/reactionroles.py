@@ -405,31 +405,9 @@ class ReactionRoleCog(_Cog):
 
     @staticmethod
     async def _read_reaction_roles_from_db() -> _Dict[int, _ReactionRole]:
-        reaction_roles: _List[_ReactionRole] = []
-        changes: _Dict[int, _ReactionRoleChange] = {}
-        requirements: _Dict[int, _ReactionRoleRequirement] = {}
-
-        query = f'SELECT * FROM {_ReactionRole.TABLE_NAME}'
-        rows = await _database.fetchall(query)
-        reaction_roles = [_ReactionRole(row[0], *row[3:]) for row in rows]
-
-        query = f'SELECT * FROM {_ReactionRoleChange.TABLE_NAME}'
-        rows = await _database.fetchall(query)
-        for row in rows:
-            changes.setdefault(row[3], []).append(_ReactionRoleChange(row[0], *row[3:]))
-
-        query = f'SELECT * FROM {_ReactionRoleRequirement.TABLE_NAME}'
-        rows = await _database.fetchall(query)
-        for row in rows:
-            requirements.setdefault(row[3], []).append(_ReactionRoleRequirement(row[0], *row[3:]))
-
-        reaction_roles.sort(key=lambda rr: rr.id)
+        reaction_roles = _ReactionRole.query.all()
         result = {}
         for reaction_role in reaction_roles:
-            if reaction_role.id in changes:
-                reaction_role.update_changes(changes[reaction_role.id])
-            if reaction_role.id in requirements:
-                reaction_role.update_requirements(requirements[reaction_role.id])
             result.setdefault(reaction_role.guild_id, []).append(reaction_role)
 
         return result
