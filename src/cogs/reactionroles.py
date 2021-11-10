@@ -36,7 +36,7 @@ class ReactionRoleCog(_Cog):
         if not bot:
             raise ValueError('Parameter \'bot\' must not be None.')
         self.__bot: _Bot = bot
-        self.__reaction_roles: _Dict[int, _ReactionRole] = []
+        self.__reaction_roles: _Dict[int, _List[_ReactionRole]] = []
         bot.loop.create_task(self.__initialize())
 
 
@@ -203,16 +203,17 @@ class ReactionRoleCog(_Cog):
             f'Emoji = {emoji}',
         ]
         if role_reaction_requirements:
-            required_roles = ', '.join([ctx.guild.get_role(role_id).name for role_id in role_reaction_requirements])
-            confirmation_prompt_lines.append(f'Required role(s) = {required_roles}')
+            required_roles = [ctx.guild.get_role(role_id) for role_id in role_reaction_requirements]
+            required_roles_text = ', '.join([role.name for role in required_roles if role])
+            confirmation_prompt_lines.append(f'Required role(s) = {required_roles_text}')
         confirmation_prompt_lines.append(f'_Role Changes_')
         review_messages = []
         for i, (role_id, add, allow_toggle, message_text, message_channel_id, message_embed) in enumerate(role_reaction_changes, 1):
-            role = ctx.guild.get_role(role_id)
+            role: _Role = ctx.guild.get_role(role_id)
             add_text = 'add' if add else 'remove'
             send_message_str = ''
             if message_channel_id:
-                message_channel = ctx.guild.get_channel(message_channel_id)
+                message_channel: _TextChannel = ctx.guild.get_channel(message_channel_id)
                 send_message_str = f' and send a message to {message_channel.mention} (review message text below)'
                 review_messages.append((i, message_text))
             confirmation_prompt_lines.append(f'{i} = {add_text} role `{role.name}`{send_message_str}')
@@ -227,9 +228,9 @@ class ReactionRoleCog(_Cog):
 
         reaction_role = await _ReactionRole.create(ctx.guild.id, channel_id, message_id, name, emoji)
         for role_reaction_change_def in role_reaction_changes:
-            await reaction_role.add_change(*role_reaction_change_def)
+            reaction_role.add_change(*role_reaction_change_def)
         for role_id in role_reaction_requirements:
-            await reaction_role.add_requirement(role_id)
+            reaction_role.add_requirement(role_id)
 
         self.__reaction_roles.setdefault(ctx.guild.id, []).append(reaction_role)
         await ctx.reply(f'Successfully set up a Reaction Role {reaction_role}.\nDon\'t forget to activate it!', mention_author=False)
@@ -288,7 +289,7 @@ class ReactionRoleCog(_Cog):
         if delete:
             delete = await _utils.discord.inquire_for_true_false(ctx, f'Do you REALLY, REALLY want to delete the Reaction Role {reaction_role} as defined above?')
             if delete:
-                result = await reaction_role.delete()
+                result = reaction_role.delete()
         if not delete:
             await ctx.reply(f'Aborted. The Reaction Role {reaction_role} has not been deleted.', mention_author=True)
             return
@@ -710,8 +711,8 @@ async def remove_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_
     role_change = await inquire_for_role_change_remove(ctx, reaction_role.role_changes, abort_text)
     if role_change:
         role_change_id = role_change.id
-        role = ctx.guild.get_role(role_change.role_id)
-        await reaction_role.remove_change(role_change_id)
+        role: _Role = ctx.guild.get_role(role_change.role_id)
+        reaction_role.remove_change(role_change_id)
         await ctx.reply(f'Removed role change (ID: {role_change_id}) for role \'{role.name}\' (ID: {role.id}).', mention_author=False)
         return True, False
     return False, True
@@ -724,8 +725,8 @@ async def remove_role_requirement(reaction_role: _ReactionRole, ctx: _Context, a
     role_requirement = await inquire_for_role_requirement_remove(ctx, reaction_role.role_requirements, abort_text)
     if role_requirement:
         role_requirement_id = role_requirement.id
-        role = ctx.guild.get_role(role_requirement.role_id)
-        await reaction_role.remove_requirement(role_requirement_id)
+        role: _Role = ctx.guild.get_role(role_requirement.role_id)
+        reaction_role.remove_requirement(role_requirement_id)
         await ctx.reply(f'Removed role requirement (ID: {role_requirement_id}) for role \'{role.name}\' (ID: {role.id}).', mention_author=False)
         return True, False
     return False, True

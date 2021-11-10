@@ -9,13 +9,13 @@ from discord import TextChannel as _TextChannel
 from discord.ext.commands import Context as _Context
 import sqlalchemy as _db
 
-from . import database as _database
+from . import baseorm as _baseorm
 from .. import utils as _utils
 
 
 
 
-class ReactionRole(_database.DatabaseRowBase):
+class ReactionRole(_baseorm.DatabaseRowBase):
     ID_COLUMN_NAME: str = 'reaction_role_id'
     TABLE_NAME: str = 'reaction_role'
     __tablename__ = TABLE_NAME
@@ -37,6 +37,38 @@ class ReactionRole(_database.DatabaseRowBase):
 
     def __str__(self) -> str:
         return f'\'{self.name}\' (ID: {self.id})'
+
+
+    def add_change(self,
+                   role_id: int,
+                   add: bool,
+                   allow_toggle: bool,
+                   message_content: _Optional[str] = None,
+                   message_channel_id: _Optional[int] = None,
+                   message_embed: _Optional[str] = None
+    ) -> 'ReactionRoleChange':
+        change = ReactionRoleChange(
+            add=add,
+            allow_toggle=allow_toggle,
+            message_content=message_content,
+            message_channel_id=message_channel_id,
+            message_embed=message_embed,
+            role_id=role_id
+        )
+        change.reaction_role = self
+        change.create()
+        return change
+
+
+    def add_requirement(self,
+                        required_role_id: int
+    ) -> 'ReactionRoleRequirement':
+        requirement = ReactionRoleRequirement(
+            role_id=required_role_id
+        )
+        requirement.reaction_role = self
+        requirement.create()
+        return requirement
 
 
     async def apply_add(self, member: _Member) -> None:
@@ -86,49 +118,81 @@ class ReactionRole(_database.DatabaseRowBase):
         await member.remove_roles(*roles_to_remove)
 
 
-    async def try_activate(self, ctx: _Context) -> bool:
+    def remove_change(self,
+                      role_change_id: int
+                      ) -> None:
+        for change in self.role_changes:
+            if change.id == role_change_id:
+                change.delete()
+                return
+        raise Exception(f'There is no role change with ID \'{role_change_id}\' related to the Reaction Role {self}.')
+
+
+    def remove_requirement(self,
+                           role_requirement_id: int
+                           ) -> None:
+        for requirement in self.role_requirements:
+            if requirement.id == role_requirement_id:
+                requirement.delete()
+                return
+        raise Exception(f'There is no role requirement with ID \'{role_requirement_id}\' related to the Reaction Role {self}.')
+
+
+    async def try_activate(self,
+                           ctx: _Context
+                           ) -> bool:
         try:
             reaction_message = await ctx.guild.get_channel(self.channel_id).fetch_message(self.message_id)
             await reaction_message.add_reaction(self.reaction)
-            result = True
+            success = True
         except:
-            result = False
-        if result:
-            result = await self.update(is_active=True)
-        return result
+            success = False
+        if success:
+            try:
+                self.is_active = True
+                self.save()
+                success = True
+            except:
+                success = False
+        return success
 
 
-    async def try_deactivate(self, ctx: _Context) -> bool:
-        result = await self.update(is_active=False)
+    async def try_deactivate(self,
+                             ctx: _Context
+                             ) -> bool:
         try:
-            reaction_message = await ctx.guild.get_channel(self.channel_id).fetch_message(self.message_id)
-            await reaction_message.remove_reaction(self.reaction, ctx.guild.me)
+            self.is_active = False
+            self.save()
+            success = True
         except:
-            pass
-        return result
+            success = False
+        if success:
+            try:
+                reaction_message = await ctx.guild.get_channel(self.channel_id).fetch_message(self.message_id)
+                await reaction_message.remove_reaction(self.reaction, ctx.guild.me)
+            except:
+                pass
+        return success
 
 
-    @staticmethod
-    async def create(guild_id: int, reaction_channel_id: int, message_id: int, name: str, reaction: str, is_active: bool = False) -> _Optional['ReactionRole']:
-        record = await _database.insert_row(
-            ReactionRole.TABLE_NAME,
-            ReactionRole.ID_COLUMN_NAME,
-            guild_id=guild_id,
-            channel_id=reaction_channel_id,
-            message_id=message_id,
-            name=name,
-            reaction=reaction,
-            is_active=is_active,
-        )
-        if record:
-            return ReactionRole(record[0], guild_id, reaction_channel_id, message_id, name, reaction, is_active)
-        return None
+    def update(self,
+               channel_id: _Optional[int] = None,
+               message_id: _Optional[int] = None,
+               is_active: _Optional[bool] = None
+               ) -> None:
+        if channel_id is not None:
+            self.channel_id = channel_id
+        if message_id is not None:
+            self.message_id = message_id
+        if is_active is not None:
+            self.is_active = is_active
+        self.save()
 
 
 
 
 
-class ReactionRoleChange(_database.DatabaseRowBase):
+class ReactionRoleChange(_baseorm.DatabaseRowBase):
     ID_COLUMN_NAME: str = 'reaction_role_change_id'
     TABLE_NAME: str = 'reaction_role_change'
     __tablename__ = TABLE_NAME
@@ -152,7 +216,7 @@ class ReactionRoleChange(_database.DatabaseRowBase):
 
 
 
-class ReactionRoleRequirement(_database.DatabaseRowBase):
+class ReactionRoleRequirement(_baseorm.DatabaseRowBase):
     ID_COLUMN_NAME: str = 'reaction_role_requirement_id'
     TABLE_NAME: str = 'reaction_role_requirement'
     __tablename__ = TABLE_NAME
@@ -165,76 +229,3 @@ class ReactionRoleRequirement(_database.DatabaseRowBase):
 
     def __repr__(self) -> str:
         return f'<ReactionRoleRequirement id={self.id} reaction_role_id={self.reaction_role_id}>'
-
-
-
-
-
-# ---------- Testing ----------
-
-async def test() -> bool:
-    await _database.init()
-    try:
-        rr = await ReactionRole.create(896010670909304863, 896010670909304863, 896010670909304863, 'RR1234', '🙂')
-    except Exception as e:
-        return False
-
-    try:
-        await rr.update(message_id=896806211058532452, name='RR1345', reaction='🙃', is_active=False)
-    except Exception as e:
-        await rr.delete()
-        return False
-
-    try:
-        ch_1 = await rr.add_change(680621105853242345, True, False)
-    except Exception as e:
-        await rr.delete()
-        rr = None
-        return False
-
-    try:
-        await ch_1.update(role_id=680621105853242456, add=False, allow_toggle=True, message_channel_id=3456, message_content='Test')
-    except Exception as e:
-        await ch_1._delete()
-        await rr.delete()
-        return False
-
-    try:
-        await rr.remove_change(ch_1.id)
-        ch_1 = None
-    except Exception as e:
-        await ch_1._delete()
-        await rr.delete()
-        return False
-
-    try:
-        req_1 = await rr.add_requirement(76211058532452)
-    except Exception as e:
-        await rr.delete()
-        rr = None
-        return False
-
-    try:
-        await req_1.update(role_id=76211050000000)
-    except Exception as e:
-        await req_1._delete()
-        await rr.delete()
-        return False
-
-    try:
-        await rr.remove_requirement(req_1.id)
-        req_1 = None
-    except Exception as e:
-        await req_1._delete()
-        await rr.delete()
-        return False
-
-    ch_2 = await rr.add_change(2345, True, False)
-    req_2 = await rr.add_requirement(6789)
-
-    await rr.delete()
-    print('All tests ran sucessfully!')
-
-
-if __name__ == '__main__':
-    _asyncio.get_event_loop().run_until_complete(test())
