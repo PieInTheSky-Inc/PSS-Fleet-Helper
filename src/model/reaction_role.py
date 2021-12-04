@@ -9,13 +9,13 @@ from discord import TextChannel as _TextChannel
 from discord.ext.commands import Context as _Context
 import sqlalchemy as _db
 
-from . import baseorm as _baseorm
+from . import orm as _orm
 from .. import utils as _utils
 
 
 
 
-class ReactionRole(_baseorm.DatabaseRowBase):
+class ReactionRole(_orm.ModelBase):
     ID_COLUMN_NAME: str = 'reaction_role_id'
     TABLE_NAME: str = 'reaction_role'
     __tablename__ = TABLE_NAME
@@ -23,7 +23,7 @@ class ReactionRole(_baseorm.DatabaseRowBase):
     id = _db.Column(ID_COLUMN_NAME, _db.Integer, primary_key=True, autoincrement=True, nullable=False)
     channel_id = _db.Column('channel_id', _db.Integer, nullable=False)
     guild_id = _db.Column('guild_id', _db.Integer, nullable=False)
-    is_active = _db.Column('is_active', _db.Boolean, nullable=False)
+    is_active = _db.Column('is_active', _db.Boolean, nullable=False, default=False)
     message_id = _db.Column('message_id', _db.Integer, nullable=False)
     name = _db.Column('name', _db.Text, nullable=False)
     reaction = _db.Column('reaction', _db.Text, nullable=False)
@@ -71,7 +71,9 @@ class ReactionRole(_baseorm.DatabaseRowBase):
         return requirement
 
 
-    async def apply_add(self, member: _Member) -> None:
+    async def apply_add(self,
+                        member: _Member
+    ) -> None:
         roles_to_add = []
         roles_to_remove = []
         messages_to_post: _List[_Tuple[_TextChannel, str]] = []
@@ -103,7 +105,9 @@ class ReactionRole(_baseorm.DatabaseRowBase):
             await channel.send(text, embed=embed)
 
 
-    async def apply_remove(self, member: _Member) -> None:
+    async def apply_remove(self,
+                           member: _Member
+    ) -> None:
         roles_to_add = []
         roles_to_remove = []
         for change in self.role_changes:
@@ -120,7 +124,7 @@ class ReactionRole(_baseorm.DatabaseRowBase):
 
     def remove_change(self,
                       role_change_id: int
-                      ) -> None:
+    ) -> None:
         for change in self.role_changes:
             if change.id == role_change_id:
                 change.delete()
@@ -130,7 +134,7 @@ class ReactionRole(_baseorm.DatabaseRowBase):
 
     def remove_requirement(self,
                            role_requirement_id: int
-                           ) -> None:
+    ) -> None:
         for requirement in self.role_requirements:
             if requirement.id == role_requirement_id:
                 requirement.delete()
@@ -140,38 +144,27 @@ class ReactionRole(_baseorm.DatabaseRowBase):
 
     async def try_activate(self,
                            ctx: _Context
-                           ) -> bool:
+    ) -> bool:
         try:
             reaction_message = await ctx.guild.get_channel(self.channel_id).fetch_message(self.message_id)
             await reaction_message.add_reaction(self.reaction)
             success = True
         except:
             success = False
-        if success:
-            try:
-                self.is_active = True
-                self.save()
-                success = True
-            except:
-                success = False
+        self.is_active = success
         return success
 
 
     async def try_deactivate(self,
                              ctx: _Context
-                             ) -> bool:
+    ) -> bool:
         try:
-            self.is_active = False
-            self.save()
+            reaction_message = await ctx.guild.get_channel(self.channel_id).fetch_message(self.message_id)
+            await reaction_message.remove_reaction(self.reaction, ctx.guild.me)
             success = True
         except:
             success = False
-        if success:
-            try:
-                reaction_message = await ctx.guild.get_channel(self.channel_id).fetch_message(self.message_id)
-                await reaction_message.remove_reaction(self.reaction, ctx.guild.me)
-            except:
-                pass
+        self.is_active = not success
         return success
 
 
@@ -179,7 +172,7 @@ class ReactionRole(_baseorm.DatabaseRowBase):
                channel_id: _Optional[int] = None,
                message_id: _Optional[int] = None,
                is_active: _Optional[bool] = None
-               ) -> None:
+    ) -> None:
         if channel_id is not None:
             self.channel_id = channel_id
         if message_id is not None:
@@ -189,10 +182,28 @@ class ReactionRole(_baseorm.DatabaseRowBase):
         self.save()
 
 
+    @classmethod
+    def make(cls,
+             guild_id: int,
+             message_channel_id: int,
+             message_id: int,
+             name: str,
+             reaction: str
+    ) -> 'ReactionRole':
+        result = ReactionRole(
+            guild_id=guild_id,
+            channel_id=message_channel_id,
+            message_id=message_id,
+            name=name,
+            reaction=reaction,
+            )
+        return result
 
 
 
-class ReactionRoleChange(_baseorm.DatabaseRowBase):
+
+
+class ReactionRoleChange(_orm.ModelBase):
     ID_COLUMN_NAME: str = 'reaction_role_change_id'
     TABLE_NAME: str = 'reaction_role_change'
     __tablename__ = TABLE_NAME
@@ -213,10 +224,30 @@ class ReactionRoleChange(_baseorm.DatabaseRowBase):
         return f'<ReactionRoleChange id={self.id} reaction_role_id={self.reaction_role_id}>'
 
 
+    @classmethod
+    def make(cls,
+             add: bool,
+             allow_toggle: bool,
+             role_id: int,
+             message_channel_id: _Optional[int] = None,
+             message_content: _Optional[str] = None,
+             message_embed: _Optional[str] = None,
+    ) -> 'ReactionRoleChange':
+        result = ReactionRoleChange(
+            add=add,
+            allow_toggle=allow_toggle,
+            role_id=role_id,
+            message_channel_id=message_channel_id,
+            message_content=message_content,
+            message_embed=message_embed
+            )
+        return result
 
 
 
-class ReactionRoleRequirement(_baseorm.DatabaseRowBase):
+
+
+class ReactionRoleRequirement(_orm.ModelBase):
     ID_COLUMN_NAME: str = 'reaction_role_requirement_id'
     TABLE_NAME: str = 'reaction_role_requirement'
     __tablename__ = TABLE_NAME
@@ -229,3 +260,13 @@ class ReactionRoleRequirement(_baseorm.DatabaseRowBase):
 
     def __repr__(self) -> str:
         return f'<ReactionRoleRequirement id={self.id} reaction_role_id={self.reaction_role_id}>'
+
+
+    @classmethod
+    def make(cls,
+             role_id: int
+    ) -> 'ReactionRoleRequirement':
+        result = ReactionRoleRequirement(
+            role_id=role_id
+        )
+        return result

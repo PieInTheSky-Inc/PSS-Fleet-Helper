@@ -1,15 +1,13 @@
 from ..model.reaction_role import ReactionRole as _ReactionRole
 
 def test() -> None:
-    rr = _ReactionRole(
+    rr = _ReactionRole.make(
         guild_id=896010670909304863,
         channel_id=896010670909304863,
-        is_active=False,
         message_id=896010670909304863,
         name='RR1234',
         reaction='🙂'
     )
-    rr.create()
 
     try:
         rr.message_id = 896806211058532452

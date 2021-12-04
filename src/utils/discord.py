@@ -53,7 +53,7 @@ __DEFAULT_TRUE_VALUES: _List[str] = ['yes', 'y', 'true', '1', '👍']
 DEFAULT_INQUIRE_TIMEOUT: float = 120.0
 
 __RX_CHANNEL_MENTION: _re.Pattern = _re.compile('<#(\d+)>')
-__RX_EMOJI: _re.Pattern = _re.compile('<:\w+:(\d+)>')
+__RX_EMOJI: _re.Pattern = _re.compile('<a?:\w+:(\d+)>')
 __RX_MESSAGE_LINK: _re.Pattern = _re.compile('https://discord.com/channels/(\d+)/(\d+)/(\d+)/?')
 __RX_ROLE_MENTION: _re.Pattern = _re.compile('<@&(\d+)>')
 __RX_USER_MENTION: _re.Pattern = _re.compile('<@\!?(\d+)>')
@@ -827,7 +827,7 @@ async def inquire_for_true_false(ctx: _Context,
     return (await inquire_for_boolean(ctx, prompt_text, timeout=timeout, abort_text=abort_text, skip_text=skip_text))
 
 
-def create_substitutions(guild: _Guild = None, channel: _TextChannel = None, role: _Role = None, member: _Member = None) -> str:
+def create_substitutions(guild: _Guild = None, channel: _TextChannel = None, role: _Role = None, member: _Member = None) -> _Dict[str, str]:
     """
     Creates a dictionary of placeholders and their substitutions based on the provided Assets.
 
