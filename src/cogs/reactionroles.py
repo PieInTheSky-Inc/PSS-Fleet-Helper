@@ -524,7 +524,7 @@ async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reac
     message_id: int = None
     if reaction_role:
         await ctx.send(f'> Current channel is <#{reaction_role.channel_id}>.\n> Current message is {_utils.discord.create_discord_link(ctx.guild.id, reaction_role.channel_id, reaction_role.message_id)}')
-    prompt_base_lines = [f'Specify the full link to the {new_str} message, which the reaction shall be added to.']
+    prompt_base_lines = [f'Specify the full link to the {new_str}message, which the reaction shall be added to.']
     prompt_lines = []
     while not channel_id and not message_id:
         prompt_lines.extend(prompt_base_lines)
@@ -602,7 +602,7 @@ async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[
         else:
             prompt_text_lines.append('This is not a valid role mention or ID.')
 
-    allow_toggle, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you want to the role to be toggable? Removing one\'s reaction would then {not_add_text} the role again.', abort_text=abort_text)
+    allow_toggle, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you want to the role to be toggleable? Removing one\'s reaction would then {not_add_text} the role again.', abort_text=abort_text)
     if aborted:
         return None, aborted
 
