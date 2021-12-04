@@ -48,7 +48,7 @@ class ModelBase(_Record, _Generic[_T]):
 
 
     def delete(self, session: _scoped_session, commit: bool = True) -> None:
-        session.remove(self)
+        session.delete(self)
         if commit:
             session.commit()
 

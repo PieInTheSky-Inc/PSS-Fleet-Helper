@@ -47,27 +47,25 @@ class ReactionRole(_orm.ModelBase):
                    message_channel_id: _Optional[int] = None,
                    message_embed: _Optional[str] = None
     ) -> 'ReactionRoleChange':
-        change = ReactionRoleChange(
-            add=add,
-            allow_toggle=allow_toggle,
+        change = ReactionRoleChange.make(
+            add,
+            allow_toggle,
+            role_id,
             message_content=message_content,
             message_channel_id=message_channel_id,
             message_embed=message_embed,
-            role_id=role_id
         )
         change.reaction_role = self
-        change.create()
         return change
 
 
     def add_requirement(self,
                         required_role_id: int
     ) -> 'ReactionRoleRequirement':
-        requirement = ReactionRoleRequirement(
-            role_id=required_role_id
+        requirement = ReactionRoleRequirement.make(
+            required_role_id
         )
         requirement.reaction_role = self
-        requirement.create()
         return requirement
 
 
@@ -179,7 +177,6 @@ class ReactionRole(_orm.ModelBase):
             self.message_id = message_id
         if is_active is not None:
             self.is_active = is_active
-        self.save()
 
 
     @classmethod

@@ -28,6 +28,12 @@ from ..model import orm as _orm
 
 
 
+# ---------- Constants ----------
+
+_SESSION = _orm.create_session()
+
+
+
 # ---------- Cog ----------
 
 class ReactionRoleCog(_Cog):
@@ -35,15 +41,12 @@ class ReactionRoleCog(_Cog):
     Commands for configuring Reaction Roles on this server.
     """
 
-    __SESSION = _orm.create_session()
-
-
     def __init__(self, bot: _Bot):
         if not bot:
             raise ValueError('Parameter \'bot\' must not be None.')
         self.__bot: _Bot = bot
         self.__reaction_roles: _Dict[int, _List[_ReactionRole]] = {}
-        reaction_roles = _orm.get_all(_ReactionRole, ReactionRoleCog.__SESSION)
+        reaction_roles = _orm.get_all(_ReactionRole, _SESSION)
         for reaction_role in reaction_roles:
             self.__reaction_roles.setdefault(reaction_role.guild_id, []).append(reaction_role)
 
@@ -63,7 +66,7 @@ class ReactionRoleCog(_Cog):
         for reaction_role in reaction_roles:
             is_active = reaction_role.is_active
             message_id_match = reaction_role.message_id == payload.message_id
-            emoji_match = reaction_role.reaction == payload.emoji.name
+            emoji_match = reaction_role.reaction == payload.emoji.name or reaction_role.reaction == f'<:{payload.emoji.name}:{payload.emoji.id}>'
             if is_active and message_id_match and emoji_match:
                 member_meets_requirements = all(requirement.role_id in member_roles_ids for requirement in reaction_role.role_requirements)
                 if member_meets_requirements:
@@ -85,7 +88,7 @@ class ReactionRoleCog(_Cog):
         for reaction_role in reaction_roles:
             is_active = reaction_role.is_active
             message_id_match = reaction_role.message_id == payload.message_id
-            emoji_match = reaction_role.reaction == payload.emoji.name
+            emoji_match = reaction_role.reaction == payload.emoji.name or reaction_role.reaction == f'<:{payload.emoji.name}:{payload.emoji.id}>'
             if is_active and message_id_match and emoji_match:
                 member_meets_requirements = all(requirement.role_id in member_roles_ids for requirement in reaction_role.role_requirements)
                 if member_meets_requirements:
@@ -109,7 +112,7 @@ class ReactionRoleCog(_Cog):
             if reaction_role.is_active:
                 raise Exception(f'The Reaction Role {reaction_role} is already active.')
             if (await reaction_role.try_activate(ctx)):
-                reaction_role.save(ReactionRoleCog.__SESSION)
+                reaction_role.save(_SESSION)
                 await ctx.reply(f'Activated Reaction Role {reaction_role}', mention_author=False)
             else:
                 raise Exception(f'Failed to activate Reaction Role {reaction_role}.')
@@ -128,7 +131,7 @@ class ReactionRoleCog(_Cog):
             for reaction_role in reaction_roles:
                 if not (await reaction_role.try_activate(ctx)):
                     failed_reaction_roles.append(reaction_role)
-            ReactionRoleCog.__SESSION.commit()
+            _SESSION.commit()
             response_lines = [f'Activated {len(reaction_roles) - len(failed_reaction_roles)} of {len(reaction_roles)} Reaction Roles on this server.']
             if failed_reaction_roles:
                 response_lines.append('Could not activate the following roles:')
@@ -233,11 +236,14 @@ class ReactionRoleCog(_Cog):
             return
 
         reaction_role = _ReactionRole.make(ctx.guild.id, channel_id, message_id, name, emoji)
+        _SESSION.add(reaction_role)
         for role_reaction_change_def in role_reaction_changes:
-            reaction_role.add_change(*role_reaction_change_def)
+            role_change = reaction_role.add_change(*role_reaction_change_def)
+            _SESSION.add(role_change)
         for role_id in role_reaction_requirements:
-            reaction_role.add_requirement(role_id)
-        reaction_role.save(ReactionRoleCog.__SESSION)
+            role_requirement = reaction_role.add_requirement(role_id)
+            _SESSION.add(role_requirement)
+        reaction_role.save(_SESSION)
 
         self.__reaction_roles.setdefault(ctx.guild.id, []).append(reaction_role)
         await ctx.reply(f'Successfully set up a Reaction Role {reaction_role}.\nDon\'t forget to activate it!', mention_author=False)
@@ -254,7 +260,7 @@ class ReactionRoleCog(_Cog):
             if not reaction_role.is_active:
                 raise Exception(f'The Reaction Role {reaction_role} is already inactive.')
             if (await reaction_role.try_deactivate(ctx)):
-                reaction_role.save(ReactionRoleCog.__SESSION)
+                reaction_role.save(_SESSION)
                 await ctx.reply(f'Deactivated Reaction Role {reaction_role}.', mention_author=False)
             else:
                 raise Exception(f'Failed to deactivate Reaction Role {reaction_role}.')
@@ -273,7 +279,7 @@ class ReactionRoleCog(_Cog):
             for reaction_role in reaction_roles:
                 if not (await reaction_role.try_deactivate(ctx)):
                     failed_reaction_roles.append(reaction_role)
-            ReactionRoleCog.__SESSION.commit()
+            _SESSION.commit()
             response_lines = [f'Deactivated {len(reaction_roles) - len(failed_reaction_roles)} of {len(reaction_roles)} Reaction Roles on this server.']
             if failed_reaction_roles:
                 response_lines.append('Could not deactivate the following roles:')
@@ -300,20 +306,15 @@ class ReactionRoleCog(_Cog):
         reaction_role_text = await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, True)
         await ctx.reply('\n'.join(reaction_role_text), mention_author=False)
 
-        result = False
         delete = await _utils.discord.inquire_for_true_false(ctx, f'Do you really want to delete the Reaction Role {reaction_role} as defined above?')
         if delete:
             delete = await _utils.discord.inquire_for_true_false(ctx, f'Do you REALLY, REALLY want to delete the Reaction Role {reaction_role} as defined above?')
             if delete:
-                result = reaction_role.delete(ReactionRoleCog.__SESSION)
+                reaction_role.delete(_SESSION)
+                self.__reaction_roles[ctx.guild.id] = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id]]
+                await ctx.reply(f'Success. The Reaction Role {reaction_role} has been deleted.', mention_author=True)
         if not delete:
             await ctx.reply(f'Aborted. The Reaction Role {reaction_role} has not been deleted.', mention_author=True)
-            return
-        if result:
-            self.__reaction_roles[ctx.guild.id] = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id]]
-            await ctx.reply(f'Success. The Reaction Role {reaction_role} has been deleted.', mention_author=True)
-        else:
-            await ctx.reply(f'Failed. The Reaction Role {reaction_role} has not been deleted.', mention_author=True)
 
 
     @_guild_only()
@@ -379,7 +380,7 @@ class ReactionRoleCog(_Cog):
             if not keep_editing:
                 keep_editing = False
         try:
-            reaction_role.save(ReactionRoleCog.__SESSION)
+            reaction_role.save(_SESSION)
         except:
             await ctx.reply(f'```Could not save the changes made to Reaction Role {reaction_role}.```', mention_author=True)
             return
@@ -436,7 +437,8 @@ async def add_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_tex
     if aborted:
         return False, aborted
 
-    role_change = await reaction_role.add_change(*role_change_definition)
+    role_change = reaction_role.add_change(*role_change_definition)
+    role_change.save(_SESSION)
     await ctx.reply(f'```Added role change with ID \'{role_change.id}\' to Reaction Role {reaction_role}.```', mention_author=False)
     return True, aborted
 
@@ -450,6 +452,7 @@ async def add_role_requirement(reaction_role: _ReactionRole, ctx: _Context, abor
         return False, aborted
 
     role_requirement = await reaction_role.add_requirement(required_role_id)
+    role_requirement.save(_SESSION)
     await ctx.reply(f'```Added role requirement with ID \'{role_requirement.id}\' to Reaction Role {reaction_role}.```', mention_author=False)
     return True, aborted
 
@@ -703,7 +706,7 @@ async def inquire_for_role_requirement_add(ctx: _Context, abort_text: str) -> _T
     return role.id, aborted
 
 
-async def inquire_for_role_requirement_remove(ctx: _Context, reaction_role_requirements: _List[_ReactionRoleRequirement], abort_text: str) -> int:
+async def inquire_for_role_requirement_remove(ctx: _Context, reaction_role_requirements: _List[_ReactionRoleRequirement], abort_text: str) -> _ReactionRoleRequirement:
     current_role_requirements = {requirement.id: requirement for requirement in reaction_role_requirements}
     options = {requirement_id: _ReactionRoleRequirementConverter.to_text(ctx, requirement) for requirement_id, requirement in current_role_requirements.items()}
     selector = _utils.Selector[str](ctx, None, options)
@@ -721,9 +724,9 @@ async def remove_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_
     """
     role_change = await inquire_for_role_change_remove(ctx, reaction_role.role_changes, abort_text)
     if role_change:
-        role_change_id = role_change.id
         role: _Role = ctx.guild.get_role(role_change.role_id)
-        reaction_role.remove_change(role_change_id)
+        role_change_id = role_change.id
+        role_change.delete(_SESSION)
         await ctx.reply(f'Removed role change (ID: {role_change_id}) for role \'{role.name}\' (ID: {role.id}).', mention_author=False)
         return True, False
     return False, True
@@ -735,9 +738,9 @@ async def remove_role_requirement(reaction_role: _ReactionRole, ctx: _Context, a
     """
     role_requirement = await inquire_for_role_requirement_remove(ctx, reaction_role.role_requirements, abort_text)
     if role_requirement:
-        role_requirement_id = role_requirement.id
         role: _Role = ctx.guild.get_role(role_requirement.role_id)
-        reaction_role.remove_requirement(role_requirement_id)
+        role_requirement_id = role_requirement.id
+        role_requirement.delete(_SESSION)
         await ctx.reply(f'Removed role requirement (ID: {role_requirement_id}) for role \'{role.name}\' (ID: {role.id}).', mention_author=False)
         return True, False
     return False, True
