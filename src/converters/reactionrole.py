@@ -3,20 +3,11 @@ from typing import List as _List
 from discord import Guild as _Guild
 from discord.ext.commands import Context as _Context
 
-from model import ReactionRole as _ReactionRole
-from model import ReactionRoleChange as _ReactionRoleChange
-from model import ReactionRoleRequirement as _ReactionRoleRequirement
-from model import utils as _utils
+from .. import utils as _utils
+from ..model import ReactionRole as _ReactionRole
+from ..model import ReactionRoleChange as _ReactionRoleChange
+from ..model import ReactionRoleRequirement as _ReactionRoleRequirement
 
-
-
-class ConverterBase():
-    def __init__(self) -> None:
-        pass
-
-
-    def to_text(self) -> str:
-        pass
 
 
 class ReactionRoleConverter():
@@ -50,7 +41,7 @@ class ReactionRoleConverter():
                 send_message_str = f' and send a message to {message_channel.mention}{review_text}'
                 if include_messages:
                     review_messages.append((i, role_change.message_content))
-            allow_toggle_text = 'toggable' if role_change.allow_toggle else 'non-toggable'
+            allow_toggle_text = 'toggleable' if role_change.allow_toggle else 'non-toggleable'
             details.append(f'{i} = {add_text} {allow_toggle_text} role `{role.name}`{send_message_str}')
         result = ['\n'.join(details)]
         for role_change_number, msg in review_messages:
@@ -69,7 +60,7 @@ class ReactionRoleChangeConverter():
         if  reaction_role_change.message_channel_id:
             message_channel = ctx.guild.get_channel(reaction_role_change.message_channel_id)
             send_message_str = f' and send a message to #{message_channel.name}'
-        allow_toggle_text = 'toggable' if reaction_role_change.allow_toggle else 'non-toggable'
+        allow_toggle_text = 'toggleable' if reaction_role_change.allow_toggle else 'non-toggleable'
         result = f'{add_text} {allow_toggle_text} role \'{role.name}\' (ID: {role.id}){send_message_str}'
         return result
 

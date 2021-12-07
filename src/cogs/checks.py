@@ -5,14 +5,14 @@ from discord.ext.commands import Context as _Context
 from discord.ext.commands import is_owner as _is_owner
 from discord.ext.commands import group as _command_group
 
-from model import utils as _utils
-
-
+from .. import utils as _utils
 
 
 
 class ChecksCog(_Cog):
     def __init__(self, bot: _Bot) -> None:
+        if not bot:
+            raise ValueError('Parameter \'bot\' must not be None.')
         self.__bot = bot
 
 

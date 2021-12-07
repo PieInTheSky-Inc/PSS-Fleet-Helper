@@ -5,7 +5,7 @@ from . import database as _database
 from .reaction_role import ReactionRole as _ReactionRole
 from .reaction_role import ReactionRoleChange as _ReactionRoleChange
 from .reaction_role import ReactionRoleRequirement as _ReactionRoleRequirement
-from . import utils as _utils
+from .. import utils as _utils
 
 
 # ---------- Initialization ----------

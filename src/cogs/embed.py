@@ -7,12 +7,14 @@ from discord.ext.commands import Cog as _Cog
 from discord.ext.commands import Context as _Context
 from discord.ext.commands import group as _command_group
 
-from model import utils as _utils
+from .. import utils as _utils
 
 
 
 class EmbedCog(_Cog):
     def __init__(self, bot: _Bot) -> None:
+        if not bot:
+            raise ValueError('Parameter \'bot\' must not be None.')
         self.__bot = bot
 
 

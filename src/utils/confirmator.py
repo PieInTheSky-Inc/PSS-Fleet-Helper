@@ -1,8 +1,13 @@
 import asyncio as _asyncio
 from typing import Dict as _Dict
 
-import discord as _discord
-from discord.ext import commands as _commands
+from discord import Message as _Message
+from discord import Reaction as _Reaction
+from discord import User as _User
+from discord.errors import NotFound as _NotFound
+from discord.ext.commands import Context as _Context
+
+from .discord import DEFAULT_INQUIRE_TIMEOUT as _DEFAULT_INQUIRE_TIMEOUT
 
 
 # ---------- Classes ----------
@@ -10,14 +15,14 @@ from discord.ext import commands as _commands
 class Confirmator():
     reactions: _Dict[str, bool] = {'✅': True, '❌': False}
 
-    def __init__(self, ctx: _commands.Context, confirmation_message: str) -> None:
-        self.__context: _commands.Context = ctx
+    def __init__(self, ctx: _Context, confirmation_message: str) -> None:
+        self.__context: _Context = ctx
         self.__confirmation_message: str = confirmation_message
-        self.__reply: _discord.Message = None
+        self.__reply: _Message = None
 
 
     async def wait_for_option_selection(self) -> bool:
-        def emoji_selection_check(reaction: _discord.Reaction, user: _discord.User) -> bool:
+        def emoji_selection_check(reaction: _Reaction, user: _User) -> bool:
             if user != self.__context.bot.user:
                 emoji = str(reaction.emoji)
                 if (emoji in Confirmator.reactions.keys() and self.__reply.id == reaction.message.id):
@@ -27,7 +32,7 @@ class Confirmator():
         await self.__post_confirmation_message()
 
         try:
-            reaction, _ = await self.__context.bot.wait_for('reaction_add', timeout=60.0, check=emoji_selection_check)
+            reaction, _ = await self.__context.bot.wait_for('reaction_add', timeout=_DEFAULT_INQUIRE_TIMEOUT, check=emoji_selection_check)
         except _asyncio.TimeoutError:
             reaction = None
 
@@ -40,7 +45,7 @@ class Confirmator():
         if result:
             try:
                 await self.__reply.delete()
-            except _discord.errors.NotFound:
+            except _NotFound:
                 pass
         else:
             await self.__reply.edit('Command cancelled')
@@ -48,7 +53,7 @@ class Confirmator():
         return result
 
 
-    async def __post_confirmation_message(self) -> _discord.Message:
+    async def __post_confirmation_message(self) -> _Message:
         self.__reply = await self.__context.reply(f'{self.__confirmation_message}\n\nDo you want to proceed?', mention_author=False)
         for reaction in Confirmator.reactions.keys():
             await self.__reply.add_reaction(reaction)

@@ -1,4 +1,5 @@
 from datetime import datetime as _datetime
+import os as _os
 from typing import Any as _Any
 from typing import Dict as _Dict
 from typing import List as _List
@@ -9,7 +10,7 @@ from threading import Lock as _Lock
 import asyncpg as _asyncpg
 
 from . import model_settings as _model_settings
-from . import utils as _utils
+from .. import utils as _utils
 
 
 # ---------- Typehints ----------
@@ -18,45 +19,15 @@ from . import utils as _utils
 ColumnDefinition = _Tuple[str, str, bool, bool, _Any]
 
 
-
-
-
 # ---------- Constants ----------
 
 __CONNECTION_POOL: _asyncpg.pool.Pool = None
 __CONNECTION_POOL_LOCK: _Lock = _Lock()
 
+DATABASE_SSL_MODE: str = _os.environ.get('DATABASE_SSL_MODE', 'require')
+DATABASE_URL: str = f'{_os.environ.get("DATABASE_URL")}?sslmode={DATABASE_SSL_MODE}'
+
 TABLE_NAME_BOT_SETTINGS: str = 'bot_settings'
-
-
-
-
-
-# ---------- Classes ----------
-
-class DatabaseRowBase():
-    def __init__(self, id: int) -> None:
-        self._id: int = id
-        self._deleted: bool = False
-
-
-    @property
-    def deleted(self) -> bool:
-        return self._deleted
-
-    @property
-    def id(self) -> int:
-        return self._id
-
-
-    def _assert_not_deleted(self) -> bool:
-        if self.deleted:
-            raise Exception(f'This object has been deleted! (ID: {self.id}')
-
-
-    def _set_deleted(self) -> None:
-        self._assert_not_deleted()
-        self._deleted = True
 
 
 
