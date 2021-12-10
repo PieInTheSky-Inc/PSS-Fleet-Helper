@@ -25,7 +25,7 @@ __CONNECTION_POOL: _asyncpg.pool.Pool = None
 __CONNECTION_POOL_LOCK: _Lock = _Lock()
 
 DATABASE_SSL_MODE: str = _os.environ.get('DATABASE_SSL_MODE', 'require')
-DATABASE_URL: str = f'{_os.environ.get("DATABASE_URL")}?sslmode={DATABASE_SSL_MODE}'
+DATABASE_URL: str = f'{_os.environ.get("DATABASE_URL")}?sslmode={DATABASE_SSL_MODE}'.replace('postgres://', 'postgresql://')
 
 TABLE_NAME_BOT_SETTINGS: str = 'bot_settings'
 
