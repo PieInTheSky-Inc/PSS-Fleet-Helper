@@ -1,5 +1,6 @@
 aiohttp[speedups]
 asyncpg
 emoji
+psycopg2
 py-cord
 sqlalchemy
