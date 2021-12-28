@@ -1,0 +1,1 @@
+TIMESTAMP_FORMAT_PSS = '%Y-%m-%dT%H:%M:%S'

@@ -4,5 +4,6 @@ from .selector import Selector
 from . import database
 from . import datetime
 from . import discord
+from . import format
 from . import web
 from .miscellaneous import *

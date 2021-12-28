@@ -15,7 +15,7 @@ from .model import setup_model as _setup_model
 # ---------- Setup ----------
 
 BOT = _Bot(
-    _when_mentioned_or('vivi '),
+    _when_mentioned_or(*_bot_settings.PREFIXES),
     intents=_discord.Intents.all(),
     activity=_discord.activity.Activity(type=_discord.ActivityType.playing, name='vivi help')
 )
@@ -56,6 +56,7 @@ async def on_ready() -> None:
 async def initialize() -> None:
     await _setup_model()
     BOT.load_extension('src.cogs.about')
+    BOT.load_extension('src.cogs.chatlog')
     BOT.load_extension('src.cogs.checks')
     BOT.load_extension('src.cogs.embed')
     BOT.load_extension('src.cogs.roles')

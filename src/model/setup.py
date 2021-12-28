@@ -2,6 +2,7 @@ import asyncio as _asyncio
 from typing import Callable as _Callable
 
 from . import database as _database
+from .chat_log import PssChatLog as _PssChatLog
 from .reaction_role import ReactionRole as _ReactionRole
 from .reaction_role import ReactionRoleChange as _ReactionRoleChange
 from .reaction_role import ReactionRoleRequirement as _ReactionRoleRequirement
@@ -25,6 +26,7 @@ async def __setup_db_schema() -> None:
         ('0.1.0', __create_db_schema),
         ('0.2.0', __update_db_schema_0_2_0),
         ('0.3.0', __update_db_schema_0_3_0),
+        ('0.4.0', __update_db_schema_0_4_0),
     ]
     for version, callable in init_functions:
         if not (await __update_schema(version, callable)):
@@ -33,27 +35,59 @@ async def __setup_db_schema() -> None:
     print('DB initialization succeeded')
 
 
+async def __update_db_schema_0_4_0() -> bool:
+    target_version = '0.4.0'
+    column_definitions_chat_log = [
+        (_PssChatLog.ID_COLUMN_NAME, 'SERIAL', True, True, None),
+        ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
+        ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
+        ('guild_id', 'BIGINT', False, True, None),
+        ('channel_id', 'BIGINT', False, True, None),
+        ('pss_channel_key', 'TEXT', False, True, None),
+        ('last_pss_message_id', 'BIGINT', False, True, 0),
+        ('name', 'TEXT', False, True, None),
+    ]
+
+    schema_version = await _database.get_schema_version()
+    if schema_version:
+        compare_0_4_0 = _utils.compare_versions(schema_version, target_version)
+        if compare_0_4_0 < 1:
+            return True
+
+    print(f'[update_schema_0_4_0] Updating to database schema v{target_version}')
+
+    success_chat_log = await _database.try_create_table(_PssChatLog.TABLE_NAME, column_definitions_chat_log)
+    if not success_chat_log:
+        print(f'[update_schema_0_4_0] Could not create table \'{_PssChatLog.TABLE_NAME}\'')
+        return False
+
+    success = await _database.try_set_schema_version(target_version)
+    return success
+
+
 async def __update_db_schema_0_3_0() -> bool:
+    target_version = '0.3.0'
     column_definition = ('message_embed', 'TEXT', False, False, None)
 
     schema_version = await _database.get_schema_version()
     if schema_version:
-        compare_0_3_0 = _utils.compare_versions(schema_version, '0.3.0')
+        compare_0_3_0 = _utils.compare_versions(schema_version, target_version)
         if compare_0_3_0 < 1:
             return True
 
-    print(f'[update_schema_0_3_0] Updating to database schema v0.3.0')
+    print(f'[update_schema_0_3_0] Updating to database schema v{target_version}')
 
     success_reaction_role = await _database.try_add_column(_ReactionRoleChange.TABLE_NAME, *column_definition)
     if not success_reaction_role:
         print(f'[update_schema_0_3_0] Could not add column \'{column_definition[0]}\' to table \'{_ReactionRoleChange.TABLE_NAME}\'')
         return False
 
-    success = await _database.try_set_schema_version('0.3.0')
+    success = await _database.try_set_schema_version(target_version)
     return success
 
 
 async def __update_db_schema_0_2_0() -> bool:
+    target_version = '0.2.0'
     column_definitions_reaction_role = [
         (_ReactionRole.ID_COLUMN_NAME, 'SERIAL', True, True, None),
         ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
@@ -86,11 +120,11 @@ async def __update_db_schema_0_2_0() -> bool:
 
     schema_version = await _database.get_schema_version()
     if schema_version:
-        compare_0_2_0 = _utils.compare_versions(schema_version, '0.2.0')
+        compare_0_2_0 = _utils.compare_versions(schema_version, target_version)
         if compare_0_2_0 < 1:
             return True
 
-    print(f'[update_schema_0_2_0] Updating to database schema v0.2.0')
+    print(f'[update_schema_0_2_0] Updating to database schema v{target_version}')
 
     success_reaction_role = await _database.try_create_table(_ReactionRole.TABLE_NAME, column_definitions_reaction_role)
     if not success_reaction_role:
@@ -110,11 +144,12 @@ async def __update_db_schema_0_2_0() -> bool:
         await _database.drop_table(_ReactionRoleChange.TABLE_NAME)
         return False
 
-    success = await _database.try_set_schema_version('0.2.0')
+    success = await _database.try_set_schema_version(target_version)
     return success
 
 
 async def __create_db_schema() -> bool:
+    target_version = '0.1.0'
     column_definition_bot_settings = [
         ('setting_name', 'TEXT' , True, True, None),
         ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
@@ -128,18 +163,18 @@ async def __create_db_schema() -> bool:
 
     schema_version = await _database.get_schema_version()
     if schema_version:
-        compare_0_1_0 = _utils.compare_versions(schema_version, '0.1.0')
+        compare_0_1_0 = _utils.compare_versions(schema_version, target_version)
         if compare_0_1_0 < 1:
             return True
 
-    print(f'[create_schema] Creating database schema v0.1.0')
+    print(f'[create_schema] Creating database schema v{target_version}')
 
     success_bot_settings = await _database.try_create_table(_database.TABLE_NAME_BOT_SETTINGS, column_definition_bot_settings)
     if not success_bot_settings:
         print(f'[create_schema] Could not create table \'{_database.TABLE_NAME_BOT_SETTINGS}\'')
         return False
 
-    success = await _database.try_set_schema_version('0.1.0')
+    success = await _database.try_set_schema_version(target_version)
     return success
 
 
