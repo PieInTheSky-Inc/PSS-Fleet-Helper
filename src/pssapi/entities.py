@@ -98,6 +98,93 @@ class PssAlliance(PssAllianceRaw):
 
 
 
+class PssMessage(PssEntityBase):
+    def __init__(self, message_info: _Dict[str, _Any]) -> None:
+        self.__message_id: int = _convert.str_to_int(message_info.get('MessageId'))
+        self.__activity_argument: str = message_info.get('ActivityArgument')
+        self.__activity_type: _enums.ActivityType = _enums.from_str(message_info.get('ActivityType'))
+        self.__alliance_id: int = _convert.str_to_int(message_info.get('AllianceId'))
+        self.__alliance_name: str = message_info.get('AllianceName')
+        self.__argument: str = message_info.get('Argument')
+        self.__border_sprite_id: int = _convert.str_to_int(message_info.get('BorderSpriteId'))
+        self.__channel_id: int = _convert.str_to_int(message_info.get('ChannelId'))
+        self.__message: str = message_info.get('Message')
+        self.__message_date: _datetime = _convert.str_to_datetime(message_info.get('MessageDate'))
+        self.__message_type: _enums.MessageType = _enums.from_str(message_info.get('MessageType'))
+        self.__ship_design_id: int = _convert.str_to_int(message_info.get('ShipDesignId'))
+        self.__trophy: int = _convert.str_to_int(message_info.get('Trophy'))
+        self.__user_id: int = _convert.str_to_int(message_info.get('UserId'))
+        self.__user_name: str = message_info.get('UserName')
+        self.__user_sprite_id: int = _convert.str_to_int(message_info.get('UserSpriteId'))
+
+
+    @property
+    def activity_argument(self) -> int:
+        return self.__activity_argument
+
+    @property
+    def activity_type(self) -> _enums.ActivityType:
+        return self.__activity_type
+
+    @property
+    def alliance_id(self) -> int:
+        return self.__alliance_id
+
+    @property
+    def alliance_name(self) -> str:
+        return self.__alliance_name
+
+    @property
+    def argument(self) -> str:
+        return self.__argument
+
+    @property
+    def border_sprite_id(self) -> int:
+        return self.__border_sprite_id
+
+    @property
+    def channel_id(self) -> int:
+        return self.__channel_id
+
+    @property
+    def message(self) -> str:
+        return self.__message
+
+    @property
+    def message_date(self) -> _datetime:
+        return self.__message_date
+
+    @property
+    def message_id(self) -> int:
+        return self.__message_id
+
+    @property
+    def message_type(self) -> _enums.MessageType:
+        return self.__message_type
+
+    @property
+    def ship_design_id(self) -> int:
+        return self.__ship_design_id
+
+    @property
+    def trophy(self) -> int:
+        return self.__trophy
+
+    @property
+    def user_id(self) -> int:
+        return self.__user_id
+
+    @property
+    def user_name(self) -> str:
+        return self.__user_name
+
+    @property
+    def user_sprite_id(self) -> int:
+        return self.__user_sprite_id
+
+
+
+
 
 class PssUserRaw(PssEntityBase):
     def __init__(self, user_info: _Dict[str, _Any]) -> None:
