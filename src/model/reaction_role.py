@@ -1,4 +1,3 @@
-import asyncio as _asyncio
 from typing import Iterable as _Iterable
 from typing import List as _List
 from typing import Optional as _Optional
