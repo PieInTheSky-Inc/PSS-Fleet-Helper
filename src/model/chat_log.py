@@ -1,17 +1,6 @@
-from typing import Iterable as _Iterable
-from typing import List as _List
-from typing import Optional as _Optional
-from typing import Tuple as _Tuple
-
-from discord import Member as _Member
-from discord import TextChannel as _TextChannel
-from discord.ext.commands import Context as _Context
 import sqlalchemy as _db
 
 from . import orm as _orm
-from .. import utils as _utils
-
-
 
 
 
