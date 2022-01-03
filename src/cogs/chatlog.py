@@ -51,8 +51,9 @@ class ChatLogCog(_Cog):
     @_tasks.loop(seconds=__CHAT_LOG_INTERVAL)
     async def log_chat(self):
         utc_now = _utils.datetime.get_utc_now()
+        session = _orm.create_session()
         access_token = await _login()
-        pss_chat_logs = _orm.get_all(_PssChatLog, _SESSION)
+        pss_chat_logs = _orm.get_all(_PssChatLog, session)
         channel_keys: _Dict[str, _List[_PssChatLog]] = {}
         for pss_chat_log in pss_chat_logs:
             channel_keys.setdefault(pss_chat_log.pss_channel_key, []).append(pss_chat_log)
@@ -77,7 +78,7 @@ class ChatLogCog(_Cog):
                     if lines:
                         await _utils.discord.send_lines_to_channel(channel, lines)
                         pss_chat_log.last_pss_message_id = max(message.message_id for message in messages)
-                        pss_chat_log.save(_SESSION)
+                        pss_chat_log.save(session)
             if channel_key_count > 1:
                 await _asyncio.sleep(delay)
 
@@ -107,9 +108,10 @@ class ChatLogCog(_Cog):
         Examples:
           vivi chatlog add public #log Public Chat - Adds a chat logger for the public chat that will post to the channel #log
         """
+        session = _orm.create_session()
         log_channel = _PssChatLog.make(ctx.guild.id, channel.id, channel_key, name)
-        log_channel.create(_SESSION)
-        await _utils.discord.reply_lines(ctx, f'Posting messages from channel \'{channel_key}\' to {channel.mention}.')
+        log_channel.create(session)
+        await _utils.discord.reply(ctx, f'Posting messages from channel \'{channel_key}\' to {channel.mention}.')
 
 
     @base.command(name='edit', brief='Edit chat logger')
@@ -126,8 +128,9 @@ class ChatLogCog(_Cog):
         Examples:
           vivi chatlog edit 1 - Edits the chat logger with ID '1' on this server.
         """
+        session = _orm.create_session()
         called_by_owner = await self.bot.is_owner(ctx.author)
-        pss_chat_log: _PssChatLog = _orm.get_query(_PssChatLog, _SESSION).filter_by(id=logger_id).first()
+        pss_chat_log: _PssChatLog = _orm.get_query(_PssChatLog, session).filter_by(id=logger_id).first()
         if not pss_chat_log or (pss_chat_log.guild_id != ctx.guild.id and not called_by_owner):
             raise Exception(f'A chat log with the ID {logger_id} does not exist on this server.')
 
@@ -136,21 +139,21 @@ class ChatLogCog(_Cog):
         await ctx.reply('\n'.join(definition_lines), mention_author=False)
 
         prompt_text = f'Please enter a new [channel_key]'
-        new_channel_key, aborted, skipped_new_channel_key = await _utils.discord.inquire_for_text(ctx, prompt_text)
+        new_channel_key, aborted, skipped_new_channel_key = await _utils.discord.inquire_for_text(ctx, prompt_text, abort_text='Aborted', skip_text='Skipped.')
 
         if aborted:
             await _utils.discord.reply(ctx, f'The request has been cancelled.')
             return
 
         prompt_text = f'Please enter a new [channel]'
-        new_channel, aborted, skipped_new_channel = await _utils.discord.inquire_for_text_channel(ctx, prompt_text)
+        new_channel, aborted, skipped_new_channel = await _utils.discord.inquire_for_text_channel(ctx, prompt_text, abort_text='Aborted', skip_text='Skipped.')
 
         if aborted:
             await _utils.discord.reply(ctx, f'The request has been cancelled.')
             return
 
         prompt_text = f'Please enter a new [name]'
-        new_name, aborted, skipped_new_name = await _utils.discord.inquire_for_text(ctx, prompt_text)
+        new_name, aborted, skipped_new_name = await _utils.discord.inquire_for_text(ctx, prompt_text, abort_text='Aborted', skip_text='Skipped.')
 
         if aborted:
             await _utils.discord.reply(ctx, f'The request has been cancelled.')
@@ -162,8 +165,8 @@ class ChatLogCog(_Cog):
             pss_chat_log.channel_id = new_channel.id
         if new_name and not skipped_new_name:
             pss_chat_log.name = new_name
-        if _SESSION.is_modified(pss_chat_log):
-            pss_chat_log.save()
+        if session.is_modified(pss_chat_log):
+            pss_chat_log.save(session)
             lines = [f'The chat logger has been edited.']
             lines.extend((await converter.to_text(called_by_owner, self.bot)))
             await _utils.discord.reply_lines(ctx, lines)
@@ -180,7 +183,8 @@ class ChatLogCog(_Cog):
           vivi chatlog list
         """
         if ctx.invoked_subcommand is None:
-            pss_chat_logs = _orm.get_all(_PssChatLog, _SESSION)
+            session = _orm.create_session()
+            pss_chat_logs = _orm.get_all(_PssChatLog, session)
             lines = ['__Listing chat loggers for this Discord server__']
             for pss_chat_log in pss_chat_logs:
                 converter = _PssChatLogConverter(pss_chat_log)
@@ -203,7 +207,8 @@ class ChatLogCog(_Cog):
         Usage:
           vivi chatlog list all
         """
-        pss_chat_logs = _orm.get_all(_PssChatLog, _SESSION)
+        session = _orm.create_session()
+        pss_chat_logs = _orm.get_all(_PssChatLog, session)
         lines = ['__Listing all chat loggers__']
         for pss_chat_log in pss_chat_logs:
             converter = _PssChatLogConverter(pss_chat_log)
@@ -231,8 +236,9 @@ class ChatLogCog(_Cog):
         Examples:
           vivi chatlog remove 1 - Removes the chat logger with the ID '1'.
         """
+        session = _orm.create_session()
         called_by_owner = await self.bot.is_owner(ctx.author)
-        pss_chat_log: _PssChatLog = _orm.get_query(_PssChatLog, _SESSION).filter_by(id=logger_id).first()
+        pss_chat_log: _PssChatLog = _orm.get_query(_PssChatLog, session).filter_by(id=logger_id).first()
         if not pss_chat_log or (pss_chat_log.guild_id != ctx.guild.id and not called_by_owner):
             raise Exception(f'A chat log with the ID {logger_id} does not exist on this server.')
 
@@ -246,7 +252,7 @@ class ChatLogCog(_Cog):
         if aborted:
             await _utils.discord.reply(ctx, f'The request has been cancelled.')
         elif remove_log:
-            pss_chat_log.delete(_SESSION)
+            pss_chat_log.delete(session)
             await _utils.discord.reply(ctx, f'The chat log has been deleted.')
         else:
             await _utils.discord.reply(ctx, f'The chat log has not been deleted.')
