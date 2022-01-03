@@ -30,7 +30,7 @@ _SESSION = _orm.create_session()
 # ---------- Cog ----------
 
 class ChatLogCog(_Cog):
-    __CHAT_LOG_INTERVAL: float = 60.0
+    __CHAT_LOG_INTERVAL: float = 30.0
 
     def __init__(self, bot: _Bot) -> None:
         if not bot:
@@ -81,45 +81,67 @@ class ChatLogCog(_Cog):
                 await _asyncio.sleep(delay)
 
 
-    @_command_group(name='chatlog', invoke_without_command=True)
+    @_command_group(name='chatlog', brief='Configure Chat Logging', invoke_without_command=True)
     async def base(self, ctx: _Context) -> None:
         """
+        Configure chat logging on this server. Check out the sub commands.
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help('chatlog')
 
 
-    @base.command(name='add')
+    @base.command(name='add', brief='Add chat logger')
     async def add(self, ctx: _Context, channel_key: str, channel: _TextChannel, *, name: str) -> None:
         """
+        Add a chat logger to this server.
+
+        Usage:
+          vivi chatlog add [channel_key] [channel] [name]
+
+        Parameters:
+          channel_key: Mandatory. The channel key of the PSS chat channel to be logged.
+          channel:     Mandatory. The channel the PSS chat shall be logged to.
+          name:        Mandatory. A name for this logger to recognize it.
+
+        Examples:
+          vivi chatlog add public #log Public Chat - Adds a chat logger for the public chat that will post to the channel #log
         """
         log_channel = _PssChatLog.make(ctx.guild.id, channel.id, channel_key, name)
         log_channel.create(_SESSION)
         await ctx.reply(f'Posting messages from channel \'{channel_key}\' to {channel.mention}.', mention_author=False)
 
 
-    @base.group(name='list', invoke_without_command=True)
+    @base.group(name='list', brief='List chat loggers for this server', invoke_without_command=True)
     async def list(self, ctx: _Context) -> None:
         """
+        Lists all chat logger configured on this server.
+
+        Usage:
+          vivi chatlog list
         """
-        pss_chat_logs = _orm.get_all(_PssChatLog, _SESSION)
-        lines = ['__Listing chat loggers for this Discord server__']
-        for pss_chat_log in pss_chat_logs:
-            converter = _PssChatLogConverter(pss_chat_log)
-            definition_lines = await converter.to_text(False)
-            lines.extend(definition_lines)
-            lines.append('_ _')
-        if len(lines) > 1:
-            lines = lines[:-1]
-        else:
-            lines.append('There are no chat loggers configured for this server.')
-        await ctx.reply('\n'.join(lines), mention_author=False)
+        if ctx.invoked_subcommand is None:
+            pss_chat_logs = _orm.get_all(_PssChatLog, _SESSION)
+            lines = ['__Listing chat loggers for this Discord server__']
+            for pss_chat_log in pss_chat_logs:
+                converter = _PssChatLogConverter(pss_chat_log)
+                definition_lines = await converter.to_text(False)
+                lines.extend(definition_lines)
+                lines.append('_ _')
+            if len(lines) > 1:
+                lines = lines[:-1]
+            else:
+                lines.append('There are no chat loggers configured for this server.')
+            await ctx.reply('\n'.join(lines), mention_author=False)
 
 
     @_is_owner()
-    @list.command(name='all', hidden=True)
+    @list.command(name='all', brief='List all chat loggers', hidden=True)
     async def list_all(self, ctx: _Context) -> None:
         """
+        Lists all chat logger configured on any server.
+
+        Usage:
+          vivi chatlog list all
         """
         pss_chat_logs = _orm.get_all(_PssChatLog, _SESSION)
         lines = ['__Listing all chat loggers__']
@@ -135,14 +157,24 @@ class ChatLogCog(_Cog):
         await ctx.reply('\n'.join(lines), mention_author=False)
 
 
-    @base.command(name='remove', aliases=['delete'])
-    async def remove(self, ctx: _Context, log_id: int) -> None:
+    @base.command(name='remove', brief='Remove chat logger', aliases=['delete'])
+    async def remove(self, ctx: _Context, logger_id: int) -> None:
         """
+        Removes a chat logger.
+
+        Usage:
+          vivi chatlog remove [logger_id]
+
+        Parameters:
+          logger_id: Mandatory. The ID of the chat logger to be removed.
+
+        Examples:
+          vivi chatlog remove 1 - Removes the chat logger with the ID '1'.
         """
         called_by_owner = await self.bot.is_owner(ctx.author)
-        pss_chat_log: _PssChatLog = _orm.get_query(_PssChatLog, _SESSION).filter_by(id=log_id).first()
+        pss_chat_log: _PssChatLog = _orm.get_query(_PssChatLog, _SESSION).filter_by(id=logger_id).first()
         if not pss_chat_log or (pss_chat_log.guild_id != ctx.guild.id and not called_by_owner):
-            raise Exception(f'A chat log with the ID {log_id} does not exist on this server.')
+            raise Exception(f'A chat log with the ID {logger_id} does not exist on this server.')
 
         converter = _PssChatLogConverter(pss_chat_log)
         definition_lines = await converter.to_text(called_by_owner, self.bot)
