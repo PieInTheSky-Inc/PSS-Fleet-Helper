@@ -69,10 +69,10 @@ class ChatLogCog(_Cog):
                     messages = [message for message in messages if message.message_id > pss_chat_log.last_pss_message_id]
                     lines = []
                     for message in messages:
-                        user_name_and_fleet = f'**{_escape_markdown(message.user_name)}**'
+                        user_name_and_fleet = f'**{_escape_markdown(message.user_name)}'
                         if message.fleet_name:
-                            user_name_and_fleet += f' ({_escape_markdown(message.fleet_name)})'
-                        lines.append(f'{user_name_and_fleet}**:** {_escape_markdown(message.message)}')
+                            user_name_and_fleet += f'** ({_escape_markdown(message.fleet_name)})**'
+                        lines.append(f'{user_name_and_fleet}:** {_escape_markdown(message.message)}')
                     if lines:
                         await channel.send(content='\n'.join(lines))
                         pss_chat_log.last_pss_message_id = max(message.message_id for message in messages)
