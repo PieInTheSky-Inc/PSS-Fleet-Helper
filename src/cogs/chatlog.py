@@ -58,7 +58,8 @@ class ChatLogCog(_Cog):
             channel_keys.setdefault(pss_chat_log.pss_channel_key, []).append(pss_chat_log)
         channel_key_count = len(channel_keys.keys())
 
-        delay = (ChatLogCog.__CHAT_LOG_INTERVAL - (_utils.datetime.get_utc_now() - utc_now).total_seconds()) / channel_key_count * .97
+        remaining_time = ChatLogCog.__CHAT_LOG_INTERVAL - (_utils.datetime.get_utc_now() - utc_now).total_seconds()
+        delay = remaining_time / channel_key_count * .97
 
         for channel_key, pss_chat_logs in channel_keys.items():
             messages = await _message_service.list_messages_for_channel_key(channel_key, access_token)
