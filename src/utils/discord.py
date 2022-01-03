@@ -797,7 +797,7 @@ async def inquire_for_text(ctx: _Context,
     aborted = False
     skipped = False
 
-    full_prompt_text = create_prompt_text(prompt_text, None, allow_abort, allow_skip)
+    full_prompt_text = create_prompt_text(prompt_text, 'any text', allow_abort, allow_skip)
     prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
