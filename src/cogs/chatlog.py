@@ -23,8 +23,6 @@ from .. import utils as _utils
 
 # ---------- Constants ----------
 
-_SESSION = _orm.create_session()
-
 
 
 # ---------- Cog ----------
