@@ -112,6 +112,65 @@ class ChatLogCog(_Cog):
         await _utils.discord.reply_lines(ctx, f'Posting messages from channel \'{channel_key}\' to {channel.mention}.')
 
 
+    @base.command(name='edit', brief='Edit chat logger')
+    async def edit(self, ctx: _Context, logger_id: int) -> None:
+        """
+        Edit a chat logger. An assistant will guide you.
+
+        Usage:
+          vivi chatlog edit [logger_id]
+
+        Parameter:
+          logger_id: Mandatory. The chat logger to be edited.
+
+        Examples:
+          vivi chatlog edit 1 - Edits the chat logger with ID '1' on this server.
+        """
+        called_by_owner = await self.bot.is_owner(ctx.author)
+        pss_chat_log: _PssChatLog = _orm.get_query(_PssChatLog, _SESSION).filter_by(id=logger_id).first()
+        if not pss_chat_log or (pss_chat_log.guild_id != ctx.guild.id and not called_by_owner):
+            raise Exception(f'A chat log with the ID {logger_id} does not exist on this server.')
+
+        converter = _PssChatLogConverter(pss_chat_log)
+        definition_lines = await converter.to_text(called_by_owner, self.bot)
+        await ctx.reply('\n'.join(definition_lines), mention_author=False)
+
+        prompt_text = f'Please enter a new [channel_key]'
+        new_channel_key, aborted, skipped_new_channel_key = await _utils.discord.inquire_for_text(ctx, prompt_text)
+
+        if aborted:
+            await _utils.discord.reply(ctx, f'The request has been cancelled.')
+            return
+
+        prompt_text = f'Please enter a new [channel]'
+        new_channel, aborted, skipped_new_channel = await _utils.discord.inquire_for_text_channel(ctx, prompt_text)
+
+        if aborted:
+            await _utils.discord.reply(ctx, f'The request has been cancelled.')
+            return
+
+        prompt_text = f'Please enter a new [name]'
+        new_name, aborted, skipped_new_name = await _utils.discord.inquire_for_text(ctx, prompt_text)
+
+        if aborted:
+            await _utils.discord.reply(ctx, f'The request has been cancelled.')
+            return
+
+        if new_channel_key and not skipped_new_channel_key:
+            pss_chat_log.pss_channel_key = new_channel_key
+        if new_channel and not skipped_new_channel:
+            pss_chat_log.channel_id = new_channel.id
+        if new_name and not skipped_new_name:
+            pss_chat_log.name = new_name
+        if _SESSION.is_modified(pss_chat_log):
+            pss_chat_log.save()
+            lines = [f'The chat logger has been edited.']
+            lines.extend((await converter.to_text(called_by_owner, self.bot)))
+            await _utils.discord.reply_lines(ctx, lines)
+        else:
+            await _utils.discord.reply(ctx, f'The chat logger **{pss_chat_log.name}** (ID: {pss_chat_log.id}) has not been edited.')
+
+
     @base.group(name='list', brief='List chat loggers for this server', invoke_without_command=True)
     async def list(self, ctx: _Context) -> None:
         """
