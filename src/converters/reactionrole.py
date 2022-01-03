@@ -12,7 +12,6 @@ from ..model import ReactionRoleRequirement as _ReactionRoleRequirement
 
 class ReactionRoleConverter():
     def __init__(self, reaction_role: _ReactionRole) -> None:
-        super().__init__()
         self.__reaction_role: _ReactionRole = reaction_role
         self.__text: _List[str] = None
 
@@ -52,7 +51,7 @@ class ReactionRoleConverter():
 
 
 class ReactionRoleChangeConverter():
-    @staticmethod
+    @classmethod
     def to_text(ctx: _Context, reaction_role_change: _ReactionRoleChange) -> str:
         role = ctx.guild.get_role(reaction_role_change.role_id)
         add_text = 'add' if reaction_role_change.add else 'remove'
@@ -66,7 +65,7 @@ class ReactionRoleChangeConverter():
 
 
 class ReactionRoleRequirementConverter():
-    @staticmethod
+    @classmethod
     def to_text(ctx: _Context, reaction_role_requirement: _ReactionRoleRequirement) -> str:
         role = ctx.guild.get_role(reaction_role_requirement.role_id)
         result = role.name
