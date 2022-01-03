@@ -74,7 +74,7 @@ class ChatLogCog(_Cog):
                             user_name_and_fleet += f'** ({_escape_markdown(message.fleet_name)})**'
                         lines.append(f'{user_name_and_fleet}:** {_escape_markdown(message.message)}')
                     if lines:
-                        await channel.send(content='\n'.join(lines))
+                        await _utils.discord.send_lines_to_channel(channel, lines)
                         pss_chat_log.last_pss_message_id = max(message.message_id for message in messages)
                         pss_chat_log.save(_SESSION)
             if channel_key_count > 1:
@@ -108,7 +108,7 @@ class ChatLogCog(_Cog):
         """
         log_channel = _PssChatLog.make(ctx.guild.id, channel.id, channel_key, name)
         log_channel.create(_SESSION)
-        await ctx.reply(f'Posting messages from channel \'{channel_key}\' to {channel.mention}.', mention_author=False)
+        await _utils.discord.reply_lines(ctx, f'Posting messages from channel \'{channel_key}\' to {channel.mention}.')
 
 
     @base.group(name='list', brief='List chat loggers for this server', invoke_without_command=True)
@@ -131,7 +131,7 @@ class ChatLogCog(_Cog):
                 lines = lines[:-1]
             else:
                 lines.append('There are no chat loggers configured for this server.')
-            await ctx.reply('\n'.join(lines), mention_author=False)
+            await _utils.discord.reply_lines(ctx, lines)
 
 
     @_is_owner()
@@ -154,7 +154,7 @@ class ChatLogCog(_Cog):
             lines = lines[:-1]
         else:
             lines.append('There are no chat loggers configured.')
-        await ctx.reply('\n'.join(lines), mention_author=False)
+        await _utils.discord.reply_lines(ctx, lines)
 
 
     @base.command(name='remove', brief='Remove chat logger', aliases=['delete'])
@@ -184,12 +184,12 @@ class ChatLogCog(_Cog):
         remove_log, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, prompt_text)
 
         if aborted:
-            await ctx.reply(f'The request has been cancelled.', mention_author=False)
+            await _utils.discord.reply(ctx, f'The request has been cancelled.')
         elif remove_log:
             pss_chat_log.delete(_SESSION)
-            await ctx.reply(f'The chat log has been deleted.', mention_author=False)
+            await _utils.discord.reply(ctx, f'The chat log has been deleted.')
         else:
-            await ctx.reply(f'The chat log has not been deleted.', mention_author=False)
+            await _utils.discord.reply(ctx, f'The chat log has not been deleted.')
 
 
 def setup(bot: _Bot):

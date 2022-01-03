@@ -29,6 +29,7 @@ from discord.abc import Messageable as _Messageable
 from discord.ext.commands import Context as _Context
 import emoji as _emoji
 
+from . import settings as _settings
 from . import web as _web
 from .datetime import get_utc_now as _get_utc_now
 from .datetime import utc_from_timestamp as _utc_from_timestamp
@@ -316,6 +317,30 @@ def create_discord_link(guild_id: int, channel_id: _Optional[int] = None, messag
         result += f'/{channel_id}'
         if message_id:
             result += f'/{message_id}'
+    return result
+
+
+def create_posts_from_lines(lines: _List[str], char_limit: int) -> _List[str]:
+    result = []
+    current_post = ''
+
+    for line in lines:
+        line_length = len(line)
+        new_post_length = 1 + len(current_post) + line_length
+        if new_post_length > char_limit:
+            result.append(current_post)
+            current_post = ''
+        if len(current_post) > 0:
+            current_post += '\n'
+
+        current_post += line
+
+    if current_post:
+        result.append(current_post)
+
+    if not result:
+        result = ['']
+
     return result
 
 
@@ -879,6 +904,41 @@ The following substitutions will be created:
 {PLACEHOLDERS}
 """.strip()
 
+
+async def reply(ctx: _Context, content: str, mention_author: bool = False, **kwargs) -> _Message:
+    if content:
+        await ctx.reply(content=content, mention_author=mention_author, **kwargs)
+
+
+async def reply_lines(ctx: _Context, content_lines: _List[str], mention_author: bool = False, **kwargs) -> _Message:
+    posts = create_posts_from_lines(content_lines, _settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
+    for post in posts:
+        if post:
+            await ctx.reply(content=post, mention_author=mention_author, **kwargs)
+
+
+async def send(ctx: _Context, content: str, **kwargs) -> _Message:
+    if content:
+        await ctx.send(content=content, **kwargs)
+
+
+async def send_lines(ctx: _Context, content_lines: _List[str], **kwargs) -> _Message:
+    posts = create_posts_from_lines(content_lines, _settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
+    for post in posts:
+        if post:
+            await ctx.send(content=post, **kwargs)
+
+
+async def send_to_channel(channel: _TextChannel, content: str, **kwargs) -> _Message:
+    if content:
+        await channel.send(content=content, **kwargs)
+
+
+async def send_lines_to_channel(channel: _TextChannel, content_lines: _List[str], **kwargs) -> _Message:
+    posts = create_posts_from_lines(content_lines, _settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
+    for post in posts:
+        if post:
+            await channel.send(content=post, **kwargs)
 
 
 async def try_delete_message(message: _Message) -> bool:
