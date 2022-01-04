@@ -6,7 +6,7 @@ from . import orm as _orm
 
 
 
-class PssChatLog(_orm.ModelBase):
+class PssChatLogger(_orm.ModelBase):
     ID_COLUMN_NAME: str = 'pss_chat_log_id'
     TABLE_NAME: str = 'pss_chat_log'
     __tablename__ = TABLE_NAME
@@ -33,8 +33,8 @@ class PssChatLog(_orm.ModelBase):
              log_to_channel_id: int,
              pss_channel_key: str,
              name: str
-    ) -> 'PssChatLog':
-        result = PssChatLog(
+    ) -> 'PssChatLogger':
+        result = PssChatLogger(
             guild_id=guild_id,
             channel_id=log_to_channel_id,
             pss_channel_key=pss_channel_key,

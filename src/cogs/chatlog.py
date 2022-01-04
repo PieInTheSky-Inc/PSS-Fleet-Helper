@@ -14,9 +14,9 @@ from discord.ext.commands import guild_only as _guild_only
 from discord.ext.commands import group as _command_group
 from discord.utils import escape_markdown as _escape_markdown
 
-from ..converters import PssChatLogConverter as _PssChatLogConverter
+from ..converters import PssChatLoggerConverter as _PssChatLoggerConverter
 from ..model import orm as _orm
-from ..model.chat_log import PssChatLog as _PssChatLog
+from ..model.chat_log import PssChatLogger as _PssChatLogger
 from ..pssapi import message_service as _message_service
 from ..pssapi import login as _login
 from .. import utils as _utils
@@ -29,7 +29,7 @@ from .. import utils as _utils
 
 # ---------- Cog ----------
 
-class ChatLogCog(_Cog):
+class ChatLoggerCog(_Cog):
     __CHAT_LOG_INTERVAL: float = 30.0
 
     def __init__(self, bot: _Bot) -> None:
@@ -37,8 +37,8 @@ class ChatLogCog(_Cog):
             raise ValueError('Parameter \'bot\' must not be None.')
         self.__bot = bot
         with _orm.create_session() as session:
-            pss_chat_logs = _orm.get_all(_PssChatLog, session)
-        if pss_chat_logs:
+            pss_chat_loggers = _orm.get_all(_PssChatLogger, session)
+        if pss_chat_loggers:
             self.log_chat.start()
 
 
@@ -56,25 +56,25 @@ class ChatLogCog(_Cog):
         utc_now = _utils.datetime.get_utc_now()
         access_token = await _login()
         with _orm.create_session() as session:
-            pss_chat_logs = _orm.get_all(_PssChatLog, session)
-        if not pss_chat_logs:
+            pss_chat_loggers = _orm.get_all(_PssChatLogger, session)
+        if not pss_chat_loggers:
             return
 
-        channel_keys: _Dict[str, _List[_PssChatLog]] = {}
-        for pss_chat_log in pss_chat_logs:
-            channel_keys.setdefault(pss_chat_log.pss_channel_key, []).append(pss_chat_log)
+        channel_keys: _Dict[str, _List[_PssChatLogger]] = {}
+        for pss_chat_logger in pss_chat_loggers:
+            channel_keys.setdefault(pss_chat_logger.pss_channel_key, []).append(pss_chat_logger)
         channel_key_count = len(channel_keys.keys())
 
-        remaining_time = ChatLogCog.__CHAT_LOG_INTERVAL - (_utils.datetime.get_utc_now() - utc_now).total_seconds()
+        remaining_time = ChatLoggerCog.__CHAT_LOG_INTERVAL - (_utils.datetime.get_utc_now() - utc_now).total_seconds()
         delay = remaining_time / channel_key_count * .97
 
-        for channel_key, pss_chat_logs in channel_keys.items():
+        for channel_key, pss_chat_loggers in channel_keys.items():
             messages = await _message_service.list_messages_for_channel_key(channel_key, access_token)
             messages = sorted(messages, key=lambda x: x.message_id)
-            for pss_chat_log in pss_chat_logs:
-                channel: _TextChannel = await self.bot.fetch_channel(pss_chat_log.channel_id)
+            for pss_chat_logger in pss_chat_loggers:
+                channel: _TextChannel = await self.bot.fetch_channel(pss_chat_logger.channel_id)
                 if channel:
-                    messages = [message for message in messages if message.message_id > pss_chat_log.last_pss_message_id]
+                    messages = [message for message in messages if message.message_id > pss_chat_logger.last_pss_message_id]
                     lines = []
                     for message in messages:
                         user_name_and_fleet = f'**{_escape_markdown(message.user_name)}'
@@ -83,10 +83,10 @@ class ChatLogCog(_Cog):
                         lines.append(f'{user_name_and_fleet}:** {_escape_markdown(message.message)}')
                     if lines:
                         await _utils.discord.send_lines_to_channel(channel, lines)
-                        pss_chat_log.last_pss_message_id = max(message.message_id for message in messages)
+                        pss_chat_logger.last_pss_message_id = max(message.message_id for message in messages)
                         with _orm.create_session() as session:
-                            pss_chat_log = _orm.merge(session, pss_chat_log)
-                            pss_chat_log.save(session)
+                            pss_chat_logger = _orm.merge(session, pss_chat_logger)
+                            pss_chat_logger.save(session)
             if channel_key_count > 1:
                 await _asyncio.sleep(delay)
 
@@ -118,11 +118,11 @@ class ChatLogCog(_Cog):
         Examples:
           vivi chatlog add public #log Public Chat - Adds a chat logger for the public chat that will post to the channel #log
         """
-        log_channel = _PssChatLog.make(ctx.guild.id, channel.id, channel_key, name)
+        log_channel = _PssChatLogger.make(ctx.guild.id, channel.id, channel_key, name)
         with _orm.create_session() as session:
             log_channel.create(session)
-            pss_chat_logs = _orm.get_all(_PssChatLog, session)
-        if len(pss_chat_logs) == 1:
+            pss_chat_loggers = _orm.get_all(_PssChatLogger, session)
+        if len(pss_chat_loggers) == 1:
             self.log_chat.start()
         await _utils.discord.reply(ctx, f'Posting messages from channel \'{channel_key}\' to {channel.mention}.')
 
@@ -143,16 +143,16 @@ class ChatLogCog(_Cog):
           vivi chatlog edit 1 - Edits the chat logger with ID '1' on this server.
         """
         with _orm.create_session() as session:
-            pss_chat_log = _orm.get_first_filtered_by(
-                _PssChatLog,
+            pss_chat_logger = _orm.get_first_filtered_by(
+                _PssChatLogger,
                 session,
                 id=logger_id,
                 guild_id=ctx.guild.id,
             )
-        if not pss_chat_log:
+        if not pss_chat_logger:
             raise Exception(f'A chat log with the ID {logger_id} does not exist on this server.')
 
-        converter = _PssChatLogConverter(pss_chat_log)
+        converter = _PssChatLoggerConverter(pss_chat_logger)
         await _utils.discord.reply_lines(ctx, (await converter.to_text()))
 
         prompt_text = f'Please enter a new [channel_key]'
@@ -178,23 +178,23 @@ class ChatLogCog(_Cog):
 
         edited = False
         if new_channel_key and not skipped_new_channel_key:
-            pss_chat_log.pss_channel_key = new_channel_key
+            pss_chat_logger.pss_channel_key = new_channel_key
             edited = True
         if new_channel and not skipped_new_channel:
-            pss_chat_log.channel_id = new_channel.id
+            pss_chat_logger.channel_id = new_channel.id
             edited = True
         if new_name and not skipped_new_name:
-            pss_chat_log.name = new_name
+            pss_chat_logger.name = new_name
             edited = True
         if edited:
             with _orm.create_session() as session:
-                pss_chat_log = _orm.merge(session, pss_chat_log)
-                pss_chat_log.save(session)
+                pss_chat_logger = _orm.merge(session, pss_chat_logger)
+                pss_chat_logger.save(session)
             lines = [f'The chat logger has been edited.']
             lines.extend((await converter.to_text()))
             await _utils.discord.reply_lines(ctx, lines)
         else:
-            await _utils.discord.reply(ctx, f'The chat logger {pss_chat_log} has not been edited.')
+            await _utils.discord.reply(ctx, f'The chat logger {pss_chat_logger} has not been edited.')
 
 
     @_guild_only()
@@ -208,10 +208,10 @@ class ChatLogCog(_Cog):
         """
         if ctx.invoked_subcommand is None:
             with _orm.create_session() as session:
-                pss_chat_logs = _orm.get_all_filtered_by(_PssChatLog, session, guild_id=ctx.guild.id)
+                pss_chat_loggers = _orm.get_all_filtered_by(_PssChatLogger, session, guild_id=ctx.guild.id)
             lines = ['__Listing chat loggers for this Discord server__']
-            for pss_chat_log in pss_chat_logs:
-                converter = _PssChatLogConverter(pss_chat_log)
+            for pss_chat_logger in pss_chat_loggers:
+                converter = _PssChatLoggerConverter(pss_chat_logger)
                 definition_lines = await converter.to_text()
                 lines.extend(definition_lines)
                 lines.append('_ _')
@@ -233,10 +233,10 @@ class ChatLogCog(_Cog):
           vivi chatlog list all
         """
         with _orm.create_session() as session:
-            pss_chat_logs = _orm.get_all(_PssChatLog, session)
+            pss_chat_loggers = _orm.get_all(_PssChatLogger, session)
         lines = ['__Listing all chat loggers__']
-        for pss_chat_log in pss_chat_logs:
-            converter = _PssChatLogConverter(pss_chat_log)
+        for pss_chat_logger in pss_chat_loggers:
+            converter = _PssChatLoggerConverter(pss_chat_logger)
             definition_lines = await converter.to_text(True, self.bot)
             lines.extend(definition_lines)
             lines.append('_ _')
@@ -263,16 +263,16 @@ class ChatLogCog(_Cog):
           vivi chatlog delete 1 - Removes the chat logger with the ID '1'.
         """
         with _orm.create_session() as session:
-            pss_chat_log: _PssChatLog = _orm.get_first_filtered_by(
-                _PssChatLog,
+            pss_chat_logger: _PssChatLogger = _orm.get_first_filtered_by(
+                _PssChatLogger,
                 session,
                 id=logger_id,
                 guild_id=ctx.guild.id
             )
-        if not pss_chat_log:
+        if not pss_chat_logger:
             raise Exception(f'A chat log with the ID {logger_id} does not exist on this server.')
 
-        converter = _PssChatLogConverter(pss_chat_log)
+        converter = _PssChatLoggerConverter(pss_chat_logger)
         await _utils.discord.reply_lines(ctx, (await converter.to_text()))
 
         prompt_text = f'Do you really want to delete the chat log listed above?'
@@ -282,10 +282,10 @@ class ChatLogCog(_Cog):
             await _utils.discord.reply(ctx, f'The request has been cancelled.')
         elif delete_log:
             with _orm.create_session() as session:
-                pss_chat_log = _orm.get_by_id(_PssChatLog, session, logger_id)
-                pss_chat_log.delete(session)
-                pss_chat_logs = _orm.create_session(_PssChatLog, session)
-                if len(pss_chat_logs) == 0:
+                pss_chat_logger = _orm.get_by_id(_PssChatLogger, session, logger_id)
+                pss_chat_logger.delete(session)
+                pss_chat_loggerss = _orm.create_session(_PssChatLogger, session)
+                if len(pss_chat_loggerss) == 0:
                     self.log_chat.stop()
             await _utils.discord.reply(ctx, f'The chat log has been deleted.')
         else:
@@ -293,4 +293,4 @@ class ChatLogCog(_Cog):
 
 
 def setup(bot: _Bot):
-    bot.add_cog(ChatLogCog(bot))
+    bot.add_cog(ChatLoggerCog(bot))

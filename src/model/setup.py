@@ -2,7 +2,7 @@ import asyncio as _asyncio
 from typing import Callable as _Callable
 
 from . import database as _database
-from .chat_log import PssChatLog as _PssChatLog
+from .chat_log import PssChatLogger as _PssChatLogger
 from .reaction_role import ReactionRole as _ReactionRole
 from .reaction_role import ReactionRoleChange as _ReactionRoleChange
 from .reaction_role import ReactionRoleRequirement as _ReactionRoleRequirement
@@ -38,7 +38,7 @@ async def __setup_db_schema() -> None:
 async def __update_db_schema_0_4_0() -> bool:
     target_version = '0.4.0'
     column_definitions_chat_log = [
-        (_PssChatLog.ID_COLUMN_NAME, 'SERIAL', True, True, None),
+        (_PssChatLogger.ID_COLUMN_NAME, 'SERIAL', True, True, None),
         ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
         ('guild_id', 'BIGINT', False, True, None),
@@ -56,9 +56,9 @@ async def __update_db_schema_0_4_0() -> bool:
 
     print(f'[update_schema_0_4_0] Updating to database schema v{target_version}')
 
-    success_chat_log = await _database.try_create_table(_PssChatLog.TABLE_NAME, column_definitions_chat_log)
+    success_chat_log = await _database.try_create_table(_PssChatLogger.TABLE_NAME, column_definitions_chat_log)
     if not success_chat_log:
-        print(f'[update_schema_0_4_0] Could not create table \'{_PssChatLog.TABLE_NAME}\'')
+        print(f'[update_schema_0_4_0] Could not create table \'{_PssChatLogger.TABLE_NAME}\'')
         return False
 
     success = await _database.try_set_schema_version(target_version)

@@ -5,18 +5,18 @@ from discord import TextChannel as _TextChannel
 from discord.ext.commands import Bot as _Bot
 
 from .. import utils as _utils
-from ..model import PssChatLog as _PssChatLog
+from ..model import PssChatLogger as _PssChatLogger
 
 
 
-class PssChatLogConverter():
-    def __init__(self, pss_chat_log: _PssChatLog) -> None:
-        self.__pss_chat_log: _PssChatLog = pss_chat_log
+class PssChatLoggerConverter():
+    def __init__(self, pss_chat_log: _PssChatLogger) -> None:
+        self.__pss_chat_log: _PssChatLogger = pss_chat_log
         self.__text: _List[str] = None
 
 
     @property
-    def pss_chat_log(self) -> _PssChatLog:
+    def pss_chat_log(self) -> _PssChatLogger:
         return self.__pss_chat_log
 
 
