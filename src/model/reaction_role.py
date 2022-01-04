@@ -26,8 +26,8 @@ class ReactionRole(_orm.ModelBase):
     message_id = _db.Column('message_id', _db.Integer, nullable=False)
     name = _db.Column('name', _db.Text, nullable=False)
     reaction = _db.Column('reaction', _db.Text, nullable=False)
-    role_changes: _Iterable['ReactionRoleChange'] = _db.orm.relationship('ReactionRoleChange', back_populates='reaction_role', cascade='all, delete')
-    role_requirements: _Iterable['ReactionRoleRequirement'] = _db.orm.relationship('ReactionRoleRequirement', back_populates='reaction_role', cascade='all, delete')
+    role_changes: _Iterable['ReactionRoleChange'] = _db.orm.relationship('ReactionRoleChange', back_populates='reaction_role', cascade='all, delete', lazy='joined')
+    role_requirements: _Iterable['ReactionRoleRequirement'] = _db.orm.relationship('ReactionRoleRequirement', back_populates='reaction_role', cascade='all, delete', lazy='joined')
 
 
     def __repr__(self) -> str:
