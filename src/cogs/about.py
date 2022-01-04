@@ -30,7 +30,8 @@ class AboutCog(_Cog):
             'Version': _bot_settings.VERSION,
             'Github': '<https://github.com/PieInTheSky-Inc/ViViBot>',
         }
-        await ctx.reply('\n'.join([f'{key}: {value}' for key, value in info.items()]), mention_author=False)
+        lines = [f'{key}: {value}' for key, value in info.items()]
+        await _utils.discord.reply_lines(ctx, lines)
 
 
     @about.command(name='placeholders', aliases=['substitutions', 'sub'], brief='List available placeholders', )
@@ -45,7 +46,8 @@ class AboutCog(_Cog):
 
     @_command(name='invite', brief='Produce invite link')
     async def cmd_invite(self, ctx: _Context) -> None:
-        await ctx.reply(f'https://discordapp.com/oauth2/authorize?scope=bot&permissions=139519798336&client_id={_bot_settings.DISCORD_BOT_CLIENT_ID}', mention_author=False)
+        invite_link = f'https://discordapp.com/oauth2/authorize?scope=bot&permissions=139519798336&client_id={_bot_settings.DISCORD_BOT_CLIENT_ID}'
+        await _utils.discord.reply(invite_link)
 
 
 def setup(bot: _Bot):

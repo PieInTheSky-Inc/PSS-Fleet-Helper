@@ -6,7 +6,7 @@ from discord.ext.commands import group as _command_group
 from discord.ext.commands import bot_has_guild_permissions as _bot_has_guild_permissions
 from discord.ext.commands import has_guild_permissions as _has_guild_permissions
 
-from ..utils import Confirmator as _Confirmator
+from .. import utils as _utils
 
 
 
@@ -37,7 +37,7 @@ class RolesCog(_Cog):
         Add one role to multiple members.
         """
         user_ids = set(user_ids.split(' '))
-        confirmator = _Confirmator(ctx, f'This command will add the role `{role}` to {len(user_ids)} members!')
+        confirmator = _utils.Confirmator(ctx, f'This command will add the role `{role}` to {len(user_ids)} members!')
         if (await confirmator.wait_for_option_selection()):
             users_added = []
             for user_id in user_ids:
@@ -45,9 +45,11 @@ class RolesCog(_Cog):
                 await member.add_roles(role)
                 users_added.append(f'{member.display_name} ({user_id})')
 
-            user_list = '\n'.join(sorted(users_added))
-
-            await ctx.reply(f'Added role {role} to members:\n{user_list}', mention_author=False)
+            lines = [
+                f'Added role {role} to members:',
+                *sorted(users_added)
+            ]
+            await _utils.discord.reply_lines(ctx, lines)
 
 
     @_bot_has_guild_permissions(manage_roles=True)
@@ -59,18 +61,20 @@ class RolesCog(_Cog):
         """
         members = list(role.members)
         if len(members) > 0:
-            confirmator = _Confirmator(ctx, f'This command will remove the role `{role}` from {len(members)} members!')
+            confirmator = _utils.Confirmator(ctx, f'This command will remove the role `{role}` from {len(members)} members!')
             if (await confirmator.wait_for_option_selection()):
                 users_removed = []
                 for member in members:
                     await member.remove_roles(role)
                     users_removed.append(f'{member.display_name} ({member.id})')
 
-                user_list = '\n'.join(sorted(users_removed))
-
-                await ctx.reply(f'Removed role {role} from members:\n{user_list}', mention_author=False)
+                lines = [
+                    f'Removed role {role} from members:',
+                    *sorted(users_removed)
+                ]
+                await _utils.discord.reply_lines(ctx, lines)
         else:
-            await ctx.reply(f'There are no members with the role {role}.', mention_author=False)
+            await _utils.discord.reply(ctx, f'There are no members with the role {role}.')
 
 
     @_bot_has_guild_permissions(manage_roles=True)
@@ -81,7 +85,7 @@ class RolesCog(_Cog):
         Remove one role from multiple members.
         """
         user_ids = set(user_ids.split(' '))
-        confirmator = _Confirmator(ctx, f'This command removes the role `{role}` from {len(user_ids)} members.')
+        confirmator = _utils.Confirmator(ctx, f'This command removes the role `{role}` from {len(user_ids)} members.')
         if (await confirmator.wait_for_option_selection()):
             users_removed = []
             for user_id in user_ids:
@@ -89,9 +93,11 @@ class RolesCog(_Cog):
                 await member.remove_roles(role)
                 users_removed.append(f'{member.display_name} ({user_id})')
 
-            user_list = '\n'.join(sorted(users_removed))
-
-            await ctx.reply(f'Removed role {role} from members:\n{user_list}', mention_author=False)
+            lines = [
+                f'Removed role {role} from members:',
+                *sorted(users_removed)
+            ]
+            await _utils.discord.reply_lines(ctx, lines)
 
 
 def setup(bot: _Bot):

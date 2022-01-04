@@ -128,7 +128,7 @@ class ReactionRoleCog(_Cog):
                     raise Exception(f'Failed to activate Reaction Role {reaction_role}.')
             else:
                 raise Exception(f'There is no Reaction Role configured on this server having the ID `{reaction_role_id}`.')
-        await ctx.reply(f'Activated Reaction Role {reaction_role}', mention_author=False)
+        await _utils.discord.reply(ctx, f'Activated Reaction Role {reaction_role}.')
 
 
     @_guild_only()
@@ -152,7 +152,7 @@ class ReactionRoleCog(_Cog):
             response_lines.append('Could not activate the following roles:')
             for failed_reaction_role in failed_reaction_roles:
                 response_lines.append(f'ID: {failed_reaction_role.id} - Name: {failed_reaction_role.name}')
-        await ctx.reply('\n'.join(response_lines), mention_author=False)
+        await _utils.discord.reply_lines(ctx, response_lines)
 
 
     @_guild_only()
@@ -168,7 +168,7 @@ class ReactionRoleCog(_Cog):
         """
         abort_text = 'Aborted. No reaction role has been created.'
 
-        await ctx.reply('\n'.join([
+        welcome_lines = [
                 '```Welcome to the Reaction Role assistent.',
                 'A Reaction Role can be created in 3 steps:',
                 '- The basic definition',
@@ -177,7 +177,8 @@ class ReactionRoleCog(_Cog):
                 '',
                 'You\'ll be guided step by step.```',
                 '_ _',
-            ]), mention_author=True)
+            ]
+        await _utils.discord.reply_lines(ctx, welcome_lines, mention_author=True)
 
         name: str = None
         emoji: str = None
@@ -239,13 +240,13 @@ class ReactionRoleCog(_Cog):
                 send_message_str = f' and send a message to {message_channel.mention} (review message text below)'
                 review_messages.append((i, message_text))
             confirmation_prompt_lines.append(f'{i} = {add_text} role `{role.name}`{send_message_str}')
-        prompts: _List[_Message] = [await ctx.reply('\n'.join(confirmation_prompt_lines), mention_author=False)]
+        prompts: _List[_Message] = [await _utils.discord.reply_lines(ctx, confirmation_prompt_lines)]
         for role_change_number, msg in review_messages:
             prompts.append((await prompts[0].reply(f'__**Message for Role Change \#{role_change_number}**__\n{msg}', mention_author=False)))
 
         finish_setup = await _utils.discord.inquire_for_true_false(ctx, 'Do you want to set up the Reaction Role? (selecting \'no\' will abort the process.)')
         if not finish_setup:
-            await ctx.reply(abort_text, mention_author=False)
+            await _utils.discord.reply(ctx, abort_text)
             return
 
         with _orm.create_session() as session:
@@ -259,7 +260,7 @@ class ReactionRoleCog(_Cog):
                 role_requirement.create(session, commit=False)
             reaction_role.save(session)
 
-        await ctx.reply(f'Successfully set up a Reaction Role {reaction_role}.\nDon\'t forget to activate it!', mention_author=False)
+        await _utils.discord.reply(ctx, f'Successfully set up a Reaction Role {reaction_role}.\nDon\'t forget to activate it!')
 
 
     @_guild_only()
@@ -283,8 +284,7 @@ class ReactionRoleCog(_Cog):
                     raise Exception(f'Failed to deactivate Reaction Role {reaction_role}.')
             else:
                 raise Exception(f'There is no Reaction Role configured on this server having the ID `{reaction_role_id}`.')
-        await ctx.reply(f'Deactivated Reaction Role {reaction_role}.', mention_author=False)
-
+        await _utils.discord.reply(ctx, f'Deactivated Reaction Role {reaction_role}.')
 
 
     @_guild_only()
@@ -311,7 +311,7 @@ class ReactionRoleCog(_Cog):
             response_lines.append('Could not deactivate the following roles:')
             for failed_reaction_role in failed_reaction_roles:
                 response_lines.append(f'ID: {failed_reaction_role.id} - Name: {failed_reaction_role.name}')
-        await ctx.reply('\n'.join(response_lines), mention_author=False)
+        await _utils.discord.reply_lines(ctx, response_lines)
 
 
     @_guild_only()
@@ -332,8 +332,8 @@ class ReactionRoleCog(_Cog):
         if not reaction_role:
             raise Exception(f'There is no Reaction Role configured on this server with the ID \'{reaction_role_id}\'.')
 
-        reaction_role_text = await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, True)
-        await ctx.reply('\n'.join(reaction_role_text), mention_author=False)
+        definition_lines = await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, True)
+        await _utils.discord.reply_lines(ctx, definition_lines)
 
         delete = await _utils.discord.inquire_for_true_false(ctx, f'Do you really want to delete the Reaction Role {reaction_role} as defined above?')
         if delete:
@@ -342,9 +342,9 @@ class ReactionRoleCog(_Cog):
                 with _orm.create_session() as session:
                     reaction_role = _orm.get_by_id(_ReactionRole, session, reaction_role_id)
                     reaction_role.delete(session)
-                await ctx.reply(f'Success. The Reaction Role {reaction_role} has been deleted.', mention_author=True)
+                await _utils.discord.reply(ctx, f'Success. The Reaction Role {reaction_role} has been deleted.', mention_author=True)
         if not delete:
-            await ctx.reply(f'Aborted. The Reaction Role {reaction_role} has not been deleted.', mention_author=True)
+            await _utils.discord.reply(ctx, f'Aborted. The Reaction Role {reaction_role} has not been deleted.', mention_author=True)
 
 
     @_guild_only()
@@ -394,7 +394,7 @@ class ReactionRoleCog(_Cog):
                 )
                 selected, selected_action = await selector.wait_for_option_selection()
                 if not selected or selected_action is None:
-                    await ctx.reply(abort_text, mention_author=False)
+                    await _utils.discord.reply(ctx, abort_text)
                     return
 
                 action = current_actions[selected_action]
@@ -406,18 +406,17 @@ class ReactionRoleCog(_Cog):
 
             success, aborted = await action(reaction_role, ctx, abort_text)
             if not success and not aborted:
-                await ctx.reply(f'Failed to make changes to the Reaction Role {reaction_role}.')
+                await _utils.discord.reply(ctx, f'Failed to make changes to the Reaction Role {reaction_role}.')
 
             if aborted:
                 keep_editing = False
             else:
-                keep_editing, _, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you want to make more changes to the Reaction Role \'{reaction_role.name}\'?')
-            if not keep_editing:
-                keep_editing = False
+                keep_editing, _, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you want to make more changes to the Reaction Role {reaction_role}?')
+            keep_editing = keep_editing or False
         with _orm.create_session() as session:
             reaction_role = _orm.merge(session, reaction_role)
-            session.commit()
-        await ctx.reply(f'```Finished editing Reaction Role {reaction_role}.```', mention_author=False)
+            reaction_role.save(session)
+        _utils.discord.reply(ctx, f'```Finished editing Reaction Role {reaction_role}.```')
 
 
     @_guild_only()
@@ -433,7 +432,7 @@ class ReactionRoleCog(_Cog):
             outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
             for output in outputs:
                 for post in output:
-                    await ctx.reply(post, mention_author=False)
+                    await _utils.discord.reply(ctx, post)
         else:
             raise Exception('There are no Reaction Roles configured for this server.')
 
@@ -452,7 +451,7 @@ class ReactionRoleCog(_Cog):
             outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
             for output in outputs:
                 for post in output:
-                    await ctx.reply(post, mention_author=False)
+                    await _utils.discord.reply(ctx, post)
         else:
             raise Exception('There are no active Reaction Roles configured for this server.')
 
@@ -471,7 +470,7 @@ class ReactionRoleCog(_Cog):
             outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
             for output in outputs:
                 for post in output:
-                    await ctx.reply(post, mention_author=False)
+                    await _utils.discord.reply(ctx, post)
         else:
             raise Exception('There are no inactive Reaction Roles configured for this server.')
 
@@ -488,7 +487,7 @@ async def add_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_tex
         return False, aborted
 
     role_change = reaction_role.add_change(*role_change_definition)
-    await ctx.reply(f'```Added role change with ID \'{role_change.id}\' to Reaction Role {reaction_role}.```', mention_author=False)
+    await _utils.discord.reply(ctx, f'```Added role change with ID \'{role_change.id}\' to Reaction Role {reaction_role}.```')
     return True, aborted
 
 
@@ -501,7 +500,7 @@ async def add_role_requirement(reaction_role: _ReactionRole, ctx: _Context, abor
         return False, aborted
 
     role_requirement = await reaction_role.add_requirement(required_role_id)
-    await ctx.reply(f'```Added role requirement with ID \'{role_requirement.id}\' to Reaction Role {reaction_role}.```', mention_author=False)
+    await _utils.discord.reply(ctx, f'```Added role requirement with ID \'{role_requirement.id}\' to Reaction Role {reaction_role}.```')
     return True, aborted
 
 
@@ -516,7 +515,7 @@ async def edit_details(reaction_role: _ReactionRole, ctx: _Context, abort_text: 
     if details:
         name, emoji, channel_id, message_id = details
         if (await reaction_role.update(channel_id, message_id, name, emoji)):
-            await ctx.reply(f'```Updated details of Reaction Role {reaction_role}.```')
+            await _utils.discord.reply(ctx, f'```Updated details of Reaction Role {reaction_role}.```')
             return True, False
     return False, aborted
 
@@ -543,7 +542,7 @@ async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reac
 
     name: str = None
     if reaction_role:
-        await ctx.send(f'> Current name is \'{reaction_role.name}\'.')
+        await _utils.discord.send(ctx, f'> Current name is \'{reaction_role.name}\'.')
     prompt_lines = [f'What should be the {new_str}name for the reaction role?']
     while not name:
         name, aborted, skipped = await _utils.discord.inquire_for_text(ctx, '\n'.join(prompt_lines), abort_text=abort_text, skip_text=skip_text)
@@ -555,7 +554,7 @@ async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reac
 
     emoji: str = None
     if reaction_role:
-        await ctx.send(f'> Current emoji is \'{reaction_role.reaction}\'.')
+        await _utils.discord.send(ctx, f'> Current emoji is \'{reaction_role.reaction}\'.')
     prompt_base_lines = [f'Specify the {new_str}emoji to be used as the reaction.']
     prompt_lines = []
     while not emoji:
@@ -574,7 +573,7 @@ async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reac
     channel_id: int = None
     message_id: int = None
     if reaction_role:
-        await ctx.send(f'> Current channel is <#{reaction_role.channel_id}>.\n> Current message is {_utils.discord.create_discord_link(ctx.guild.id, reaction_role.channel_id, reaction_role.message_id)}')
+        await _utils.discord.send(ctx, f'> Current channel is <#{reaction_role.channel_id}>.\n> Current message is {_utils.discord.create_discord_link(ctx.guild.id, reaction_role.channel_id, reaction_role.message_id)}')
     prompt_base_lines = [f'Specify the full link to the {new_str}message, which the reaction shall be added to.']
     prompt_lines = []
     while not channel_id and not message_id:
@@ -704,7 +703,7 @@ async def inquire_for_role_change_add(ctx: _Context, abort_text: str) -> _Tuple[
                 embed = None
 
             if role_change_message_text or role_change_message_embed:
-                await ctx.send(role_change_message_text, embed=embed)
+                await _utils.discord.send(ctx, role_change_message_text, embed=embed)
                 accept_message, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, 'Do you want to use this message?', abort_text=abort_text)
                 if aborted:
                     return None, aborted
@@ -729,7 +728,7 @@ async def inquire_for_role_change_remove(ctx: _Context, reaction_role_changes: _
     selector = _utils.Selector[str](ctx, None, options)
     selected, selected_id = await selector.wait_for_option_selection()
     if not selected or selected_id is None:
-        await ctx.reply(abort_text, mention_author=False)
+        await _utils.discord.reply(ctx, abort_text)
         return None
 
     return current_role_changes[selected_id]
@@ -760,7 +759,7 @@ async def inquire_for_role_requirement_remove(ctx: _Context, reaction_role_requi
     selector = _utils.Selector[str](ctx, None, options)
     selected, selected_id = await selector.wait_for_option_selection()
     if not selected or selected_id is None:
-        await ctx.reply(abort_text, mention_author=False)
+        await _utils.discord.reply(ctx, abort_text)
         return None
 
     return current_role_requirements[selected_id]
@@ -774,7 +773,7 @@ async def remove_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_
     if role_change:
         role: _Role = ctx.guild.get_role(role_change.role_id)
         role_change_id = role_change.id
-        await ctx.reply(f'Removed role change (ID: {role_change_id}) for role \'{role.name}\' (ID: {role.id}).', mention_author=False)
+        await _utils.discord.reply(ctx, f'Removed role change (ID: {role_change_id}) for role \'{role.name}\' (ID: {role.id}).')
         return True, False
     return False, True
 
@@ -787,7 +786,7 @@ async def remove_role_requirement(reaction_role: _ReactionRole, ctx: _Context, a
     if role_requirement:
         role: _Role = ctx.guild.get_role(role_requirement.role_id)
         role_requirement_id = role_requirement.id
-        await ctx.reply(f'Removed role requirement (ID: {role_requirement_id}) for role \'{role.name}\' (ID: {role.id}).', mention_author=False)
+        await _utils.discord.reply(ctx, f'Removed role requirement (ID: {role_requirement_id}) for role \'{role.name}\' (ID: {role.id}).')
         return True, False
     return False, True
 

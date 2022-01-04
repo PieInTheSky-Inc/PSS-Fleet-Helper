@@ -35,11 +35,11 @@ async def on_command_error(ctx: _Context,
         err = err.original
     error_type = type(err).__name__
     error_text = (err.args[0] or '') if err.args else ''
-    msg = f'**{error_type}**'
+    error_lines = [f'**{error_type}**']
     if error_text:
-        msg += f'\n{error_text}'
+        error_lines.append(error_text)
 
-    await ctx.reply(f'{msg}', mention_author=False)
+    await _utils.discord.reply_lines(ctx, error_lines)
 
 
 @BOT.event

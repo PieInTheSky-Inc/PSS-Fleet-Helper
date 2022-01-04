@@ -549,7 +549,7 @@ async def inquire_for_boolean(ctx: _Context,
     if respond_to_message:
         prompt_message = await respond_to_message.reply(full_prompt_text, mention_author=False)
     else:
-        prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+        prompt_message = await reply(full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, true_values, false_values, check=check_for_boolean_string, timeout=timeout)
     if user_reply:
         content_lower = user_reply.content.strip().lower()
@@ -578,7 +578,7 @@ async def inquire_for_embed_definition(ctx: _Context,
     skipped = False
 
     full_prompt_text = create_prompt_text(prompt_text, 'an embed definition as JSON as plain text, a hyperlink to a web resource containing a definition or a file uploaded containing a definition', allow_abort, allow_skip)
-    prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+    prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
@@ -610,7 +610,7 @@ async def inquire_for_emoji(ctx: _Context,
     skipped = False
 
     full_prompt_text = create_prompt_text(prompt_text, 'an emoji', allow_abort, allow_skip)
-    prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+    prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
@@ -639,7 +639,7 @@ async def inquire_for_integer(ctx: _Context,
     skipped = False
 
     full_prompt_text = create_prompt_text(prompt_text, 'an integer', allow_abort, allow_skip)
-    prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+    prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_integer, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
@@ -668,7 +668,7 @@ async def inquire_for_member(ctx: _Context,
     skipped = False
 
     full_prompt_text = create_prompt_text(prompt_text, 'a member mention, name or ID', allow_abort, allow_skip)
-    prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+    prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_member_id_name_or_mention, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
@@ -711,7 +711,7 @@ async def inquire_for_message_id(ctx: _Context,
     skipped = False
 
     full_prompt_text = create_prompt_text(prompt_text, 'a message ID', allow_abort, allow_skip)
-    prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+    prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_message_id, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
@@ -740,7 +740,7 @@ async def inquire_for_message_link(ctx: _Context,
     skipped = False
 
     full_prompt_text = create_prompt_text(prompt_text, 'an full link to a Discord message', allow_abort, allow_skip)
-    prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+    prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_message_link, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
@@ -769,7 +769,7 @@ async def inquire_for_role(ctx: _Context,
     skipped = False
 
     full_prompt_text = create_prompt_text(prompt_text, 'a role mention or ID', allow_abort, allow_skip)
-    prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+    prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_role_id_or_mention, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
@@ -798,7 +798,7 @@ async def inquire_for_text(ctx: _Context,
     skipped = False
 
     full_prompt_text = create_prompt_text(prompt_text, 'any text', allow_abort, allow_skip)
-    prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+    prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
@@ -827,7 +827,7 @@ async def inquire_for_text_channel(ctx: _Context,
     skipped = False
 
     full_prompt_text = create_prompt_text(prompt_text, 'a channel mention or ID', allow_abort, allow_skip)
-    prompt_message = await ctx.reply(full_prompt_text, mention_author=False)
+    prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_channel_id_or_mention, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()

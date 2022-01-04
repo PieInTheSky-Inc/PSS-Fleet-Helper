@@ -1,3 +1,4 @@
+from discord import Role as _Role
 from discord import TextChannel as _TextChannel
 from discord.ext.commands import Bot as _Bot
 from discord.ext.commands import Cog as _Cog
@@ -32,9 +33,13 @@ class ChecksCog(_Cog):
     async def channel(self, ctx: _Context, channel: str) -> None:
         result = _utils.discord.get_text_channel(ctx, channel)
         if result:
-            await ctx.reply(result.mention, mention_author=False)
+            await _utils.discord.reply(ctx, result.mention)
         else:
-            await ctx.reply(f'This is not a valid channel or I cannot access it:\n{channel}', mention_author=False)
+            lines = [
+                f'This is not a valid channel or I cannot access it:',
+                channel
+            ]
+            await _utils.discord.reply_lines(ctx, lines)
 
 
     @_is_owner()
@@ -42,9 +47,13 @@ class ChecksCog(_Cog):
     async def emoji(self, ctx: _Context, emoji: str) -> None:
         result = _utils.discord.get_emoji(ctx, emoji)
         if result:
-            await ctx.reply(result, mention_author=False)
+            await _utils.discord.reply(ctx, result)
         else:
-            await ctx.reply(f'This is not a valid emoji or I cannot access it:\n{emoji}', mention_author=False)
+            lines = [
+                f'This is not a valid emoji or I cannot access it:',
+                emoji
+            ]
+            await _utils.discord.reply_lines(ctx, lines)
 
 
     @_is_owner()
@@ -52,9 +61,13 @@ class ChecksCog(_Cog):
     async def member(self, ctx: _Context, *, member: str) -> None:
         result = _utils.discord.get_member(ctx, member)
         if result:
-            await ctx.reply(result.mention, mention_author=False)
+            await _utils.discord.reply(ctx, result.mention)
         else:
-            await ctx.reply(f'This is not a valid member of this guild:\n{member}', mention_author=False)
+            lines = [
+                f'This is not a valid member of this server:',
+                member
+            ]
+            await _utils.discord.reply_lines(ctx, lines)
 
 
     @_is_owner()
@@ -62,19 +75,32 @@ class ChecksCog(_Cog):
     async def message(self, ctx: _Context, channel: _TextChannel, message_id: str) -> None:
         result = await _utils.discord.fetch_message(channel, message_id)
         if result:
-            await ctx.reply(f'{result.content}\nBy {result.author.mention}', mention_author=False)
+            await _utils.discord.reply(ctx, f'{result.content}\nBy {result.author.mention}')
         else:
-            await ctx.reply(f'This is not a valid message id or I cannot access the channel:\n{channel.mention}\n{message_id}', mention_author=False)
+            lines = [
+                f'This is not a valid message id or I cannot access the channel:',
+                channel.mention,
+                message_id
+            ]
+            await _utils.discord.reply_lines(ctx, lines)
 
 
     @_is_owner()
     @base.command(name='role')
     async def role(self, ctx: _Context, role: str) -> None:
-        result = _utils.discord.get_role(ctx, role)
+        result: _Role = _utils.discord.get_role(ctx, role)
         if result:
-            await ctx.reply(f'{result.mention}\n{result.position}', mention_author=False)
+            lines = [
+                result.mention,
+                str(result.position),
+            ]
+            await _utils.discord.reply_lines(ctx, lines)
         else:
-            await ctx.reply(f'This is not a valid role:\n{role}', mention_author=False)
+            lines = [
+                f'This is not a valid role:',
+                role,
+            ]
+            await _utils.discord.reply_lines(ctx, lines)
 
 
 def setup(bot: _Bot):

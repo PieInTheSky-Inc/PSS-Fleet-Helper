@@ -50,7 +50,7 @@ class EmbedCog(_Cog):
         else:
             raise Exception('You need to specify a definition or upload a file containing a definition!')
         for embed in embeds:
-            await ctx.reply(embed=embed, mention_author=False)
+            await _utils.discord.reply(ctx, None, embed=embed)
 
 
 def setup(bot: _Bot):
