@@ -20,7 +20,7 @@ class PssChatLogConverter():
         return self.__pss_chat_log
 
 
-    async def to_text(self, for_admin: bool, bot: _Bot = None) -> _List[str]:
+    async def to_text(self, for_admin: bool = False, bot: _Bot = None) -> _List[str]:
         if self.__text is not None:
             return self.__text
 

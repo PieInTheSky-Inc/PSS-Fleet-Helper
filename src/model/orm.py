@@ -1,6 +1,7 @@
 from datetime import datetime as _datetime
 from typing import List as _List
 from typing import Generic as _Generic
+from typing import Optional as _Optional
 from typing import TypeVar as _TypeVar
 from typing import Type as _Type
 
@@ -19,6 +20,7 @@ _ENGINE: _sqlalchemy.engine.Engine = _sqlalchemy.create_engine(
     DATABASE_URL
 )
 _SESSION_MAKER: _sqlalchemy.orm.sessionmaker = _sqlalchemy.orm.sessionmaker(autocommit=False, autoflush=False, bind=_ENGINE)
+ScopedSession = _scoped_session
 
 
 
@@ -53,8 +55,12 @@ class ModelBase(_Record, _Generic[_T]):
             session.commit()
 
 
+    def reset_changes(self, session: _scoped_session) -> _T:
+        session.rollback()
+        return self
+
+
     def save(self, session: _scoped_session) -> _T:
-        #session.add(self)
         session.commit()
         return self
 
@@ -72,5 +78,21 @@ def get_all(cls: _Type[_T], session: _scoped_session) -> _List[_T]:
     return get_query(cls, session).all()
 
 
+def get_by_id(cls: _Type[_T], session: _scoped_session, id: int) -> _Optional[_T]:
+    return get_query(cls, session).get(id)
+
+
+def get_all_filtered_by(cls: _Type[_T], session: _scoped_session, **kwargs) -> _List[_T]:
+    return get_query(cls, session).filter_by(**kwargs).all()
+
+
+def get_first_filtered_by(cls: _Type[_T], session: _scoped_session, **kwargs) -> _Optional[_T]:
+    return get_query(cls, session).filter_by(**kwargs).first()
+
+
 def get_query(cls: _Type[_T], session: _scoped_session) -> _Query:
     return session.query(cls)
+
+
+def merge(session: _scoped_session, instance: _T) -> _T:
+    return session.merge(instance)

@@ -30,8 +30,6 @@ from ..model import orm as _orm
 
 # ---------- Constants ----------
 
-_SESSION = _orm.create_session()
-
 
 
 # ---------- Cog ----------
@@ -45,10 +43,6 @@ class ReactionRoleCog(_Cog):
         if not bot:
             raise ValueError('Parameter \'bot\' must not be None.')
         self.__bot: _Bot = bot
-        self.__reaction_roles: _Dict[int, _List[_ReactionRole]] = {}
-        reaction_roles = _orm.get_all(_ReactionRole, _SESSION)
-        for reaction_role in reaction_roles:
-            self.__reaction_roles.setdefault(reaction_role.guild_id, []).append(reaction_role)
 
 
     @property
@@ -61,13 +55,18 @@ class ReactionRoleCog(_Cog):
         if payload.member.guild.me == payload.member:
             return
 
-        reaction_roles: _List[_ReactionRole] = self.__reaction_roles.get(payload.guild_id, [])
+        with _orm.create_session() as session:
+            reaction_roles: _List[_ReactionRole] = _orm.get_all_filtered_by(
+                _ReactionRole,
+                session,
+                guild_id=payload.member.guild.id,
+                is_active=True,
+                message_id=payload.message_id
+            )
         member_roles_ids = [role.id for role in payload.member.roles]
         for reaction_role in reaction_roles:
-            is_active = reaction_role.is_active
-            message_id_match = reaction_role.message_id == payload.message_id
             emoji_match = reaction_role.reaction == payload.emoji.name or reaction_role.reaction == f'<:{payload.emoji.name}:{payload.emoji.id}>'
-            if is_active and message_id_match and emoji_match:
+            if emoji_match:
                 member_meets_requirements = all(requirement.role_id in member_roles_ids for requirement in reaction_role.role_requirements)
                 if member_meets_requirements:
                     await reaction_role.apply_add(payload.member)
@@ -83,13 +82,18 @@ class ReactionRoleCog(_Cog):
         if not member or member == guild.me:
             return
 
-        reaction_roles: _List[_ReactionRole] = self.__reaction_roles.get(payload.guild_id, [])
+        with _orm.create_session() as session:
+            reaction_roles: _List[_ReactionRole] = _orm.get_all_filtered_by(
+                _ReactionRole,
+                session,
+                guild_id=payload.member.guild.id,
+                is_active=True,
+                message_id=payload.message_id
+            )
         member_roles_ids = [role.id for role in member.roles]
         for reaction_role in reaction_roles:
-            is_active = reaction_role.is_active
-            message_id_match = reaction_role.message_id == payload.message_id
             emoji_match = reaction_role.reaction == payload.emoji.name or reaction_role.reaction == f'<:{payload.emoji.name}:{payload.emoji.id}>'
-            if is_active and message_id_match and emoji_match:
+            if emoji_match:
                 member_meets_requirements = all(requirement.role_id in member_roles_ids for requirement in reaction_role.role_requirements)
                 if member_meets_requirements:
                     await reaction_role.apply_remove(member)
@@ -106,18 +110,25 @@ class ReactionRoleCog(_Cog):
     @_has_guild_permissions(manage_roles=True)
     @base.group(name='activate', aliases=['enable', 'on'], brief='Activate a Reaction Role', invoke_without_command=True)
     async def activate(self, ctx: _Context, reaction_role_id: int) -> None:
-        reaction_roles = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id] if reaction_role.id == reaction_role_id]
-        if reaction_roles:
-            reaction_role = reaction_roles[0]
-            if reaction_role.is_active:
-                raise Exception(f'The Reaction Role {reaction_role} is already active.')
-            if (await reaction_role.try_activate(ctx)):
-                reaction_role.save(_SESSION)
-                await ctx.reply(f'Activated Reaction Role {reaction_role}', mention_author=False)
+        success = False
+        with _orm.create_session() as session:
+            reaction_role = _orm.get_first_filtered_by(
+                _ReactionRole,
+                session,
+                id=reaction_role_id,
+                guild_id=ctx.guild.id
+            )
+            if reaction_role:
+                if reaction_role.is_active:
+                    raise Exception(f'The Reaction Role {reaction_role} is already active.')
+                success = await reaction_role.try_activate(ctx)
+                if success:
+                    reaction_role.save(session)
+                else:
+                    raise Exception(f'Failed to activate Reaction Role {reaction_role}.')
             else:
-                raise Exception(f'Failed to activate Reaction Role {reaction_role}.')
-        else:
-            raise Exception(f'There is no Reaction Role configured on this server having the ID `{reaction_role_id}`.')
+                raise Exception(f'There is no Reaction Role configured on this server having the ID `{reaction_role_id}`.')
+        await ctx.reply(f'Activated Reaction Role {reaction_role}', mention_author=False)
 
 
     @_guild_only()
@@ -125,21 +136,23 @@ class ReactionRoleCog(_Cog):
     @_has_guild_permissions(manage_roles=True)
     @activate.command(name='all', brief='Activate all Reaction Roles')
     async def activate_all(self, ctx: _Context) -> None:
-        reaction_roles = list(self.__reaction_roles[ctx.guild.id])
-        if reaction_roles:
-            failed_reaction_roles: _List[_ReactionRole] = []
-            for reaction_role in reaction_roles:
-                if not (await reaction_role.try_activate(ctx)):
-                    failed_reaction_roles.append(reaction_role)
-            _SESSION.commit()
-            response_lines = [f'Activated {len(reaction_roles) - len(failed_reaction_roles)} of {len(reaction_roles)} Reaction Roles on this server.']
-            if failed_reaction_roles:
-                response_lines.append('Could not activate the following roles:')
-                for failed_reaction_role in failed_reaction_roles:
-                    response_lines.append(f'ID: {failed_reaction_role.id} - Name: {failed_reaction_role.name}')
-            await ctx.reply('\n'.join(response_lines), mention_author=False)
-        else:
-            raise Exception(f'There are no Reaction Roles configured on this server.')
+        reaction_roles: _List[_ReactionRole] = []
+        failed_reaction_roles: _List[_ReactionRole] = []
+        with _orm.create_session() as session:
+            reaction_roles = _orm.get_all_filtered_by(_ReactionRole, session, guild_id=ctx.guild.id)
+            if reaction_roles:
+                for reaction_role in reaction_roles:
+                    if not (await reaction_role.try_activate(ctx)):
+                        failed_reaction_roles.append(reaction_role)
+                session.commit()
+            else:
+                raise Exception(f'There are no Reaction Roles configured on this server.')
+        response_lines = [f'Activated {len(reaction_roles) - len(failed_reaction_roles)} of {len(reaction_roles)} Reaction Roles on this server.']
+        if failed_reaction_roles:
+            response_lines.append('Could not activate the following roles:')
+            for failed_reaction_role in failed_reaction_roles:
+                response_lines.append(f'ID: {failed_reaction_role.id} - Name: {failed_reaction_role.name}')
+        await ctx.reply('\n'.join(response_lines), mention_author=False)
 
 
     @_guild_only()
@@ -226,7 +239,7 @@ class ReactionRoleCog(_Cog):
                 send_message_str = f' and send a message to {message_channel.mention} (review message text below)'
                 review_messages.append((i, message_text))
             confirmation_prompt_lines.append(f'{i} = {add_text} role `{role.name}`{send_message_str}')
-        prompts = [await ctx.reply('\n'.join(confirmation_prompt_lines), mention_author=False)]
+        prompts: _List[_Message] = [await ctx.reply('\n'.join(confirmation_prompt_lines), mention_author=False)]
         for role_change_number, msg in review_messages:
             prompts.append((await prompts[0].reply(f'__**Message for Role Change \#{role_change_number}**__\n{msg}', mention_author=False)))
 
@@ -235,17 +248,17 @@ class ReactionRoleCog(_Cog):
             await ctx.reply(abort_text, mention_author=False)
             return
 
-        reaction_role = _ReactionRole.make(ctx.guild.id, channel_id, message_id, name, emoji)
-        _SESSION.add(reaction_role)
-        for role_reaction_change_def in role_reaction_changes:
-            role_change = reaction_role.add_change(*role_reaction_change_def)
-            _SESSION.add(role_change)
-        for role_id in role_reaction_requirements:
-            role_requirement = reaction_role.add_requirement(role_id)
-            _SESSION.add(role_requirement)
-        reaction_role.save(_SESSION)
+        with _orm.create_session() as session:
+            reaction_role = _ReactionRole.make(ctx.guild.id, channel_id, message_id, name, emoji)
+            reaction_role.create(session, commit=False)
+            for role_reaction_change_def in role_reaction_changes:
+                role_change = reaction_role.add_change(*role_reaction_change_def)
+                role_change.create(session, commit=False)
+            for role_id in role_reaction_requirements:
+                role_requirement = reaction_role.add_requirement(role_id)
+                role_requirement.create(session, commit=False)
+            reaction_role.save(session)
 
-        self.__reaction_roles.setdefault(ctx.guild.id, []).append(reaction_role)
         await ctx.reply(f'Successfully set up a Reaction Role {reaction_role}.\nDon\'t forget to activate it!', mention_author=False)
 
 
@@ -254,18 +267,24 @@ class ReactionRoleCog(_Cog):
     @_has_guild_permissions(manage_roles=True)
     @base.group(name='deactivate', aliases=['disable', 'off'], brief='Deactivate a Reaction Role', invoke_without_command=True)
     async def deactivate(self, ctx: _Context, reaction_role_id: int) -> None:
-        reaction_roles = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id] if reaction_role.id == reaction_role_id]
-        if reaction_roles:
-            reaction_role = reaction_roles[0]
-            if not reaction_role.is_active:
-                raise Exception(f'The Reaction Role {reaction_role} is already inactive.')
-            if (await reaction_role.try_deactivate(ctx)):
-                reaction_role.save(_SESSION)
-                await ctx.reply(f'Deactivated Reaction Role {reaction_role}.', mention_author=False)
+        with _orm.create_session() as session:
+            reaction_role = _orm.get_first_filtered_by(
+                _ReactionRole,
+                session,
+                id=reaction_role_id,
+                guild_id=ctx.guild.id
+            )
+            if reaction_role:
+                if not reaction_role.is_active:
+                    raise Exception(f'The Reaction Role {reaction_role} is already inactive.')
+                if (await reaction_role.try_deactivate(ctx)):
+                    reaction_role.save(session)
+                else:
+                    raise Exception(f'Failed to deactivate Reaction Role {reaction_role}.')
             else:
-                raise Exception(f'Failed to deactivate Reaction Role {reaction_role}.')
-        else:
-            raise Exception(f'There is no Reaction Role configured on this server having the ID `{reaction_role_id}`.')
+                raise Exception(f'There is no Reaction Role configured on this server having the ID `{reaction_role_id}`.')
+        await ctx.reply(f'Deactivated Reaction Role {reaction_role}.', mention_author=False)
+
 
 
     @_guild_only()
@@ -273,21 +292,26 @@ class ReactionRoleCog(_Cog):
     @_has_guild_permissions(manage_roles=True)
     @deactivate.command(name='all', brief='Deactivate all Reaction Roles')
     async def deactivate_all(self, ctx: _Context) -> None:
-        reaction_roles = list(self.__reaction_roles[ctx.guild.id])
-        if reaction_roles:
-            failed_reaction_roles: _List[_ReactionRole] = []
-            for reaction_role in reaction_roles:
-                if not (await reaction_role.try_deactivate(ctx)):
-                    failed_reaction_roles.append(reaction_role)
-            _SESSION.commit()
-            response_lines = [f'Deactivated {len(reaction_roles) - len(failed_reaction_roles)} of {len(reaction_roles)} Reaction Roles on this server.']
-            if failed_reaction_roles:
-                response_lines.append('Could not deactivate the following roles:')
-                for failed_reaction_role in failed_reaction_roles:
-                    response_lines.append(f'ID: {failed_reaction_role.id} - Name: {failed_reaction_role.name}')
-            await ctx.reply('\n'.join(response_lines), mention_author=False)
-        else:
-            raise Exception(f'There are no Reaction Roles configured on this server.')
+        with _orm.create_session() as session:
+            reaction_roles = _orm.get_all_filtered_by(
+                _ReactionRole,
+                session,
+                guild_id=ctx.guild.id
+            )
+            if reaction_roles:
+                failed_reaction_roles: _List[_ReactionRole] = []
+                for reaction_role in reaction_roles:
+                    if not (await reaction_role.try_deactivate(ctx)):
+                        failed_reaction_roles.append(reaction_role)
+                session.commit()
+            else:
+                raise Exception(f'There are no Reaction Roles configured on this server.')
+        response_lines = [f'Deactivated {len(reaction_roles) - len(failed_reaction_roles)} of {len(reaction_roles)} Reaction Roles on this server.']
+        if failed_reaction_roles:
+            response_lines.append('Could not deactivate the following roles:')
+            for failed_reaction_role in failed_reaction_roles:
+                response_lines.append(f'ID: {failed_reaction_role.id} - Name: {failed_reaction_role.name}')
+        await ctx.reply('\n'.join(response_lines), mention_author=False)
 
 
     @_guild_only()
@@ -298,11 +322,16 @@ class ReactionRoleCog(_Cog):
         """
         Delete a Reaction Role
         """
-        reaction_roles = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id] if reaction_role.id == reaction_role_id]
-        if not reaction_roles:
+        with _orm.create_session() as session:
+            reaction_role = _orm.get_first_filtered_by(
+                _ReactionRole,
+                session,
+                id=reaction_role_id,
+                guild_id=ctx.guild.id
+            )
+        if not reaction_role:
             raise Exception(f'There is no Reaction Role configured on this server with the ID \'{reaction_role_id}\'.')
 
-        reaction_role: _ReactionRole = reaction_roles[0]
         reaction_role_text = await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, True)
         await ctx.reply('\n'.join(reaction_role_text), mention_author=False)
 
@@ -310,8 +339,9 @@ class ReactionRoleCog(_Cog):
         if delete:
             delete = await _utils.discord.inquire_for_true_false(ctx, f'Do you REALLY, REALLY want to delete the Reaction Role {reaction_role} as defined above?')
             if delete:
-                reaction_role.delete(_SESSION)
-                self.__reaction_roles[ctx.guild.id] = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id]]
+                with _orm.create_session() as session:
+                    reaction_role = _orm.get_by_id(_ReactionRole, session, reaction_role_id)
+                    reaction_role.delete(session)
                 await ctx.reply(f'Success. The Reaction Role {reaction_role} has been deleted.', mention_author=True)
         if not delete:
             await ctx.reply(f'Aborted. The Reaction Role {reaction_role} has not been deleted.', mention_author=True)
@@ -325,11 +355,16 @@ class ReactionRoleCog(_Cog):
         """
         Edit deactivated Reaction Roles.
         """
-        reaction_roles = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id] if reaction_role.id == reaction_role_id]
-        if not reaction_roles:
+        with _orm.create_session() as session:
+            reaction_role = _orm.get_first_filtered_by(
+                _ReactionRole,
+                session,
+                id=reaction_role_id,
+                guild_id=ctx.guild.id
+            )
+        if not reaction_role:
             raise Exception(f'There is no Reaction Role configured on this server with the ID \'{reaction_role_id}\'.')
 
-        reaction_role: _ReactionRole = reaction_roles[0]
         if reaction_role.is_active:
             raise Exception(f'Cannot edit the Reaction Role {reaction_role}, because it is active.')
 
@@ -379,18 +414,21 @@ class ReactionRoleCog(_Cog):
                 keep_editing, _, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you want to make more changes to the Reaction Role \'{reaction_role.name}\'?')
             if not keep_editing:
                 keep_editing = False
-        try:
-            reaction_role.save(_SESSION)
-        except:
-            await ctx.reply(f'```Could not save the changes made to Reaction Role {reaction_role}.```', mention_author=True)
-            return
+        with _orm.create_session() as session:
+            reaction_role = _orm.merge(session, reaction_role)
+            session.commit()
         await ctx.reply(f'```Finished editing Reaction Role {reaction_role}.```', mention_author=False)
 
 
     @_guild_only()
     @base.group(name='list', brief='List reaction roles', invoke_without_command=True)
     async def list(self, ctx: _Context, include_messages: bool = False) -> None:
-        reaction_roles: _List[_ReactionRole] = list(self.__reaction_roles[ctx.guild.id])
+        with _orm.create_session() as session:
+            reaction_roles = _orm.get_all_filtered_by(
+                _ReactionRole,
+                session,
+                guild_id=ctx.guild.id
+            )
         if reaction_roles:
             outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
             for output in outputs:
@@ -403,7 +441,13 @@ class ReactionRoleCog(_Cog):
     @_guild_only()
     @list.command(name='active', aliases=['enabled', 'on'], brief='List active reaction roles', invoke_without_command=True)
     async def list_active(self, ctx: _Context, include_messages: bool = False) -> None:
-        reaction_roles = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id] if reaction_role.is_active]
+        with _orm.create_session() as session:
+            reaction_roles = _orm.get_all_filtered_by(
+                _ReactionRole,
+                session,
+                guild_id=ctx.guild.id,
+                is_active=True
+            )
         if reaction_roles:
             outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
             for output in outputs:
@@ -416,7 +460,13 @@ class ReactionRoleCog(_Cog):
     @_guild_only()
     @list.command(name='inactive', aliases=['disabled', 'off'], brief='List inactive reaction roles', invoke_without_command=True)
     async def list_inactive(self, ctx: _Context, include_messages: bool = False) -> None:
-        reaction_roles = [reaction_role for reaction_role in self.__reaction_roles[ctx.guild.id] if not reaction_role.is_active]
+        with _orm.create_session() as session:
+            reaction_roles = _orm.get_all_filtered_by(
+                _ReactionRole,
+                session,
+                guild_id=ctx.guild.id,
+                is_active=False
+            )
         if reaction_roles:
             outputs = [(await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
             for output in outputs:
@@ -438,7 +488,6 @@ async def add_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_tex
         return False, aborted
 
     role_change = reaction_role.add_change(*role_change_definition)
-    role_change.save(_SESSION)
     await ctx.reply(f'```Added role change with ID \'{role_change.id}\' to Reaction Role {reaction_role}.```', mention_author=False)
     return True, aborted
 
@@ -452,7 +501,6 @@ async def add_role_requirement(reaction_role: _ReactionRole, ctx: _Context, abor
         return False, aborted
 
     role_requirement = await reaction_role.add_requirement(required_role_id)
-    role_requirement.save(_SESSION)
     await ctx.reply(f'```Added role requirement with ID \'{role_requirement.id}\' to Reaction Role {reaction_role}.```', mention_author=False)
     return True, aborted
 
@@ -726,7 +774,6 @@ async def remove_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_
     if role_change:
         role: _Role = ctx.guild.get_role(role_change.role_id)
         role_change_id = role_change.id
-        role_change.delete(_SESSION)
         await ctx.reply(f'Removed role change (ID: {role_change_id}) for role \'{role.name}\' (ID: {role.id}).', mention_author=False)
         return True, False
     return False, True
@@ -740,7 +787,6 @@ async def remove_role_requirement(reaction_role: _ReactionRole, ctx: _Context, a
     if role_requirement:
         role: _Role = ctx.guild.get_role(role_requirement.role_id)
         role_requirement_id = role_requirement.id
-        role_requirement.delete(_SESSION)
         await ctx.reply(f'Removed role requirement (ID: {role_requirement_id}) for role \'{role.name}\' (ID: {role.id}).', mention_author=False)
         return True, False
     return False, True
