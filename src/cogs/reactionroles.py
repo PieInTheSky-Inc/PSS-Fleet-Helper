@@ -86,7 +86,7 @@ class ReactionRoleCog(_Cog):
             reaction_roles: _List[_ReactionRole] = _orm.get_all_filtered_by(
                 _ReactionRole,
                 session,
-                guild_id=payload.member.guild.id,
+                guild_id=payload.guild_id,
                 is_active=True,
                 message_id=payload.message_id
             )
