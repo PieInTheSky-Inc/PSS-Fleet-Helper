@@ -239,19 +239,19 @@ class ChatLogCog(_Cog):
 
 
     @_guild_only()
-    @base.command(name='remove', brief='Remove chat logger', aliases=['delete'])
-    async def remove(self, ctx: _Context, logger_id: int) -> None:
+    @base.command(name='delete', brief='Delete chat logger', aliases=['remove'])
+    async def delete(self, ctx: _Context, logger_id: int) -> None:
         """
         Removes a chat logger.
 
         Usage:
-          vivi chatlog remove [logger_id]
+          vivi chatlog delete [logger_id]
 
         Parameters:
-          logger_id: Mandatory. The ID of the chat logger to be removed.
+          logger_id: Mandatory. The ID of the chat logger to be deleted.
 
         Examples:
-          vivi chatlog remove 1 - Removes the chat logger with the ID '1'.
+          vivi chatlog delete 1 - Removes the chat logger with the ID '1'.
         """
         with _orm.create_session() as session:
             pss_chat_log: _PssChatLog = _orm.get_first_filtered_by(
@@ -266,12 +266,12 @@ class ChatLogCog(_Cog):
         converter = _PssChatLogConverter(pss_chat_log)
         await _utils.discord.reply_lines((await converter.to_text()))
 
-        prompt_text = f'Do you really want to remove the chat log listed above?'
-        remove_log, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, prompt_text)
+        prompt_text = f'Do you really want to delete the chat log listed above?'
+        delete_log, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, prompt_text)
 
         if aborted:
             await _utils.discord.reply(ctx, f'The request has been cancelled.')
-        elif remove_log:
+        elif delete_log:
             with _orm.create_session as session:
                 pss_chat_log = _orm.get_by_id(_PssChatLog, session, logger_id)
                 pss_chat_log.delete(session)

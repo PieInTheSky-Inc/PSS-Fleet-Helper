@@ -102,6 +102,9 @@ class ReactionRoleCog(_Cog):
     @_guild_only()
     @_command_group(name='reactionrole', aliases=['rr'], brief='Set up reaction roles', invoke_without_command=True)
     async def base(self, ctx: _Context) -> None:
+        """
+        Set up cool Reaction Roles for this server. Check out the subcommands.
+        """
         await ctx.send_help('reactionrole')
 
 
@@ -110,6 +113,19 @@ class ReactionRoleCog(_Cog):
     @_has_guild_permissions(manage_roles=True)
     @base.group(name='activate', aliases=['enable', 'on'], brief='Activate a Reaction Role', invoke_without_command=True)
     async def activate(self, ctx: _Context, reaction_role_id: int) -> None:
+        """
+        Attempts to activate the deactivated Reaction Role with the given ID on this server. This means adding the specified reaction to the specified channel and listening for members adding or removing said reaction to perform the configured role changes.
+        Reaction Role IDs can be retrieved via the command: vivi reactionrole list
+
+        Usage:
+          vivi reactionrole activate [reaction_role_id]
+
+        Parameters:
+          reaction_role_id: Mandatory. The ID of an inactive Reaction Role on this server.
+
+        Usage:
+          vivi reactionrole activate 1 - Attempts to activate the Reaction Role with the ID 1.
+        """
         success = False
         with _orm.create_session() as session:
             reaction_role = _orm.get_first_filtered_by(
@@ -136,10 +152,21 @@ class ReactionRoleCog(_Cog):
     @_has_guild_permissions(manage_roles=True)
     @activate.command(name='all', brief='Activate all Reaction Roles')
     async def activate_all(self, ctx: _Context) -> None:
+        """
+        Attempts to activate all inactive Reaction Roles configured on this server. This means adding the specified reaction to the specified channel and listening for members adding or removing said reaction to perform the configured role changes. Will print any Reaction Role that could not be activated.
+
+        Usage:
+          vivi reactionrole activate all
+        """
         reaction_roles: _List[_ReactionRole] = []
         failed_reaction_roles: _List[_ReactionRole] = []
         with _orm.create_session() as session:
-            reaction_roles = _orm.get_all_filtered_by(_ReactionRole, session, guild_id=ctx.guild.id)
+            reaction_roles = _orm.get_all_filtered_by(
+                _ReactionRole,
+                session,
+                guild_id=ctx.guild.id,
+                is_active=False,
+            )
             if reaction_roles:
                 for reaction_role in reaction_roles:
                     if not (await reaction_role.try_activate(ctx)):
@@ -161,10 +188,10 @@ class ReactionRoleCog(_Cog):
     @base.command(name='add', brief='Add a reaction role')
     async def add(self, ctx: _Context) -> None:
         """
-        Assistant for adding reaction roles
+        Add a new Reaction Role to this server. Starts an assistant guiding through the creation process.
 
-        [message_id] must be of a message in [channel]
-        [name] may contain whitespace
+        Usage:
+          vivi reactionrole add
         """
         abort_text = 'Aborted. No reaction role has been created.'
 
@@ -268,6 +295,19 @@ class ReactionRoleCog(_Cog):
     @_has_guild_permissions(manage_roles=True)
     @base.group(name='deactivate', aliases=['disable', 'off'], brief='Deactivate a Reaction Role', invoke_without_command=True)
     async def deactivate(self, ctx: _Context, reaction_role_id: int) -> None:
+        """
+        Attempts to deactivate the activated Reaction Role with the given ID on this server. This means removing the specified reaction to the specified channel and no more listening for members adding or removing said reaction.
+        Reaction Role IDs can be retrieved via the command: vivi reactionrole list
+
+        Usage:
+          vivi reactionrole deactivate [reaction_role_id]
+
+        Parameters:
+          reaction_role_id: Mandatory. The ID of an active Reaction Role on this server.
+
+        Usage:
+          vivi reactionrole deactivate 1 - Attempts to deactivate the Reaction Role with the ID 1.
+        """
         with _orm.create_session() as session:
             reaction_role = _orm.get_first_filtered_by(
                 _ReactionRole,
@@ -292,6 +332,12 @@ class ReactionRoleCog(_Cog):
     @_has_guild_permissions(manage_roles=True)
     @deactivate.command(name='all', brief='Deactivate all Reaction Roles')
     async def deactivate_all(self, ctx: _Context) -> None:
+        """
+        Attempts to deactivate all active Reaction Roles configured on this server. This means removing the specified reaction to the specified channel and no more listening for members adding or removing said reaction. Will print any Reaction Role that could not be activated.
+
+        Usage:
+          vivi reactionrole deactivate all
+        """
         with _orm.create_session() as session:
             reaction_roles = _orm.get_all_filtered_by(
                 _ReactionRole,
@@ -320,7 +366,17 @@ class ReactionRoleCog(_Cog):
     @base.group(name='delete', aliases=['remove'], brief='Delete a Reaction Role')
     async def delete(self, ctx: _Context, reaction_role_id: int) -> None:
         """
-        Delete a Reaction Role
+        Deletes an inactive Reaction Role with the given ID on this server.
+        Reaction Role IDs can be retrieved via the command: vivi reactionrole list
+
+        Usage:
+          vivi reactionrole delete [reaction_role_id]
+
+        Parameters:
+          reaction_role_id: Mandatory. The ID of an inactive Reaction Role on this server.
+
+        Examples:
+          vivi reactionrole delete 1 - Attempts to delete the Reaction Role with the ID 1
         """
         with _orm.create_session() as session:
             reaction_role = _orm.get_first_filtered_by(
@@ -353,7 +409,17 @@ class ReactionRoleCog(_Cog):
     @base.command(name='edit', brief='Edit a Reaction Role')
     async def edit(self, ctx: _Context, reaction_role_id: int) -> None:
         """
-        Edit deactivated Reaction Roles.
+        Edits an inactive Reaction Role with the given ID on this server. Starts an assistant guiding through the process.
+        Reaction Role IDs can be retrieved via the command: vivi reactionrole list
+
+        Usage:
+          vivi reactionrole edit [reaction_role_id]
+
+        Parameters:
+          reaction_role_id: Mandatory. The ID of an inactive Reaction Role on this server.
+
+        Examples:
+          vivi reactionrole edit 1 - Attempts to edit the Reaction Role with the ID 1
         """
         with _orm.create_session() as session:
             reaction_role = _orm.get_first_filtered_by(
@@ -422,6 +488,19 @@ class ReactionRoleCog(_Cog):
     @_guild_only()
     @base.group(name='list', brief='List reaction roles', invoke_without_command=True)
     async def list(self, ctx: _Context, include_messages: bool = False) -> None:
+        """
+        Lists all Reaction Roles configured on this server.
+
+        Usage:
+          vivi reactionrole list <include_messages>
+
+        Parameters:
+          include_messages: Optional. Determines, if Reaction Role Change messages and embeds shall be printed. Defaults to False.
+
+        Examples:
+          vivi reactionrole list yes - Prints all Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
+          vivi reactionrole list false - Prints all Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
+        """
         with _orm.create_session() as session:
             reaction_roles = _orm.get_all_filtered_by(
                 _ReactionRole,
@@ -440,6 +519,19 @@ class ReactionRoleCog(_Cog):
     @_guild_only()
     @list.command(name='active', aliases=['enabled', 'on'], brief='List active reaction roles', invoke_without_command=True)
     async def list_active(self, ctx: _Context, include_messages: bool = False) -> None:
+        """
+        Lists all active Reaction Roles configured on this server.
+
+        Usage:
+          vivi reactionrole list active <include_messages>
+
+        Parameters:
+          include_messages: Optional. Determines, if Reaction Role Change messages and embeds shall be printed. Defaults to False.
+
+        Examples:
+          vivi reactionrole list active yes - Prints all active Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
+          vivi reactionrole list active false - Prints all active Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
+        """
         with _orm.create_session() as session:
             reaction_roles = _orm.get_all_filtered_by(
                 _ReactionRole,
@@ -459,6 +551,19 @@ class ReactionRoleCog(_Cog):
     @_guild_only()
     @list.command(name='inactive', aliases=['disabled', 'off'], brief='List inactive reaction roles', invoke_without_command=True)
     async def list_inactive(self, ctx: _Context, include_messages: bool = False) -> None:
+        """
+        Lists all inactive Reaction Roles configured on this server.
+
+        Usage:
+          vivi reactionrole list inactive <include_messages>
+
+        Parameters:
+          include_messages: Optional. Determines, if Reaction Role Change messages and embeds shall be printed. Defaults to False.
+
+        Examples:
+          vivi reactionrole list inactive yes - Prints all inactive Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
+          vivi reactionrole list inactive false - Prints all inactive Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
+        """
         with _orm.create_session() as session:
             reaction_roles = _orm.get_all_filtered_by(
                 _ReactionRole,
@@ -477,6 +582,8 @@ class ReactionRoleCog(_Cog):
 
 
 
+
+# ---------- Helper ----------
 
 async def add_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_text: str) -> _Tuple[bool, bool]:
     """

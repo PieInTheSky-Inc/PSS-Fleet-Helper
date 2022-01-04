@@ -24,6 +24,12 @@ class AboutCog(_Cog):
 
     @_command_group(name='about', brief='General info about the bot', invoke_without_command=True)
     async def about(self, ctx: _Context) -> None:
+        """
+        Returns general information about this bot.
+
+        Usage:
+          vivi about
+        """
         info = {
             'Server count': len(self.bot.guilds),
             'Member count': sum([guild.member_count for guild in self.bot.guilds]),
@@ -46,6 +52,12 @@ class AboutCog(_Cog):
 
     @_command(name='invite', brief='Produce invite link')
     async def cmd_invite(self, ctx: _Context) -> None:
+        """
+        Produces a link to invite this bot to your server.
+
+        Usage:
+          vivi invite
+        """
         invite_link = f'https://discordapp.com/oauth2/authorize?scope=bot&permissions=139519798336&client_id={_bot_settings.DISCORD_BOT_CLIENT_ID}'
         await _utils.discord.reply(invite_link)
 
