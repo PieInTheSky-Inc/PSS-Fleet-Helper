@@ -59,7 +59,7 @@ class AboutCog(_Cog):
           vivi invite
         """
         invite_link = f'https://discordapp.com/oauth2/authorize?scope=bot&permissions=139519798336&client_id={_bot_settings.DISCORD_BOT_CLIENT_ID}'
-        await _utils.discord.reply(invite_link)
+        await _utils.discord.reply(ctx, invite_link)
 
 
 def setup(bot: _Bot):

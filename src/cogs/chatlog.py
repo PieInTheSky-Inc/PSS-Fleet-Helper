@@ -144,7 +144,7 @@ class ChatLogCog(_Cog):
             raise Exception(f'A chat log with the ID {logger_id} does not exist on this server.')
 
         converter = _PssChatLogConverter(pss_chat_log)
-        await _utils.discord.reply_lines((await converter.to_text()))
+        await _utils.discord.reply_lines(ctx, (await converter.to_text()))
 
         prompt_text = f'Please enter a new [channel_key]'
         new_channel_key, aborted, skipped_new_channel_key = await _utils.discord.inquire_for_text(ctx, prompt_text, abort_text='Aborted', skip_text='Skipped.')
@@ -264,7 +264,7 @@ class ChatLogCog(_Cog):
             raise Exception(f'A chat log with the ID {logger_id} does not exist on this server.')
 
         converter = _PssChatLogConverter(pss_chat_log)
-        await _utils.discord.reply_lines((await converter.to_text()))
+        await _utils.discord.reply_lines(ctx, (await converter.to_text()))
 
         prompt_text = f'Do you really want to delete the chat log listed above?'
         delete_log, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, prompt_text)

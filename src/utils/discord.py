@@ -549,7 +549,7 @@ async def inquire_for_boolean(ctx: _Context,
     if respond_to_message:
         prompt_message = await respond_to_message.reply(full_prompt_text, mention_author=False)
     else:
-        prompt_message = await reply(full_prompt_text)
+        prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, true_values, false_values, check=check_for_boolean_string, timeout=timeout)
     if user_reply:
         content_lower = user_reply.content.strip().lower()
