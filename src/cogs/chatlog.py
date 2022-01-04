@@ -36,7 +36,10 @@ class ChatLogCog(_Cog):
         if not bot:
             raise ValueError('Parameter \'bot\' must not be None.')
         self.__bot = bot
-        self.log_chat.start()
+        with _orm.create_session() as session:
+            pss_chat_logs = _orm.get_all(_PssChatLog, session)
+        if pss_chat_logs:
+            self.log_chat.start()
 
 
     @property
@@ -118,6 +121,9 @@ class ChatLogCog(_Cog):
         log_channel = _PssChatLog.make(ctx.guild.id, channel.id, channel_key, name)
         with _orm.create_session() as session:
             log_channel.create(session)
+            pss_chat_logs = _orm.get_all(_PssChatLog, session)
+        if len(pss_chat_logs) == 1:
+            self.log_chat.start()
         await _utils.discord.reply(ctx, f'Posting messages from channel \'{channel_key}\' to {channel.mention}.')
 
 
@@ -278,6 +284,9 @@ class ChatLogCog(_Cog):
             with _orm.create_session() as session:
                 pss_chat_log = _orm.get_by_id(_PssChatLog, session, logger_id)
                 pss_chat_log.delete(session)
+                pss_chat_logs = _orm.create_session(_PssChatLog, session)
+                if len(pss_chat_logs) == 0:
+                    self.log_chat.stop()
             await _utils.discord.reply(ctx, f'The chat log has been deleted.')
         else:
             await _utils.discord.reply(ctx, f'The chat log has not been deleted.')
