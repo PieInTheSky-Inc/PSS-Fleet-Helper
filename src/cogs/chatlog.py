@@ -133,7 +133,7 @@ class ChatLogCog(_Cog):
         Examples:
           vivi chatlog edit 1 - Edits the chat logger with ID '1' on this server.
         """
-        with _orm.create_session as session:
+        with _orm.create_session() as session:
             pss_chat_log = _orm.get_first_filtered_by(
                 _PssChatLog,
                 session,
@@ -272,7 +272,7 @@ class ChatLogCog(_Cog):
         if aborted:
             await _utils.discord.reply(ctx, f'The request has been cancelled.')
         elif delete_log:
-            with _orm.create_session as session:
+            with _orm.create_session() as session:
                 pss_chat_log = _orm.get_by_id(_PssChatLog, session, logger_id)
                 pss_chat_log.delete(session)
             await _utils.discord.reply(ctx, f'The chat log has been deleted.')
