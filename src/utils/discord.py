@@ -907,38 +907,44 @@ The following substitutions will be created:
 
 async def reply(ctx: _Context, content: str, mention_author: bool = False, **kwargs) -> _Message:
     if content:
-        await ctx.reply(content=content, mention_author=mention_author, **kwargs)
+        return (await ctx.reply(content=content, mention_author=mention_author, **kwargs))
 
 
-async def reply_lines(ctx: _Context, content_lines: _List[str], mention_author: bool = False, **kwargs) -> _Message:
+async def reply_lines(ctx: _Context, content_lines: _List[str], mention_author: bool = False, **kwargs) -> _List[_Message]:
     posts = create_posts_from_lines(content_lines, _settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
+    result = []
     for post in posts:
         if post:
-            await ctx.reply(content=post, mention_author=mention_author, **kwargs)
+            result.append((await ctx.reply(content=post, mention_author=mention_author, **kwargs)))
+    return result
 
 
 async def send(ctx: _Context, content: str, **kwargs) -> _Message:
     if content:
-        await ctx.send(content=content, **kwargs)
+        return (await ctx.send(content=content, **kwargs))
 
 
-async def send_lines(ctx: _Context, content_lines: _List[str], **kwargs) -> _Message:
+async def send_lines(ctx: _Context, content_lines: _List[str], **kwargs) -> _List[_Message]:
     posts = create_posts_from_lines(content_lines, _settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
+    result = []
     for post in posts:
         if post:
-            await ctx.send(content=post, **kwargs)
+            result.append((await ctx.send(content=post, **kwargs)))
+    return result
 
 
 async def send_to_channel(channel: _TextChannel, content: str, **kwargs) -> _Message:
     if content:
-        await channel.send(content=content, **kwargs)
+        return (await channel.send(content=content, **kwargs))
 
 
-async def send_lines_to_channel(channel: _TextChannel, content_lines: _List[str], **kwargs) -> _Message:
+async def send_lines_to_channel(channel: _TextChannel, content_lines: _List[str], **kwargs) -> _List[_Message]:
     posts = create_posts_from_lines(content_lines, _settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
+    result = []
     for post in posts:
         if post:
-            await channel.send(content=post, **kwargs)
+            result.append((await channel.send(content=post, **kwargs)))
+    return result
 
 
 async def try_delete_message(message: _Message) -> bool:
