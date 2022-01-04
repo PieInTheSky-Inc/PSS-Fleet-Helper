@@ -54,6 +54,9 @@ class ChatLogCog(_Cog):
         access_token = await _login()
         with _orm.create_session() as session:
             pss_chat_logs = _orm.get_all(_PssChatLog, session)
+        if not pss_chat_logs:
+            return
+
         channel_keys: _Dict[str, _List[_PssChatLog]] = {}
         for pss_chat_log in pss_chat_logs:
             channel_keys.setdefault(pss_chat_log.pss_channel_key, []).append(pss_chat_log)
