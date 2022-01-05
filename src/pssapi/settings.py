@@ -18,3 +18,6 @@ LANGUAGE_KEY: str = 'en'
 
 
 OVERWRITE_PSS_PRODUCTION_SERVER: str = _os.environ.get('PSS_PRODUCTION_SERVER')
+
+
+TIMESTAMP_FORMAT_PSS: str = '%Y-%m-%dT%H:%M:%S'

@@ -18,7 +18,7 @@ from ..converters import PssChatLoggerConverter as _PssChatLoggerConverter
 from ..model import orm as _orm
 from ..model.chat_log import PssChatLogger as _PssChatLogger
 from ..pssapi import message_service as _message_service
-from ..pssapi import login as _login
+from ..pssapi import device_login as _login
 from .. import utils as _utils
 
 

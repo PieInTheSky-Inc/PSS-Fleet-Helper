@@ -3,8 +3,8 @@ from typing import List as _List
 
 from . import convert as _convert
 from . import core as _core
-from .entities import PssAllianceRaw as _PssAlliance
-from .entities import PssUserRaw as _PssUser
+from .entities import PssAlliance as _PssAlliance
+from .entities import PssUser as _PssUser
 
 
 

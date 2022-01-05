@@ -5,7 +5,6 @@ from typing import Optional as _Optional
 
 from . import convert as _convert
 from . import core as _core
-from .. import utils as _utils
 from . import utils as _pss_utils
 from . import settings as _settings
 
@@ -27,8 +26,8 @@ __LOGIN_BASE_PARAMS: _Dict[str, str] = {
 
 # ---------- Functions ----------
 
-async def login() -> _Optional[str]:
-    client_datetime = _utils.format.pss_timestamp(_utils.datetime.get_utc_now())
+async def device_login() -> _Optional[str]:
+    client_datetime = _pss_utils.format_pss_timestamp(_pss_utils.get_utc_now())
     base_url = await _core.get_base_url()
     url = f'{base_url}{__LOGIN_BASE_PATH}'
     params = dict(__LOGIN_BASE_PARAMS)
