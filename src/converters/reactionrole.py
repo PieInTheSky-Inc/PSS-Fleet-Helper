@@ -52,7 +52,7 @@ class ReactionRoleConverter():
 
 class ReactionRoleChangeConverter():
     @classmethod
-    def to_text(ctx: _Context, reaction_role_change: _ReactionRoleChange) -> str:
+    def to_text(cls, ctx: _Context, reaction_role_change: _ReactionRoleChange) -> str:
         role = ctx.guild.get_role(reaction_role_change.role_id)
         add_text = 'add' if reaction_role_change.add else 'remove'
         send_message_str = ''
@@ -66,7 +66,7 @@ class ReactionRoleChangeConverter():
 
 class ReactionRoleRequirementConverter():
     @classmethod
-    def to_text(ctx: _Context, reaction_role_requirement: _ReactionRoleRequirement) -> str:
+    def to_text(cls, ctx: _Context, reaction_role_requirement: _ReactionRoleRequirement) -> str:
         role = ctx.guild.get_role(reaction_role_requirement.role_id)
         result = role.name
         return result

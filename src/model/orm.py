@@ -71,7 +71,7 @@ class ModelBase(_Record, _Generic[_T]):
 # ---------- Helper ----------
 
 def create_session() -> _scoped_session:
-    return _SESSION_MAKER()
+    return _SESSION_MAKER(expire_on_commit=False)
 
 
 def get_all(cls: _Type[_T], session: _scoped_session) -> _List[_T]:

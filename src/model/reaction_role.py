@@ -220,6 +220,23 @@ class ReactionRoleChange(_orm.ModelBase):
         return f'<ReactionRoleChange id={self.id} reaction_role_id={self.reaction_role_id}>'
 
 
+    def update(self,
+               role_id: int,
+               add: bool,
+               allow_toggle: bool,
+               message_content: str,
+               message_channel_id: int,
+               message_embed: str
+    ) -> 'ReactionRoleChange':
+        self.role_id = role_id
+        self.add = add
+        self.allow_toggle = allow_toggle
+        self.message_content = message_content
+        self.message_channel_id = message_channel_id
+        self.message_embed = message_embed
+        return self
+
+
     @classmethod
     def make(cls,
              add: bool,

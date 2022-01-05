@@ -13,25 +13,25 @@ from discord import Message as _Message
 from discord.ext.commands import Context as _Context
 from .discord import DEFAULT_INQUIRE_TIMEOUT as _DEFAULT_INQUIRE_TIMEOUT
 
-T = _TypeVar('T')
+_T = _TypeVar('_T')
 
 
 # ---------- Classes ----------
 
-class Selector(_Generic[T]):
-    def __init__(self, ctx: _Context, search_term: str, available_options: _Union[_List[T], _Dict[_Any, T]], short_text_function: _Optional[_Callable[[T], str]] = None, title: _Optional[str] = None, timeout: float = _DEFAULT_INQUIRE_TIMEOUT) -> None:
+class Selector(_Generic[_T]):
+    def __init__(self, ctx: _Context, search_term: str, available_options: _Union[_List[_T], _Dict[_Any, _T]], short_text_function: _Optional[_Callable[[_T], str]] = None, title: _Optional[str] = None, timeout: float = _DEFAULT_INQUIRE_TIMEOUT) -> None:
         self.__got_options_dict: bool = isinstance(available_options, dict)
-        self.__available_options: _Union[_List[T], _Dict[_Any, T]] = dict(available_options) if self.__got_options_dict else list(available_options)
+        self.__available_options: _Union[_List[_T], _Dict[_Any, _T]] = dict(available_options) if self.__got_options_dict else list(available_options)
         self.__context: _Context = ctx
         self.__search_term: str = search_term
-        self.__short_text_function: _Callable[[T], str] = short_text_function
+        self.__short_text_function: _Callable[[_T], str] = short_text_function
         self.__timeout: int = timeout
-        self.__current_options: _Dict[_Any, T] = self.__available_options if self.__got_options_dict else {i: option for i, option in enumerate(self.__available_options, 1)}
+        self.__current_options: _Dict[_Any, _T] = self.__available_options if self.__got_options_dict else {i: option for i, option in enumerate(self.__available_options, 1)}
         self.__message: _Message = None
         self.__title: str = title or Selector.__get_title(self.__search_term)
 
 
-    async def wait_for_option_selection(self) -> _Tuple[bool, T]:
+    async def wait_for_option_selection(self) -> _Tuple[bool, _T]:
         def option_selection_check(message: _Message) -> bool:
             if message.author == self.__context.author:
                 return True
@@ -76,7 +76,7 @@ class Selector(_Generic[T]):
 
 
     @staticmethod
-    async def __get_options_display(options: _Union[_Dict[_Any, T], _List[T]], short_text_function: _Callable[[T], str]) -> str:
+    async def __get_options_display(options: _Union[_Dict[_Any, _T], _List[_T]], short_text_function: _Callable[[_T], str]) -> str:
         lines = []
         if isinstance(options, list):
             iterable = enumerate(options, 1)

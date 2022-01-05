@@ -29,7 +29,7 @@ from discord.abc import Messageable as _Messageable
 from discord.ext.commands import Context as _Context
 import emoji as _emoji
 
-from . import settings as _settings
+from . import settings
 from . import web as _web
 from .datetime import get_utc_now as _get_utc_now
 from .datetime import utc_from_timestamp as _utc_from_timestamp
@@ -509,12 +509,13 @@ def get_text_channel(ctx: _Context,
 async def inquire_for_add_remove(ctx: _Context,
                                     prompt_message: str,
                                     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-                                    abort_text: _Optional[str] = None
+                                    abort_text: _Optional[str] = None,
+                                    skip_text: _Optional[str] = None
                                 ) -> _Tuple[_Optional[bool], bool, bool]:
     """
     Returns (`Optional[discord.Role]`, user_has_aborted, `False`)
     """
-    return (await inquire_for_boolean(ctx, prompt_message, ['add'], ['remove'], timeout=timeout, abort_text=abort_text))
+    return (await inquire_for_boolean(ctx, prompt_message, ['add'], ['remove'], timeout=timeout, abort_text=abort_text, skip_text=skip_text))
 
 
 async def inquire_for_boolean(ctx: _Context,
@@ -911,7 +912,7 @@ async def reply(ctx: _Context, content: str, mention_author: bool = False, **kwa
 
 
 async def reply_lines(ctx: _Context, content_lines: _List[str], mention_author: bool = False, **kwargs) -> _List[_Message]:
-    posts = create_posts_from_lines(content_lines, _settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
+    posts = create_posts_from_lines(content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
     result = []
     for post in posts:
         if post:
@@ -925,7 +926,7 @@ async def send(ctx: _Context, content: str, **kwargs) -> _Message:
 
 
 async def send_lines(ctx: _Context, content_lines: _List[str], **kwargs) -> _List[_Message]:
-    posts = create_posts_from_lines(content_lines, _settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
+    posts = create_posts_from_lines(content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
     result = []
     for post in posts:
         if post:
@@ -939,7 +940,7 @@ async def send_to_channel(channel: _TextChannel, content: str, **kwargs) -> _Mes
 
 
 async def send_lines_to_channel(channel: _TextChannel, content_lines: _List[str], **kwargs) -> _List[_Message]:
-    posts = create_posts_from_lines(content_lines, _settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
+    posts = create_posts_from_lines(content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
     result = []
     for post in posts:
         if post:
