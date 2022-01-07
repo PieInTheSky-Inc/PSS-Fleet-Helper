@@ -7,7 +7,7 @@ from discord.ext.commands.errors import CommandInvokeError as _CommandInvokeErro
 from discord.ext.commands.errors import CommandNotFound as _CommandNotFound
 from discord.ext.commands import when_mentioned_or as _when_mentioned_or
 
-from src.model.errors import UnauthorizedChannelError
+from src.model.errors import UnauthorizedChannelError as _UnauthorizedChannelError
 
 from . import bot_settings as _bot_settings
 from . import utils as _utils
@@ -33,6 +33,9 @@ async def on_command_error(ctx: _Context,
                         ) -> None:
     if _bot_settings.THROW_COMMAND_ERRORS:
         raise err
+
+    if isinstance(err, _UnauthorizedChannelError):
+        return
 
     if isinstance(err, _CommandNotFound):
         if not _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS, raise_on_error=False):

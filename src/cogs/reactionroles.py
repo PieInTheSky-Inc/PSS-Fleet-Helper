@@ -107,7 +107,7 @@ class ReactionRoleCog(_Cog):
         Set up cool Reaction Roles for this server. Check out the subcommands.
         """
         if ctx.invoked_subcommand is None:
-            _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+            _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
             await ctx.send_help('reactionrole')
 
 
@@ -129,7 +129,7 @@ class ReactionRoleCog(_Cog):
         Usage:
           vivi reactionrole activate 1 - Attempts to activate the Reaction Role with the ID 1.
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         success = False
         with _orm.create_session() as session:
             reaction_role = _orm.get_first_filtered_by(
@@ -164,7 +164,7 @@ class ReactionRoleCog(_Cog):
         Usage:
           vivi reactionrole activate all
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         reaction_roles: _List[_ReactionRole] = []
         succeeded: _List[_ReactionRole] = []
         failed: _List[_ReactionRole] = []
@@ -207,7 +207,7 @@ class ReactionRoleCog(_Cog):
         Usage:
           vivi reactionrole add
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         abort_text = 'Aborted. No reaction role has been created.'
 
         welcome_lines = [
@@ -323,7 +323,7 @@ class ReactionRoleCog(_Cog):
         Usage:
           vivi reactionrole deactivate 1 - Attempts to deactivate the Reaction Role with the ID 1.
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         with _orm.create_session() as session:
             reaction_role = _orm.get_first_filtered_by(
                 _ReactionRole,
@@ -356,7 +356,7 @@ class ReactionRoleCog(_Cog):
         Usage:
           vivi reactionrole deactivate all
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         succeeded: _List[_ReactionRole] = []
         failed: _List[_ReactionRole] = []
         with _orm.create_session() as session:
@@ -404,7 +404,7 @@ class ReactionRoleCog(_Cog):
         Examples:
           vivi reactionrole delete 1 - Attempts to delete the Reaction Role with the ID 1
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         with _orm.create_session() as session:
             reaction_role = _orm.get_first_filtered_by(
                 _ReactionRole,
@@ -448,7 +448,7 @@ class ReactionRoleCog(_Cog):
         Examples:
           vivi reactionrole edit 1 - Attempts to edit the Reaction Role with the ID 1
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         with _orm.create_session() as session:
             reaction_role = _orm.get_first_filtered_by(
                 _ReactionRole,
@@ -531,7 +531,7 @@ class ReactionRoleCog(_Cog):
           vivi reactionrole list yes - Prints all Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
           vivi reactionrole list false - Prints all Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         with _orm.create_session() as session:
             reaction_roles = _orm.get_all_filtered_by(
                 _ReactionRole,
@@ -563,7 +563,7 @@ class ReactionRoleCog(_Cog):
           vivi reactionrole list active yes - Prints all active Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
           vivi reactionrole list active false - Prints all active Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         with _orm.create_session() as session:
             reaction_roles = _orm.get_all_filtered_by(
                 _ReactionRole,
@@ -596,7 +596,7 @@ class ReactionRoleCog(_Cog):
           vivi reactionrole list inactive yes - Prints all inactive Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
           vivi reactionrole list inactive false - Prints all inactive Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         with _orm.create_session() as session:
             reaction_roles = _orm.get_all_filtered_by(
                 _ReactionRole,

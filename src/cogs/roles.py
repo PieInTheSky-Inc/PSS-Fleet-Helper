@@ -28,7 +28,7 @@ class RolesCog(_Cog):
     @_command_group(name='role', brief='Role management', invoke_without_command=True)
     async def base(self, ctx: _Context) -> None:
         if ctx.invoked_subcommand is None:
-            _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+            _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
             await ctx.send_help('role')
 
 
@@ -50,7 +50,7 @@ class RolesCog(_Cog):
           vivi role add @foobar 1 2 3 - Adds the Role @foobar to the members with the IDs 1, 2 & 3
           vivi role add 45 1 2 3 - Adds the Role with ID '45' to the members with the IDs 1, 2 & 3
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         user_ids = set(user_ids.split(' '))
         confirmator = _utils.Confirmator(ctx, f'This command will add the role `{role_id_or_mention}` to {len(user_ids)} members!')
         if (await confirmator.wait_for_option_selection()):
@@ -85,7 +85,7 @@ class RolesCog(_Cog):
           vivi role clear @foobar - Removes the Role @foobar from all members of this server.
           vivi role clear 45 - Removes the Role with ID '45' from all members of this server.
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         members = list(role.members)
         if len(members) > 0:
             confirmator = _utils.Confirmator(ctx, f'This command will remove the role `{role}` from {len(members)} members!')
@@ -122,7 +122,7 @@ class RolesCog(_Cog):
           vivi role remove @foobar 1 2 3 - Removes the Role @foobar from Members with the User ID 1, 2 & 3.
           vivi role remove 45 1 2 3 - Removes the Role with ID '45' from Members with the User ID 1, 2 & 3.
         """
-        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         user_ids = set(user_ids.split(' '))
         confirmator = _utils.Confirmator(ctx, f'This command removes the role `{role}` from {len(user_ids)} members.')
         if (await confirmator.wait_for_option_selection()):
