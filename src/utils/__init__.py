@@ -1,9 +1,9 @@
-
-from .confirmator import Confirmator
-from .selector import Selector
+from . import assert_
 from . import database
 from . import datetime
 from . import discord
 from . import format
 from . import web
+from .confirmator import Confirmator
 from .miscellaneous import *
+from .selector import Selector

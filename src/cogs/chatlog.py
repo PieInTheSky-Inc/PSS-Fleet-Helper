@@ -14,12 +14,13 @@ from discord.ext.commands import guild_only as _guild_only
 from discord.ext.commands import group as _command_group
 from discord.utils import escape_markdown as _escape_markdown
 
+from .. import bot_settings as _bot_settings
+from .. import utils as _utils
 from ..converters import PssChatLoggerConverter as _PssChatLoggerConverter
 from ..model import orm as _orm
 from ..model.chat_log import PssChatLogger as _PssChatLogger
 from ..pssapi import message_service as _message_service
 from ..pssapi import device_login as _login
-from .. import utils as _utils
 
 
 
@@ -98,6 +99,7 @@ class ChatLoggerCog(_Cog):
         Configure chat logging on this server. Check out the sub commands.
         """
         if ctx.invoked_subcommand is None:
+            _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
             await ctx.send_help('chatlog')
 
 
@@ -118,6 +120,7 @@ class ChatLoggerCog(_Cog):
         Examples:
           vivi chatlog add public #log Public Chat - Adds a chat logger for the public chat that will post to the channel #log
         """
+        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         log_channel = _PssChatLogger.make(ctx.guild.id, channel.id, channel_key, name)
         with _orm.create_session() as session:
             log_channel.create(session)
@@ -142,6 +145,7 @@ class ChatLoggerCog(_Cog):
         Examples:
           vivi chatlog edit 1 - Edits the chat logger with ID '1' on this server.
         """
+        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         with _orm.create_session() as session:
             pss_chat_logger = _orm.get_first_filtered_by(
                 _PssChatLogger,
@@ -207,6 +211,7 @@ class ChatLoggerCog(_Cog):
           vivi chatlog list
         """
         if ctx.invoked_subcommand is None:
+            _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
             with _orm.create_session() as session:
                 pss_chat_loggers = _orm.get_all_filtered_by(_PssChatLogger, session, guild_id=ctx.guild.id)
             lines = ['__Listing chat loggers for this Discord server__']
@@ -232,6 +237,7 @@ class ChatLoggerCog(_Cog):
         Usage:
           vivi chatlog list all
         """
+        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         with _orm.create_session() as session:
             pss_chat_loggers = _orm.get_all(_PssChatLogger, session)
         lines = ['__Listing all chat loggers__']
@@ -262,6 +268,7 @@ class ChatLoggerCog(_Cog):
         Examples:
           vivi chatlog delete 1 - Removes the chat logger with the ID '1'.
         """
+        _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
         with _orm.create_session() as session:
             pss_chat_logger: _PssChatLogger = _orm.get_first_filtered_by(
                 _PssChatLogger,

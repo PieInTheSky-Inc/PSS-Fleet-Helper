@@ -6,6 +6,7 @@ from discord.ext.commands import Context as _Context
 from discord.ext.commands import is_owner as _is_owner
 from discord.ext.commands import group as _command_group
 
+from .. import bot_settings as _bot_settings
 from .. import utils as _utils
 
 
@@ -31,7 +32,8 @@ class ChecksCog(_Cog):
         Usage:
           vivi check [subcommand]
         """
-        pass
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help('check')
 
 
     @_is_owner()

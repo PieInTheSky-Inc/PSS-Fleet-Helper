@@ -1,6 +1,10 @@
 import os as _os
+import json as _json
 from typing import List as _List
 
+
+
+AUTHORIZED_CHANNEL_IDS: _List[int] = _json.loads(_os.environ.get('AUTHORIZED_CHANNEL_IDS', '[]'))
 
 
 DISCORD_BOT_CLIENT_ID: str = _os.environ.get('VIVIBOT_DISCORD_BOT_CLIENT_ID')

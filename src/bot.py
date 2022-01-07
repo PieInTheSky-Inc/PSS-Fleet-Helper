@@ -4,7 +4,10 @@ import discord as _discord
 from discord.ext.commands import Bot as _Bot
 from discord.ext.commands import Context as _Context
 from discord.ext.commands.errors import CommandInvokeError as _CommandInvokeError
+from discord.ext.commands.errors import CommandNotFound as _CommandNotFound
 from discord.ext.commands import when_mentioned_or as _when_mentioned_or
+
+from src.model.errors import UnauthorizedChannelError
 
 from . import bot_settings as _bot_settings
 from . import utils as _utils
@@ -31,15 +34,21 @@ async def on_command_error(ctx: _Context,
     if _bot_settings.THROW_COMMAND_ERRORS:
         raise err
 
+    if isinstance(err, _CommandNotFound):
+        if not _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS, raise_on_error=False):
+            return
+
+    delete_after: float = None
     if isinstance(err, _CommandInvokeError):
         err = err.original
+        delete_after = 10.0
     error_type = type(err).__name__
     error_text = (err.args[0] or '') if err.args else ''
     error_lines = [f'**{error_type}**']
     if error_text:
         error_lines.append(error_text)
 
-    await _utils.discord.reply_lines(ctx, error_lines)
+    await _utils.discord.reply_lines(ctx, error_lines, delete_after)
 
 
 @BOT.event

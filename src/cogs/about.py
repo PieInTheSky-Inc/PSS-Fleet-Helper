@@ -46,7 +46,6 @@ class AboutCog(_Cog):
         Available placeholders:
         {}
         """
-
         await ctx.send_help('about placeholders')
 
 
