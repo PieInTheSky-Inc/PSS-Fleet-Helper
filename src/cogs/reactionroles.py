@@ -909,9 +909,11 @@ async def inquire_for_role_change_details(ctx: _Context, abort_text: str, reacti
             else:
                 prompt_text_lines.append('This is not a valid channel mention or a channel ID.')
 
-        content = reaction_role_change.message_content
+        content = None
+        if reaction_role_change:
+            content = reaction_role_change.message_content
         embed = None
-        if reaction_role_change.message_embed:
+        if content and reaction_role_change and reaction_role_change.message_embed:
             embed = await _utils.discord.get_embed_from_definition_or_url(reaction_role_change.message_embed)
         await _utils.discord.send(ctx, content, embed=embed)
         while role_change_message_content is None and role_change_message_embed is None:
