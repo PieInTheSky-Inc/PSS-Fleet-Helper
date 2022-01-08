@@ -290,7 +290,8 @@ class ChatLoggerCog(_Cog):
         elif delete_log:
             with _orm.create_session() as session:
                 pss_chat_logger = _orm.get_by_id(_PssChatLogger, session, logger_id)
-                pss_chat_logger.delete(session)
+                session.delete(pss_chat_logger)
+                session.commit()
             await _utils.discord.reply(ctx, f'The chat log has been deleted.')
         else:
             await _utils.discord.reply(ctx, f'The chat log has not been deleted.')
