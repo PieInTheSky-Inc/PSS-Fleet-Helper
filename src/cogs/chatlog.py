@@ -291,9 +291,6 @@ class ChatLoggerCog(_Cog):
             with _orm.create_session() as session:
                 pss_chat_logger = _orm.get_by_id(_PssChatLogger, session, logger_id)
                 pss_chat_logger.delete(session)
-                pss_chat_loggerss = _orm.create_session(_PssChatLogger, session)
-                if len(pss_chat_loggerss) == 0:
-                    self.log_chat.stop()
             await _utils.discord.reply(ctx, f'The chat log has been deleted.')
         else:
             await _utils.discord.reply(ctx, f'The chat log has not been deleted.')
