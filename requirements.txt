@@ -3,5 +3,6 @@ asyncpg
 emoji
 psycopg2
 py-cord
+pytz
 sqlalchemy
 strenum
