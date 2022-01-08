@@ -83,7 +83,10 @@ class ChatLoggerCog(_Cog):
                             user_name_and_fleet += f'** ({_escape_markdown(message.fleet_name)})**'
                         lines.append(f'{user_name_and_fleet}:** {_escape_markdown(message.message)}')
                     if lines:
-                        await _utils.discord.send_lines_to_channel(channel, lines)
+                        try:
+                            await _utils.discord.send_lines_to_channel(channel, lines)
+                        except:
+                            continue
                         pss_chat_logger.last_pss_message_id = max(message.message_id for message in messages)
                         with _orm.create_session() as session:
                             pss_chat_logger = _orm.merge(session, pss_chat_logger)
