@@ -282,7 +282,7 @@ class ReactionRoleCog(_Cog):
                 send_message_str = f' and send a message to {message_channel.mention} (review message text below)'
                 review_messages.append((i, message_text))
             confirmation_prompt_lines.append(f'{i} = {add_text} role `{role.name}`{send_message_str}')
-        prompts: _List[_Message] = [await _utils.discord.reply_lines(ctx, confirmation_prompt_lines)]
+        prompts: _List[_Message] = await _utils.discord.reply_lines(ctx, confirmation_prompt_lines)
         for role_change_number, msg in review_messages:
             prompts.append((await prompts[0].reply(f'__**Message for Role Change \#{role_change_number}**__\n{msg}', mention_author=False)))
 
