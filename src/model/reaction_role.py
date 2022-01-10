@@ -166,16 +166,22 @@ class ReactionRole(_orm.ModelBase):
 
 
     def update(self,
+               name: _Optional[str] = None,
                channel_id: _Optional[int] = None,
                message_id: _Optional[int] = None,
-               is_active: _Optional[bool] = None
+               is_active: _Optional[bool] = None,
+               reaction: _Optional[str] = None
     ) -> None:
+        if name is not None:
+            self.name = name
         if channel_id is not None:
             self.channel_id = channel_id
         if message_id is not None:
             self.message_id = message_id
         if is_active is not None:
             self.is_active = is_active
+        if reaction is not None:
+            self.reaction = reaction
 
 
     @classmethod

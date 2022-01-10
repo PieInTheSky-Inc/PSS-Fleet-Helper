@@ -512,7 +512,10 @@ class ReactionRoleCog(_Cog):
         with _orm.create_session() as session:
             reaction_role = _orm.merge(session, reaction_role)
             reaction_role.save(session)
-        await _utils.discord.reply(ctx, f'```Finished editing Reaction Role {reaction_role}.```')
+        activate, _, _ = await _utils.discord.inquire_for_true_false(ctx, f'Finished editing Reaction Role {reaction_role}.\nDo you want to activate it now?')
+        if activate:
+            cmd = self.bot.get_command('reactionrole activate')
+            await ctx.invoke(cmd, reaction_role_id=reaction_role.id)
 
 
     @_guild_only()
@@ -654,9 +657,14 @@ async def edit_details(reaction_role: _ReactionRole, ctx: _Context, abort_text: 
 
     if details:
         name, emoji, channel_id, message_id = details
-        if (await reaction_role.update(channel_id, message_id, name, emoji)):
-            await _utils.discord.reply(ctx, f'```Updated details of Reaction Role {reaction_role}.```')
-            return True, False
+        reaction_role.update(
+            name=name,
+            channel_id=channel_id,
+            message_id=message_id,
+            reaction=emoji,
+        )
+        await _utils.discord.reply(ctx, f'```Updated details of Reaction Role {reaction_role}.```')
+        return True, False
     return False, aborted
 
 
