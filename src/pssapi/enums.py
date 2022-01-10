@@ -56,6 +56,7 @@ class MessageType(_StrEnum):
     Mission = 'Mission'
     Task = 'Task'
     Global = 'Global'
+    AllianceAnnouncement = 'AllianceAnnouncement'
 
 
 
