@@ -41,6 +41,7 @@ class ActivityType(_StrEnum):
     ModelUpdate = 'ModelUpdate'
     FriendRequestDecline = 'FriendRequestDecline'
     FriendRequestAccept = 'FriendRequestAccept'
+    AllianceAnnouncement = 'AllianceAnnouncement'
 
 
 class MessageType(_StrEnum):
@@ -56,7 +57,6 @@ class MessageType(_StrEnum):
     Mission = 'Mission'
     Task = 'Task'
     Global = 'Global'
-    AllianceAnnouncement = 'AllianceAnnouncement'
 
 
 
