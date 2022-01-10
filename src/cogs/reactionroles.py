@@ -282,7 +282,7 @@ class ReactionRoleCog(_Cog):
                 send_message_str = f' and send a message to {message_channel.mention} (review message text below)'
                 review_messages.append((i, message_text))
             confirmation_prompt_lines.append(f'{i} = {add_text} role `{role.name}`{send_message_str}')
-        prompts: _List[_Message] = [await _utils.discord.reply_lines(ctx, confirmation_prompt_lines)]
+        prompts: _List[_Message] = await _utils.discord.reply_lines(ctx, confirmation_prompt_lines)
         for role_change_number, msg in review_messages:
             prompts.append((await prompts[0].reply(f'__**Message for Role Change \#{role_change_number}**__\n{msg}', mention_author=False)))
 
@@ -863,6 +863,7 @@ async def inquire_for_role_change_details(ctx: _Context, abort_text: str, reacti
         allow_toggle = reaction_role_change.allow_toggle
 
     add_message_prompt_message = f'Do you want to add a message that should be posted to a text channel, when a user gets the role `{role.name}` {add_text}ed?'
+    add_message_current_value = None
     if reaction_role_change:
         add_message_current_value = reaction_role_change.message_channel_id and (reaction_role_change.message_content or reaction_role_change.message_embed)
         add_message_prompt_message += f'\nCurrent value: {add_message_current_value}'
@@ -870,7 +871,8 @@ async def inquire_for_role_change_details(ctx: _Context, abort_text: str, reacti
     if aborted:
         return None, aborted
     if skipped:
-        add_message = add_message_current_value
+        add_message = False
+        add_message_current_value = None
     if not add_message and add_message_current_value:
         remove_current_message, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you want to remove the current message that should be posted to a text channel, when a user gets the role `{role.name}` {add_text}ed?', abort_text=abort_text)
         if aborted:
@@ -907,9 +909,11 @@ async def inquire_for_role_change_details(ctx: _Context, abort_text: str, reacti
             else:
                 prompt_text_lines.append('This is not a valid channel mention or a channel ID.')
 
-        content = reaction_role_change.message_content
+        content = None
+        if reaction_role_change:
+            content = reaction_role_change.message_content
         embed = None
-        if reaction_role_change.message_embed:
+        if content and reaction_role_change and reaction_role_change.message_embed:
             embed = await _utils.discord.get_embed_from_definition_or_url(reaction_role_change.message_embed)
         await _utils.discord.send(ctx, content, embed=embed)
         while role_change_message_content is None and role_change_message_embed is None:
