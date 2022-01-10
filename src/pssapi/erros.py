@@ -1,0 +1,4 @@
+
+
+class PssApiError(Exception):
+    pass

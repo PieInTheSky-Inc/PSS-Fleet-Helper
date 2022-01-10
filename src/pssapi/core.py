@@ -1,6 +1,8 @@
 import aiohttp as _aiohttp
 from typing import Dict as _Dict
 
+from src.pssapi.erros import PssApiError
+
 from . import settings as _settings
 from . import convert as _convert
 from .types import EntityInfo as _EntityInfo
@@ -54,7 +56,11 @@ async def __get_data_from_url(url: str, **params) -> str:
 
 
 async def __get_production_server() -> str:
-    if _settings.OVERWRITE_PSS_PRODUCTION_SERVER:
-        return _settings.OVERWRITE_PSS_PRODUCTION_SERVER
-    latest_settings = await get_latest_settings(base_url=_settings.DEFAULT_PSS_PRODUCTION_SERVER)
-    return latest_settings['ProductionServer']
+    for i in range(10):
+        if _settings.OVERWRITE_PSS_PRODUCTION_SERVER:
+            return _settings.OVERWRITE_PSS_PRODUCTION_SERVER
+        latest_settings = await get_latest_settings(base_url=_settings.DEFAULT_PSS_PRODUCTION_SERVER)
+        result = latest_settings.get('ProductionServer')
+        if result:
+            return result
+    raise PssApiError('Could not retrieve the current production server.')

@@ -21,7 +21,7 @@ from ..model import orm as _orm
 from ..model.chat_log import PssChatLogger as _PssChatLogger
 from ..pssapi import message_service as _message_service
 from ..pssapi import device_login as _login
-
+from ..pssapi.erros import PssApiError as _PssApiError
 
 
 # ---------- Constants ----------
@@ -31,7 +31,7 @@ from ..pssapi import device_login as _login
 # ---------- Cog ----------
 
 class ChatLoggerCog(_Cog):
-    __CHAT_LOG_INTERVAL: float = 30.0
+    __CHAT_LOG_INTERVAL: float = 60.0
 
     def __init__(self, bot: _Bot) -> None:
         if not bot:
@@ -55,7 +55,11 @@ class ChatLoggerCog(_Cog):
     @_tasks.loop(seconds=__CHAT_LOG_INTERVAL)
     async def log_chat(self):
         utc_now = _utils.datetime.get_utc_now()
-        access_token = await _login()
+        try:
+            access_token = await _login()
+        except _PssApiError as e:
+            print(e)
+            return
         with _orm.create_session() as session:
             pss_chat_loggers = _orm.get_all(_PssChatLogger, session)
         if not pss_chat_loggers:
@@ -70,27 +74,32 @@ class ChatLoggerCog(_Cog):
         delay = remaining_time / channel_key_count * .97
 
         for channel_key, pss_chat_loggers in channel_keys.items():
-            messages = await _message_service.list_messages_for_channel_key(channel_key, access_token)
-            messages = sorted(messages, key=lambda x: x.message_id)
-            for pss_chat_logger in pss_chat_loggers:
-                channel: _TextChannel = await self.bot.fetch_channel(pss_chat_logger.channel_id)
-                if channel:
-                    messages = [message for message in messages if message.message_id > pss_chat_logger.last_pss_message_id]
-                    lines = []
-                    for message in messages:
-                        user_name_and_fleet = f'**{_escape_markdown(message.user_name)}'
-                        if message.fleet_name:
-                            user_name_and_fleet += f'** ({_escape_markdown(message.fleet_name)})**'
-                        lines.append(f'{user_name_and_fleet}:** {_escape_markdown(message.message)}')
-                    if lines:
-                        try:
-                            await _utils.discord.send_lines_to_channel(channel, lines)
-                        except:
-                            continue
-                        pss_chat_logger.last_pss_message_id = max(message.message_id for message in messages)
-                        with _orm.create_session() as session:
-                            pss_chat_logger = _orm.merge(session, pss_chat_logger)
-                            pss_chat_logger.save(session)
+            try:
+                messages = await _message_service.list_messages_for_channel_key(channel_key, access_token)
+            except _PssApiError as e:
+                print(f'Could not get messages for channel key \'{channel_key}\': {e}')
+                messages = None
+            if messages:
+                messages = sorted(messages, key=lambda x: x.message_id)
+                for pss_chat_logger in pss_chat_loggers:
+                    channel: _TextChannel = await self.bot.fetch_channel(pss_chat_logger.channel_id)
+                    if channel:
+                        messages = [message for message in messages if message.message_id > pss_chat_logger.last_pss_message_id]
+                        lines = []
+                        for message in messages:
+                            user_name_and_fleet = f'**{_escape_markdown(message.user_name)}'
+                            if message.fleet_name:
+                                user_name_and_fleet += f'** ({_escape_markdown(message.fleet_name)})**'
+                            lines.append(f'{user_name_and_fleet}:** {_escape_markdown(message.message)}')
+                        if lines:
+                            try:
+                                await _utils.discord.send_lines_to_channel(channel, lines)
+                            except:
+                                continue
+                            pss_chat_logger.last_pss_message_id = max(message.message_id for message in messages)
+                            with _orm.create_session() as session:
+                                pss_chat_logger = _orm.merge(session, pss_chat_logger)
+                                pss_chat_logger.save(session)
             if channel_key_count > 1:
                 await _asyncio.sleep(delay)
 
