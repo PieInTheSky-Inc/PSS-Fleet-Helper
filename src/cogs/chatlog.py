@@ -21,7 +21,7 @@ from ..model import orm as _orm
 from ..model.chat_log import PssChatLogger as _PssChatLogger
 from ..pssapi import message_service as _message_service
 from ..pssapi import device_login as _login
-from ..pssapi.erros import PssApiError as _PssApiError
+from ..pssapi.errors import PssApiError as _PssApiError
 
 
 # ---------- Constants ----------

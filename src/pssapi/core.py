@@ -1,7 +1,7 @@
 import aiohttp as _aiohttp
 from typing import Dict as _Dict
 
-from src.pssapi.erros import PssApiError
+from .errors import PssApiError as _PssApiError
 
 from . import settings as _settings
 from . import convert as _convert
@@ -63,4 +63,4 @@ async def __get_production_server() -> str:
         result = latest_settings.get('ProductionServer')
         if result:
             return result
-    raise PssApiError('Could not retrieve the current production server.')
+    raise _PssApiError('Could not retrieve the current production server.')
