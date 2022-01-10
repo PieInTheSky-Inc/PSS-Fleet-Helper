@@ -459,10 +459,17 @@ class ReactionRoleCog(_Cog):
         if not reaction_role:
             raise Exception(f'There is no Reaction Role configured on this server with the ID \'{reaction_role_id}\'.')
 
-        if reaction_role.is_active:
-            raise Exception(f'Cannot edit the Reaction Role {reaction_role}, because it is active.')
-
         abort_text = f'Aborted. The Reaction Role {reaction_role} has not been edited.'
+
+        if reaction_role.is_active:
+            deactivate, _, _ = await _utils.discord.inquire_for_true_false(ctx, f'The Reaction Role {reaction_role} is currently active and cannot be edited, do you want to deactivate it now?')
+            if deactivate:
+                cmd = self.bot.get_command('reactionrole deactivate')
+                await ctx.invoke(cmd, reaction_role_id=reaction_role.id)
+            else:
+                await _utils.discord.reply(ctx, abort_text)
+                return
+
         actions = {
             'Edit details': edit_details,
             'Edit Role Changes': {
