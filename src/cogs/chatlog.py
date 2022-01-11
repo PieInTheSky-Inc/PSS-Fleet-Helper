@@ -22,6 +22,7 @@ from ..model.chat_log import PssChatLogger as _PssChatLogger
 from ..pssapi import message_service as _message_service
 from ..pssapi import device_login as _login
 from ..pssapi.errors import PssApiError as _PssApiError
+from ..pssapi.errors import ServerMaintenanceError as _ServerMaintenanceError
 
 
 # ---------- Constants ----------
@@ -76,6 +77,9 @@ class ChatLoggerCog(_Cog):
         for channel_key, pss_chat_loggers in channel_keys.items():
             try:
                 messages = await _message_service.list_messages_for_channel_key(channel_key, access_token)
+            except _ServerMaintenanceError:
+                print(f'Server is under maintenance.')
+                return
             except _PssApiError as e:
                 print(f'Could not get messages for channel key \'{channel_key}\': {e}')
                 messages = None

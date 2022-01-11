@@ -2,6 +2,7 @@ import aiohttp as _aiohttp
 from typing import Dict as _Dict
 
 from .errors import PssApiError as _PssApiError
+from .errors import ServerMaintenanceError as _ServerMaintenanceError
 
 from . import settings as _settings
 from . import convert as _convert
@@ -44,7 +45,7 @@ async def get_latest_settings(base_url: str = None) -> _EntityInfo:
     result = _convert.xmltree_to_dict3(raw_text)
     maintenance_message = result.get('MaintenanceMessage')
     if maintenance_message:
-        raise Exception(maintenance_message)
+        raise _ServerMaintenanceError(maintenance_message)
     return result
 
 
