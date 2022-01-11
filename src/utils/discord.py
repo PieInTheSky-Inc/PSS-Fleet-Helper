@@ -105,48 +105,51 @@ class EmbedLeovoelEncoder(_JSONEncoder):
     Tool at: https://leovoel.github.io/embed-visualizer/
     """
     def default(self, obj):
-        if isinstance(obj, _Embed):
-            embed: _Embed = obj
-            result = {}
-            if embed.title:
-                result['title'] = embed.title
-            if embed.description:
-                result['description'] = embed.description
-            if embed.url:
-                result['url'] = embed.url
-            if embed.color:
-                r, g, b = embed.color.to_rgb()
-                result['color'] = (r << 16) + (g << 8) + b
-            if embed.timestamp:
-                result['timestamp'] = _utc_to_timestamp(embed.timestamp)
-            if embed.footer:
-                if embed.footer.icon_url:
-                    result.setdefault('footer', {})['icon_url'] = embed.footer.icon_url
-                if embed.footer.text:
-                    result.setdefault('footer', {})['text'] = embed.footer.text
-            if embed.thumbnail and embed.thumbnail.url:
-                result.setdefault('thumbnail', {})['url'] = embed.thumbnail.url
-            if embed.image and embed.image.url:
-                result.setdefault('image', {})['url'] = embed.image.url
-            if embed.author:
-                if embed.author.icon_url:
-                    result.setdefault('author', {})['icon_url'] = embed.footer.icon_url
-                if embed.author.name:
-                    result.setdefault('author', {})['name'] = embed.footer.name
-                if embed.author.url:
-                    result.setdefault('author', {})['url'] = embed.footer.url
-            if embed.fields:
-                for field in embed.fields:
-                    result.setdefault('fields', []).append({
-                        'inline': field.inline,
-                        'name': field.name,
-                        'value': field.value
-                    })
-            return result
+        if obj:
+            if isinstance(obj, _Embed):
+                embed: _Embed = obj
+                result = {}
+                if embed.title:
+                    result['title'] = embed.title
+                if embed.description:
+                    result['description'] = embed.description
+                if embed.url:
+                    result['url'] = embed.url
+                if embed.color:
+                    r, g, b = embed.color.to_rgb()
+                    result['color'] = (r << 16) + (g << 8) + b
+                if embed.timestamp:
+                    result['timestamp'] = _utc_to_timestamp(embed.timestamp)
+                if embed.footer:
+                    if embed.footer.icon_url:
+                        result.setdefault('footer', {})['icon_url'] = embed.footer.icon_url
+                    if embed.footer.text:
+                        result.setdefault('footer', {})['text'] = embed.footer.text
+                if embed.thumbnail and embed.thumbnail.url:
+                    result.setdefault('thumbnail', {})['url'] = embed.thumbnail.url
+                if embed.image and embed.image.url:
+                    result.setdefault('image', {})['url'] = embed.image.url
+                if embed.author:
+                    if embed.author.icon_url:
+                        result.setdefault('author', {})['icon_url'] = embed.footer.icon_url
+                    if embed.author.name:
+                        result.setdefault('author', {})['name'] = embed.footer.name
+                    if embed.author.url:
+                        result.setdefault('author', {})['url'] = embed.footer.url
+                if embed.fields:
+                    for field in embed.fields:
+                        result.setdefault('fields', []).append({
+                            'inline': field.inline,
+                            'name': field.name,
+                            'value': field.value
+                        })
+                return result
+            else:
+                # call base class implementation which takes care of
+                # raising exceptions for unsupported types
+                return _JSONEncoder.default(self, obj)
         else:
-            # call base class implementation which takes care of
-            # raising exceptions for unsupported types
-            return _JSONEncoder.default(self, obj)
+            return ''
 
 
 class EmbedLeovoelDecoder(_JSONDecoder):
@@ -925,7 +928,7 @@ async def reply_lines(ctx: _Context, content_lines: _List[str], mention_author: 
 
 
 async def send(ctx: _Context, content: str, **kwargs) -> _Message:
-    if content:
+    if content or 'embed' in kwargs or 'embeds' in kwargs:
         return (await ctx.send(content=content, **kwargs))
 
 
