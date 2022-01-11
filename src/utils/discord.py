@@ -131,11 +131,11 @@ class EmbedLeovoelEncoder(_JSONEncoder):
                     result.setdefault('image', {})['url'] = embed.image.url
                 if embed.author:
                     if embed.author.icon_url:
-                        result.setdefault('author', {})['icon_url'] = embed.footer.icon_url
+                        result.setdefault('author', {})['icon_url'] = embed.author.icon_url
                     if embed.author.name:
-                        result.setdefault('author', {})['name'] = embed.footer.name
+                        result.setdefault('author', {})['name'] = embed.author.name
                     if embed.author.url:
-                        result.setdefault('author', {})['url'] = embed.footer.url
+                        result.setdefault('author', {})['url'] = embed.author.url
                 if embed.fields:
                     for field in embed.fields:
                         result.setdefault('fields', []).append({
