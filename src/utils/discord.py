@@ -1,3 +1,4 @@
+from aiohttp import InvalidURL as _InvalidURL
 from asyncio import TimeoutError as _TimeoutError
 from datetime import timedelta as _timedelta
 from json import dumps as _json_dumps
@@ -171,7 +172,7 @@ class EmbedLeovoelDecoder(_JSONDecoder):
             result = _Embed(title=title, color=color, url=url, description=description, timestamp=timestamp)
             author_info = dct.get('author')
             if author_info:
-                result.set_author(author_info.get('name'), url=author_info.get('url', _Embed.Empty), icon_url=author_info.get('icon_url', _Embed.Empty))
+                result.set_author(name=author_info.get('name'), url=author_info.get('url', _Embed.Empty), icon_url=author_info.get('icon_url', _Embed.Empty))
             footer_info = dct.get('footer')
             if footer_info:
                 result.set_footer(text=footer_info.get('text', _Embed.Empty), icon_url=footer_info.get('icon_url', _Embed.Empty))
@@ -409,12 +410,15 @@ async def get_embed_from_definition_or_url(definition_or_url: str) -> _Embed:
             url = _web.get_raw_pastebin(definition_or_url)
         else:
             url = definition_or_url
+    try:
         url_definition = await _web.get_data_from_url(url)
+    except _InvalidURL as e:
+        raise Exception('This is not a valid url pointing to a file containing an embed definition.') from e
 
     try:
         return _json_loads(url_definition, cls=EmbedLeovoelDecoder)
-    except _JSONDecodeError:
-        raise Exception('This is not a valid embed definition or this url points to a file not containing a valid embed definition.')
+    except _JSONDecodeError as e:
+        raise Exception('This is not a valid embed definition or this url points to a file not containing a valid embed definition.') from e
 
 
 def get_emoji(ctx: _Context,
@@ -907,7 +911,7 @@ The following substitutions will be created:
 
 
 async def reply(ctx: _Context, content: str, mention_author: bool = False, **kwargs) -> _Message:
-    if content:
+    if content or 'embed' in kwargs:
         return (await ctx.reply(content=content, mention_author=mention_author, **kwargs))
 
 
