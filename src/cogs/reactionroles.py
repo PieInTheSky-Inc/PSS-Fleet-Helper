@@ -302,7 +302,10 @@ class ReactionRoleCog(_Cog):
                 role_requirement.create(session, commit=False)
             reaction_role.save(session)
 
-        await _utils.discord.reply(ctx, f'Successfully set up a Reaction Role {reaction_role}.\nDon\'t forget to activate it!')
+        activate, _, _ = await _utils.discord.inquire_for_true_false(ctx, f'Created Reaction Role {reaction_role}.\nDo you want to activate it now?')
+        if activate:
+            cmd = self.bot.get_command('reactionrole activate')
+            await ctx.invoke(cmd, reaction_role_id=reaction_role.id)
 
 
     @_guild_only()
