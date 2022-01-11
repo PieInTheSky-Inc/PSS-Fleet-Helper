@@ -934,7 +934,7 @@ async def inquire_for_role_change_details(ctx: _Context, abort_text: str, reacti
         while role_change_message_content is None and role_change_message_embed is None:
             inquire_message_text = True
             if reaction_role_change and reaction_role_change.message_content:
-                inquire_message_text, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, 'Do you want to edit the above message?', abort_text=abort_text)
+                inquire_message_text, aborted, _ = await _utils.discord.inquire_for_true_false(ctx, 'Do you want to edit the above message content?', abort_text=abort_text)
                 if aborted:
                     return None, aborted
 
