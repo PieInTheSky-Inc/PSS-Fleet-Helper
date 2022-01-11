@@ -868,7 +868,10 @@ async def inquire_for_role_change_details(ctx: _Context, abort_text: str, reacti
 
         prompt_text_lines = []
         if role:
-            if role.position >= ctx.guild.me.roles[-1].position:
+            if role.is_bot_managed or role.is_integration or role.is_default or role.is_premium_subscriber:
+                prompt_text_lines.append(f'I cannot add or remove the role {role.name}. It is either managed by bot or integration, the everyone role or the Nitro Server Booster role.')
+                role = None
+            elif role.position >= ctx.guild.me.roles[-1].position:
                 prompt_text_lines.append(f'I am not allowed to add or remove the role {role.name}. It is higher than my highest role.')
                 role = None
         else:
@@ -1027,7 +1030,10 @@ async def inquire_for_role_requirement_add(ctx: _Context, abort_text: str) -> _T
         if aborted:
             return None, aborted
 
-        prompt_text_lines = ['This is not a valid role mention or ID.']
+        if not role:
+            prompt_text_lines = ['This is not a valid role mention or ID.']
+        elif role.is_bot_managed or role.is_integration or role.is_default or role.is_premium_subscriber:
+            prompt_text_lines = [f'I cannot add or remove the role {role.name}. It is either managed by bot or integration, the everyone role or the Nitro Server Booster role.']
     return role.id, aborted
 
 
