@@ -151,7 +151,7 @@ class ChecksCog(_Cog):
     @base.command(name='role')
     async def role(self, ctx: _Context, role_id_or_mention: str) -> None:
         """
-        Checks, if a role with the given ID or mention exists on this guild and prints its position in the role list of this guild.
+        Checks, if a role with the given ID or mention exists on this guild and prints information about it.
 
         Usage:
           vivi check role [role_id_or_mention]
@@ -167,7 +167,11 @@ class ChecksCog(_Cog):
         if result:
             lines = [
                 result.mention,
-                str(result.position),
+                f'Position: {result.position}',
+                f'Is managed by a bot: {result.is_bot_managed()}',
+                f'Is managed by an integration: {result.is_integration()}',
+                f'Is everyone: {result.is_default()}',
+                f'Is Nitro Booster: {result.is_premium_subscriber()}',
             ]
             await _utils.discord.reply_lines(ctx, lines)
         else:
