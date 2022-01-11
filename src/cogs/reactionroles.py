@@ -938,6 +938,9 @@ async def inquire_for_role_change_details(ctx: _Context, abort_text: str, reacti
                 if aborted:
                     return None, aborted
 
+            if not inquire_message_text:
+                role_change_message_content = content
+
             while inquire_message_text and role_change_message_content is None:
                 prompt_lines = [
                         f'Please type a message to be sent (max. {_utils.discord.settings.MESSAGE_MAXIMUM_CHARACTER_COUNT} characters). The following variables are available:',
