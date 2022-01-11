@@ -911,7 +911,7 @@ The following substitutions will be created:
 
 
 async def reply(ctx: _Context, content: str, mention_author: bool = False, **kwargs) -> _Message:
-    if content or 'embed' in kwargs:
+    if content or 'embed' in kwargs or 'embeds' in kwargs:
         return (await ctx.reply(content=content, mention_author=mention_author, **kwargs))
 
 
@@ -939,7 +939,7 @@ async def send_lines(ctx: _Context, content_lines: _List[str], **kwargs) -> _Lis
 
 
 async def send_to_channel(channel: _TextChannel, content: str, **kwargs) -> _Message:
-    if content:
+    if content or 'embed' in kwargs or 'embeds' in kwargs:
         return (await channel.send(content=content, **kwargs))
 
 
