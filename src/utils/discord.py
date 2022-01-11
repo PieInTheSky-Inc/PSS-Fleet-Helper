@@ -976,14 +976,16 @@ def update_embed_definition(embed_definition: str, substitutions: _Optional[_Dic
             field['name'] = field.get('name', '').replace(key, value)
             field['value'] = field.get('value', '').replace(key, value)
         if 'author' in embed_dct:
-            embed_dct['author']['icon_url'] = embed_dct['author'].get('icon_url').replace(key, value)
-            embed_dct['author']['name'] = embed_dct['author'].get('name').replace(key, value)
-        if 'footer' in embed_dct:
-            embed_dct['footer']['icon_url'] = embed_dct['footer'].get('icon_url').replace(key, value)
-        if 'image' in embed_dct:
-            embed_dct['image']['url'] = embed_dct['image'].get('url').replace(key, value)
-        if 'thumbnail' in embed_dct:
-            embed_dct['thumbnail']['url'] = embed_dct['thumbnail'].get('url').replace(key, value)
+            if 'icon_url' in embed_dct['author']:
+                embed_dct['author']['icon_url'] = embed_dct['author']['icon_url'].replace(key, value)
+            if 'name' in embed_dct['author']:
+                embed_dct['author']['name'] = embed_dct['author']['name'].replace(key, value)
+        if 'footer' in embed_dct and 'icon_url' in embed_dct['footer']:
+            embed_dct['footer']['icon_url'] = embed_dct['footer']['icon_url'].replace(key, value)
+        if 'image' in embed_dct and 'url' in embed_dct['image']:
+            embed_dct['image']['url'] = embed_dct['image']['url'].replace(key, value)
+        if 'thumbnail' in embed_dct and 'url' in embed_dct['thumbnail']:
+            embed_dct['thumbnail']['url'] = embed_dct['thumbnail']['url'].replace(key, value)
 
     return _json_dumps(embed_dct, separators=(',', ':'))
 
