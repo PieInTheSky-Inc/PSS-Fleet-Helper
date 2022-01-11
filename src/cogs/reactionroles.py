@@ -425,8 +425,9 @@ class ReactionRoleCog(_Cog):
         if delete:
             delete, _, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you REALLY, REALLY want to delete the Reaction Role {reaction_role} as defined above?')
             if delete:
-                cmd = self.bot.get_command('reactionrole deactivate')
-                await ctx.invoke(cmd, reaction_role_id=reaction_role_id)
+                if reaction_role.is_active:
+                    cmd = self.bot.get_command('reactionrole deactivate')
+                    await ctx.invoke(cmd, reaction_role_id=reaction_role_id)
                 with _orm.create_session() as session:
                     reaction_role = _orm.get_by_id(_ReactionRole, session, reaction_role_id)
                     reaction_role.delete(session)
