@@ -421,9 +421,9 @@ class ReactionRoleCog(_Cog):
         definition_lines = await _ReactionRoleConverter(reaction_role).to_text(ctx.guild, True)
         await _utils.discord.reply_lines(ctx, definition_lines)
 
-        delete = await _utils.discord.inquire_for_true_false(ctx, f'Do you really want to delete the Reaction Role {reaction_role} as defined above?')
+        delete, _, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you really want to delete the Reaction Role {reaction_role} as defined above?')
         if delete:
-            delete = await _utils.discord.inquire_for_true_false(ctx, f'Do you REALLY, REALLY want to delete the Reaction Role {reaction_role} as defined above?')
+            delete, _, _ = await _utils.discord.inquire_for_true_false(ctx, f'Do you REALLY, REALLY want to delete the Reaction Role {reaction_role} as defined above?')
             if delete:
                 with _orm.create_session() as session:
                     reaction_role = _orm.get_by_id(_ReactionRole, session, reaction_role_id)
