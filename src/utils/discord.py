@@ -24,10 +24,11 @@ from discord import Message as _Message
 from discord import Role as _Role
 from discord import TextChannel as _TextChannel
 from discord import User as _User
+from discord.abc import Messageable as _Messageable
 from discord.errors import Forbidden as _Forbidden
 from discord.errors import NotFound as _NotFound
-from discord.abc import Messageable as _Messageable
 from discord.ext.commands import Context as _Context
+from discord.utils import escape_markdown as _escape_markdown
 import emoji as _emoji
 
 from . import settings
@@ -1040,3 +1041,11 @@ async def __send_aborted_or_skipped(abort_reply_to: _Message,
         await abort_reply_to.reply(abort_text, mention_author=False)
     if skipped and bool(skip_text):
         await skip_reply_to.reply(skip_text, mention_author=False)
+
+
+def escape_markdown_and_mentions(s: str) -> str:
+    if not s:
+        return s
+
+    s = _escape_markdown(s).replace('@', '@​')
+    return s

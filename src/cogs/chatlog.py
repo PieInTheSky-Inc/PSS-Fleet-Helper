@@ -12,10 +12,10 @@ from discord.ext.commands import Context as _Context
 from discord.ext.commands import is_owner as _is_owner
 from discord.ext.commands import guild_only as _guild_only
 from discord.ext.commands import group as _command_group
-from discord.utils import escape_markdown as _escape_markdown
 
 from .. import bot_settings as _bot_settings
 from .. import utils as _utils
+from ..utils.discord import escape_markdown_and_mentions as _escape_markdown_and_mentions
 from ..converters import PssChatLoggerConverter as _PssChatLoggerConverter
 from ..model import orm as _orm
 from ..model.chat_log import PssChatLogger as _PssChatLogger
@@ -91,10 +91,10 @@ class ChatLoggerCog(_Cog):
                         messages = [message for message in messages if message.message_id > pss_chat_logger.last_pss_message_id]
                         lines = []
                         for message in messages:
-                            user_name_and_fleet = f'**{_escape_markdown(message.user_name)}'
+                            user_name_and_fleet = f'**{_escape_markdown_and_mentions(message.user_name)}'
                             if message.fleet_name:
-                                user_name_and_fleet += f'** ({_escape_markdown(message.fleet_name)})**'
-                            lines.append(f'{user_name_and_fleet}:** {_escape_markdown(message.message)}')
+                                user_name_and_fleet += f'** ({_escape_markdown_and_mentions(message.fleet_name)})**'
+                            lines.append(f'{user_name_and_fleet}:** {_escape_markdown_and_mentions(message.message)}')
                         if lines:
                             try:
                                 await _utils.discord.send_lines_to_channel(channel, lines)
