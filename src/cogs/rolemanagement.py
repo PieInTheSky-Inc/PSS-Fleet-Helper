@@ -15,7 +15,7 @@ from .. import utils as _utils
 
 
 
-class RolesCog(_Cog):
+class RoleManagement(_Cog):
     def __init__(self, bot: _Bot) -> None:
         if not bot:
             raise ValueError('Parameter \'bot\' must not be None.')
@@ -28,7 +28,7 @@ class RolesCog(_Cog):
 
 
     @_command_group(name='role', aliases=['roles'], brief='Role management', invoke_without_command=True)
-    async def base(self, ctx: _Context) -> None:
+    async def role(self, ctx: _Context) -> None:
         if ctx.invoked_subcommand is None:
             _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
             await ctx.send_help('role')
@@ -36,7 +36,7 @@ class RolesCog(_Cog):
 
     @_bot_has_guild_permissions(manage_roles=True)
     @_has_guild_permissions(manage_roles=True)
-    @base.command(name='add', brief='Add Role to members')
+    @role.command(name='add', brief='Add Role to members')
     async def add(self, ctx: _Context, role_id_or_mention: _Role, *, user_ids: str) -> None:
         """
         Add a Role to multiple members of this server.
@@ -87,7 +87,7 @@ class RolesCog(_Cog):
 
     @_bot_has_guild_permissions(manage_roles=True)
     @_has_guild_permissions(manage_roles=True)
-    @base.group(name='clear', brief='Remove a role from all members', invoke_without_command=True)
+    @role.group(name='clear', brief='Remove a role from all members', invoke_without_command=True)
     async def clear(self, ctx: _Context, role_id_or_mention: _Role) -> None:
         """
         Remove a Role from all members of this server.
@@ -178,7 +178,7 @@ class RolesCog(_Cog):
 
     @_bot_has_guild_permissions(manage_roles=True)
     @_has_guild_permissions(manage_roles=True)
-    @base.command(name='remove', brief='Remove a role from specified members')
+    @role.command(name='remove', brief='Remove a role from specified members')
     async def remove(self, ctx: _Context, role_id_or_mention: _Role, *, user_ids: str) -> None:
         """
         Remove a Role from multiple members of this server.
@@ -228,4 +228,4 @@ class RolesCog(_Cog):
 
 
 def setup(bot: _Bot):
-    bot.add_cog(RolesCog(bot))
+    bot.add_cog(RoleManagement(bot))

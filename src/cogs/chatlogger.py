@@ -4,7 +4,6 @@ from typing import List as _List
 from xml.etree.ElementTree import ParseError as _XmlParseError
 
 import asyncio as _asyncio
-from discord import Guild as _Guild
 from discord import TextChannel as _TextChannel
 import discord.ext.tasks as _tasks
 from discord.ext.commands import Bot as _Bot
@@ -26,13 +25,14 @@ from ..pssapi.errors import PssApiError as _PssApiError
 from ..pssapi.errors import ServerMaintenanceError as _ServerMaintenanceError
 
 
+
 # ---------- Constants ----------
 
 
 
 # ---------- Cog ----------
 
-class ChatLoggerCog(_Cog):
+class ChatLogger(_Cog):
     __CHAT_LOG_INTERVAL: float = 60.0
 
     def __init__(self, bot: _Bot) -> None:
@@ -72,7 +72,7 @@ class ChatLoggerCog(_Cog):
             channel_keys.setdefault(pss_chat_logger.pss_channel_key, []).append(pss_chat_logger)
         channel_key_count = len(channel_keys.keys())
 
-        remaining_time = ChatLoggerCog.__CHAT_LOG_INTERVAL - (_utils.datetime.get_utc_now() - utc_now).total_seconds()
+        remaining_time = ChatLogger.__CHAT_LOG_INTERVAL - (_utils.datetime.get_utc_now() - utc_now).total_seconds()
         delay = remaining_time / channel_key_count * (1 - channel_key_count * .01)
 
         for channel_key, pss_chat_loggers in channel_keys.items():
@@ -315,4 +315,4 @@ class ChatLoggerCog(_Cog):
 
 
 def setup(bot: _Bot):
-    bot.add_cog(ChatLoggerCog(bot))
+    bot.add_cog(ChatLogger(bot))

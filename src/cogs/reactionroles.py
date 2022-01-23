@@ -35,7 +35,7 @@ from ..model import orm as _orm
 
 # ---------- Cog ----------
 
-class ReactionRoleCog(_Cog):
+class ReactionRoles(_Cog):
     """
     Commands for configuring Reaction Roles on this server.
     """
@@ -1076,4 +1076,4 @@ async def remove_role_requirement(reaction_role: _ReactionRole, ctx: _Context, a
 
 
 def setup(bot: _Bot):
-    bot.add_cog(ReactionRoleCog(bot))
+    bot.add_cog(ReactionRoles(bot))

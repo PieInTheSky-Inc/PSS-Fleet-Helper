@@ -9,7 +9,7 @@ from .. import utils as _utils
 
 
 
-class AboutCog(_Cog):
+class About(_Cog):
     def __init__(self, bot: _Bot) -> None:
         if not bot:
             raise ValueError('Parameter \'bot\' must not be None.')
@@ -62,4 +62,4 @@ class AboutCog(_Cog):
 
 
 def setup(bot: _Bot):
-    bot.add_cog(AboutCog(bot))
+    bot.add_cog(About(bot))

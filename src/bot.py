@@ -58,8 +58,9 @@ async def on_command_error(ctx: _Context,
 async def on_ready() -> None:
     print(f'Bot logged in as {BOT.user.name} ({BOT.user.id})')
     print(f'Bot version: {_bot_settings.VERSION}')
-    extensions = '\n'.join(f'- {key.split(".")[-1]}' for key in BOT.extensions.keys())
-    print(f'Loaded extensions:\n{extensions}')
+    for cog_name, cog_path in _bot_settings.COGS_TO_LOAD.items():
+        print(f'Loading cog {cog_name} from extension {cog_path}')
+        BOT.load_extension(cog_path)
 
 
 
@@ -67,12 +68,6 @@ async def on_ready() -> None:
 
 async def initialize() -> None:
     await _setup_model()
-    BOT.load_extension('src.cogs.about')
-    BOT.load_extension('src.cogs.chatlog')
-    BOT.load_extension('src.cogs.checks')
-    BOT.load_extension('src.cogs.embed')
-    BOT.load_extension('src.cogs.roles')
-    BOT.load_extension('src.cogs.reactionroles')
 
 
 def run_bot():

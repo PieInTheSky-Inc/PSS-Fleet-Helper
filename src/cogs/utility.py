@@ -1,3 +1,7 @@
+import json as _json
+from typing import List as _List
+
+from discord import Embed as _Embed
 from discord import Role as _Role
 from discord import TextChannel as _TextChannel
 from discord.ext.commands import Bot as _Bot
@@ -6,12 +10,11 @@ from discord.ext.commands import Context as _Context
 from discord.ext.commands import is_owner as _is_owner
 from discord.ext.commands import group as _command_group
 
-from .. import bot_settings as _bot_settings
 from .. import utils as _utils
 
 
 
-class ChecksCog(_Cog):
+class Utility(_Cog):
     def __init__(self, bot: _Bot) -> None:
         if not bot:
             raise ValueError('Parameter \'bot\' must not be None.')
@@ -25,7 +28,7 @@ class ChecksCog(_Cog):
 
     @_is_owner()
     @_command_group(name='check', hidden=True, invoke_without_command=True)
-    async def base(self, ctx: _Context) -> None:
+    async def check(self, ctx: _Context) -> None:
         """
         Provides commands for checking user input. Check out the subcommands.
 
@@ -37,7 +40,7 @@ class ChecksCog(_Cog):
 
 
     @_is_owner()
-    @base.command(name='channel')
+    @check.command(name='channel')
     async def channel(self, ctx: _Context, channel_id_or_mention: str) -> None:
         """
         Checks, if a channel with the provided ID or mention exists on this guild and can be accessed by the bot.
@@ -64,7 +67,7 @@ class ChecksCog(_Cog):
 
 
     @_is_owner()
-    @base.command(name='emoji')
+    @check.command(name='emoji')
     async def emoji(self, ctx: _Context, emoji: str) -> None:
         """
         Checks, if a given emoji exists on this guild or is a standard emoji and can be accessed by the bot.
@@ -91,7 +94,7 @@ class ChecksCog(_Cog):
 
 
     @_is_owner()
-    @base.command(name='member')
+    @check.command(name='member')
     async def member(self, ctx: _Context, *, member_id_mention_or_name: str) -> None:
         """
         Checks, if a given member exists on this guild.
@@ -120,7 +123,7 @@ class ChecksCog(_Cog):
 
 
     @_is_owner()
-    @base.command(name='message')
+    @check.command(name='message')
     async def message(self, ctx: _Context, channel: _TextChannel, message_id: str) -> None:
         """
         Checks, if a message with the given ID exists in the given channel and can be accessed by the bot.
@@ -148,7 +151,7 @@ class ChecksCog(_Cog):
 
 
     @_is_owner()
-    @base.command(name='role')
+    @check.command(name='role')
     async def role(self, ctx: _Context, role_id_or_mention: str) -> None:
         """
         Checks, if a role with the given ID or mention exists on this guild and prints information about it.
@@ -182,5 +185,35 @@ class ChecksCog(_Cog):
             await _utils.discord.reply_lines(ctx, lines)
 
 
+    @_command_group(name='embed', invoke_without_command=True)
+    async def embed(self, ctx: _Context, *, definition_or_url: str = None) -> None:
+        """
+        Test the look of an embed.
+        Create and edit embed definitions: https://leovoel.github.io/embed-visualizer/
+
+        How to use:
+        - Go to https://leovoel.github.io/embed-visualizer/
+        - Create an embed as you like it
+        - Copy the code on the left starting with the curled opening brackets right next to 'embed:' ending with the second to last curled closing bracket.
+        - Paste the code as parameter 'definition_or_url'
+
+        You can also copy the code into a file and attach that file instead, if the definition would be too long to send otherwise.
+        You can also copy the code onto pastebin.com and type the url to that file instead.
+        You can also type the link to any file on the web containing an embed definition.
+        """
+        embeds: _List[_Embed] = []
+        if definition_or_url:
+            embeds.append((await _utils.discord.get_embed_from_definition_or_url(definition_or_url)))
+        elif ctx.message.attachments:
+            for attachment in ctx.message.attachments:
+                attachment_content = (await attachment.read()).decode('utf-8')
+                if attachment_content:
+                    embeds.append(_json.loads(attachment_content, cls=_utils.discord.EmbedLeovoelDecoder))
+        else:
+            raise Exception('You need to specify a definition or upload a file containing a definition!')
+        for embed in embeds:
+            await _utils.discord.reply(ctx, None, embed=embed)
+
+
 def setup(bot: _Bot):
-    bot.add_cog(ChecksCog(bot))
+    bot.add_cog(Utility(bot))
