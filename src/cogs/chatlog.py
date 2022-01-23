@@ -73,7 +73,7 @@ class ChatLoggerCog(_Cog):
         channel_key_count = len(channel_keys.keys())
 
         remaining_time = ChatLoggerCog.__CHAT_LOG_INTERVAL - (_utils.datetime.get_utc_now() - utc_now).total_seconds()
-        delay = remaining_time / channel_key_count * .97
+        delay = remaining_time / channel_key_count * (1 - channel_key_count * .01)
 
         for channel_key, pss_chat_loggers in channel_keys.items():
             try:
