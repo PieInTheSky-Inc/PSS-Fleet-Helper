@@ -27,7 +27,7 @@ class RolesCog(_Cog):
         return self.__bot
 
 
-    @_command_group(name='role', brief='Role management', invoke_without_command=True)
+    @_command_group(name='role', aliases=['roles'], brief='Role management', invoke_without_command=True)
     async def base(self, ctx: _Context) -> None:
         if ctx.invoked_subcommand is None:
             _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
@@ -53,28 +53,42 @@ class RolesCog(_Cog):
           vivi role add 45 1 2 3 - Adds the Role with ID '45' to the members with the IDs 1, 2 & 3
         """
         _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+
+        if role_id_or_mention.position >= ctx.me.top_role.position:
+            raise Exception(f'Cannot add the role {role_id_or_mention.mention}: it is either my top role or above.')
+
         user_ids = set(user_ids.split(' '))
         reason = f'User {ctx.author.display_name} (ID: {ctx.author.id}) issued command: role add'
         confirmator = _utils.Confirmator(ctx, f'This command will add the role `{role_id_or_mention}` to {len(user_ids)} members!')
         if (await confirmator.wait_for_option_selection()):
             users_added = []
+            not_added = []
             for user_id in user_ids:
-                member = await ctx.guild.fetch_member(int(user_id))
+                member = ctx.guild.get_member(int(user_id))
                 if member:
                     await member.add_roles(role_id_or_mention, reason=reason)
                     users_added.append(f'{member.display_name} ({user_id})')
+                else:
+                    not_added.append(user_id)
 
-            lines = [
-                f'Added role {role_id_or_mention} to members:',
-                *sorted(users_added)
-            ]
+            lines = ['The command completed successfully.']
+            if users_added:
+                lines.extend((
+                    f'Added role {role_id_or_mention} to {len(users_added)} members:',
+                    *users_added
+                ))
+            if not_added:
+                lines.extend((
+                    f'Could not add role to {len(not_added)} users with ID:',
+                    *not_added
+                ))
             await _utils.discord.reply_lines(ctx, lines)
 
 
     @_bot_has_guild_permissions(manage_roles=True)
     @_has_guild_permissions(manage_roles=True)
     @base.group(name='clear', brief='Remove a role from all members', invoke_without_command=True)
-    async def clear(self, ctx: _Context, role: _Role) -> None:
+    async def clear(self, ctx: _Context, role_id_or_mention: _Role) -> None:
         """
         Remove a Role from all members of this server.
 
@@ -89,24 +103,31 @@ class RolesCog(_Cog):
           vivi role clear 45 - Removes the Role with ID '45' from all members of this server.
         """
         if ctx.invoked_subcommand is None:
-          _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
-          reason = f'User {ctx.author.display_name} (ID: {ctx.author.id}) issued command: role clear'
-          members = list(role.members)
-          if len(members) > 0:
-              confirmator = _utils.Confirmator(ctx, f'This command will remove the role `{role}` from {len(members)} members!')
-              if (await confirmator.wait_for_option_selection()):
-                  users_removed = []
-                  for member in members:
-                      await member.remove_roles(role, reason=reason)
-                      users_removed.append(f'{member.display_name} ({member.id})')
+            _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
 
-                  lines = [
-                      f'Removed role {role} from members:',
-                      *sorted(users_removed)
-                  ]
-                  await _utils.discord.reply_lines(ctx, lines)
-          else:
-              await _utils.discord.reply(ctx, f'There are no members with the role {role}.')
+            if role_id_or_mention.position >= ctx.me.top_role.position:
+                raise Exception(f'Cannot remove the role {role_id_or_mention.mention}: it is either my top role or above.')
+
+            reason = f'User {ctx.author.display_name} (ID: {ctx.author.id}) issued command: role clear'
+            members = list(role_id_or_mention.members)
+            if len(members) > 0:
+                confirmator = _utils.Confirmator(ctx, f'This command will remove the role `{role_id_or_mention}` from {len(members)} members!')
+                if (await confirmator.wait_for_option_selection()):
+                    users_removed = []
+                    for member in members:
+                        try:
+                            await member.remove_roles(role_id_or_mention, reason=reason)
+                            users_removed.append(f'{member.display_name} ({member.id})')
+                        except:
+                            pass
+                    lines = [
+                        'The command completed successfully.',
+                        f'Removed role {role_id_or_mention} from members:',
+                        *sorted(users_removed)
+                    ]
+                    await _utils.discord.reply_lines(ctx, lines)
+            else:
+                await _utils.discord.reply(ctx, f'There are no members with the role {role_id_or_mention}.')
 
 
     @_bot_has_guild_permissions(manage_roles=True)
@@ -131,23 +152,34 @@ class RolesCog(_Cog):
         confirmator = _utils.Confirmator(ctx, f'This command will remove all non-managed roles from {len(user_ids)} members!\nNote: Roles that are above my highest role will not be removed.')
         if (await confirmator.wait_for_option_selection()):
             users_removed = []
+            not_removed = []
             for user_id in user_ids:
-                member: _Member = await ctx.guild.fetch_member(int(user_id))
-                roles = [role for role in member.roles if role.position and role.position < ctx.me.top_role.position and not role.managed]
-                await member.remove_roles(*roles, reason=reason)
-                users_removed.append(f'{member.display_name} ({user_id})')
+                member: _Member = ctx.guild.get_member(int(user_id))
+                if member:
+                    roles = [role for role in member.roles if role.position and role.position < ctx.me.top_role.position and not role.managed]
+                    await member.remove_roles(*roles, reason=reason)
+                    users_removed.append(f'{member.display_name} ({user_id})')
+                else:
+                    not_removed.append(user_id)
 
-            lines = [
-                f'Removed all roles from members:',
-                *sorted(users_removed)
-            ]
+            lines = ['The command completed successfully.']
+            if users_removed:
+                lines.extend((
+                    f'Removed all roles from {len(users_removed)} members:',
+                    *users_removed
+                ))
+            if not_removed:
+                lines.extend((
+                    f'Could not remove roles from {len(not_removed)} users with ID:',
+                    *not_removed
+                ))
             await _utils.discord.reply_lines(ctx, lines)
 
 
     @_bot_has_guild_permissions(manage_roles=True)
     @_has_guild_permissions(manage_roles=True)
     @base.command(name='remove', brief='Remove a role from specified members')
-    async def remove(self, ctx: _Context, role: _Role, *, user_ids: str) -> None:
+    async def remove(self, ctx: _Context, role_id_or_mention: _Role, *, user_ids: str) -> None:
         """
         Remove a Role from multiple members of this server.
 
@@ -163,20 +195,35 @@ class RolesCog(_Cog):
           vivi role remove 45 1 2 3 - Removes the Role with ID '45' from Members with the User ID 1, 2 & 3.
         """
         _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+
+        if role_id_or_mention.position >= ctx.me.top_role.position:
+            raise Exception(f'Cannot remove the role {role_id_or_mention.mention}: it is either my top role or above.')
+
         user_ids = set(user_ids.split(' '))
         reason = f'User {ctx.author.display_name} (ID: {ctx.author.id}) issued command: role remove'
-        confirmator = _utils.Confirmator(ctx, f'This command removes the role `{role}` from {len(user_ids)} members.')
+        confirmator = _utils.Confirmator(ctx, f'This command removes the role `{role_id_or_mention}` from {len(user_ids)} members.')
         if (await confirmator.wait_for_option_selection()):
             users_removed = []
+            not_removed = []
             for user_id in user_ids:
-                member = await ctx.guild.fetch_member(int(user_id))
-                await member.remove_roles(role, reason=reason)
-                users_removed.append(f'{member.display_name} ({user_id})')
+                member = ctx.guild.get_member(int(user_id))
+                if member:
+                    await member.remove_roles(role_id_or_mention, reason=reason)
+                    users_removed.append(f'{member.display_name} ({user_id})')
+                else:
+                    not_removed.append(user_id)
 
-            lines = [
-                f'Removed role {role} from members:',
-                *sorted(users_removed)
-            ]
+            lines = ['The command completed successfully.']
+            if users_removed:
+                lines.extend((
+                    f'Removed role {role_id_or_mention} from {len(users_removed)} members:',
+                    *users_removed
+                ))
+            if not_removed:
+                lines.extend((
+                    f'Could not remove role from {len(not_removed)} users with ID:',
+                    *not_removed
+                ))
             await _utils.discord.reply_lines(ctx, lines)
 
 
