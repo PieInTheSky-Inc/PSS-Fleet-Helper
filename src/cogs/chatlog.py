@@ -1,6 +1,7 @@
 from logging import log
 from typing import Dict as _Dict
 from typing import List as _List
+from xml.etree.ElementTree import ParseError as _XmlParseError
 
 import asyncio as _asyncio
 from discord import Guild as _Guild
@@ -80,7 +81,7 @@ class ChatLoggerCog(_Cog):
             except _ServerMaintenanceError:
                 print(f'Server is under maintenance.')
                 return
-            except _PssApiError as e:
+            except (_PssApiError, _XmlParseError) as e:
                 print(f'Could not get messages for channel key \'{channel_key}\': {e}')
                 messages = None
             if messages:
