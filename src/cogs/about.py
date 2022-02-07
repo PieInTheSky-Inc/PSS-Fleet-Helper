@@ -34,7 +34,7 @@ class About(_Cog):
             'Server count': len(self.bot.guilds),
             'Member count': sum([guild.member_count for guild in self.bot.guilds]),
             'Version': _bot_settings.VERSION,
-            'Github': '<https://github.com/PieInTheSky-Inc/ViViBot>',
+            'Github': '<https://github.com/PieInTheSky-Inc/PSS-Fleet-Helper>',
         }
         lines = [f'{key}: {value}' for key, value in info.items()]
         await _utils.discord.reply_lines(ctx, lines)
@@ -57,7 +57,7 @@ class About(_Cog):
         Usage:
           vivi invite
         """
-        invite_link = f'https://discordapp.com/oauth2/authorize?scope=bot&permissions=139519798336&client_id={_bot_settings.DISCORD_BOT_CLIENT_ID}'
+        invite_link = f'https://discordapp.com/oauth2/authorize?scope=bot%20applications.commands&permissions=476674780370&client_id={_bot_settings.DISCORD_BOT_CLIENT_ID}'
         await _utils.discord.reply(ctx, invite_link)
 
 
