@@ -139,8 +139,6 @@ class ChatLogger(_Cog):
         with _orm.create_session() as session:
             log_channel.create(session)
             pss_chat_loggers = _orm.get_all(_PssChatLogger, session)
-        if len(pss_chat_loggers) == 1:
-            self.log_chat.start()
         await _utils.discord.reply(ctx, f'Posting messages from channel \'{channel_key}\' to {channel.mention}.')
 
 
