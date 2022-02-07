@@ -39,10 +39,7 @@ class ChatLogger(_Cog):
         if not bot:
             raise ValueError('Parameter \'bot\' must not be None.')
         self.__bot = bot
-        with _orm.create_session() as session:
-            pss_chat_loggers = _orm.get_all(_PssChatLogger, session)
-        if pss_chat_loggers:
-            self.log_chat.start()
+        self.log_chat.start()
 
 
     @property
@@ -57,14 +54,14 @@ class ChatLogger(_Cog):
     @_tasks.loop(seconds=__CHAT_LOG_INTERVAL)
     async def log_chat(self):
         utc_now = _utils.datetime.get_utc_now()
-        try:
-            access_token = await _login()
-        except _PssApiError as e:
-            print(e)
-            return
         with _orm.create_session() as session:
             pss_chat_loggers = _orm.get_all(_PssChatLogger, session)
         if not pss_chat_loggers:
+            return
+        try:
+            access_token = await _login()
+        except (_PssApiError, _XmlParseError) as e:
+            print(e)
             return
 
         channel_keys: _Dict[str, _List[_PssChatLogger]] = {}
