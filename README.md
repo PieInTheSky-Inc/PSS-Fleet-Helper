@@ -1,2 +1,3 @@
-# ViViBot
- A bot assisting in Discord management
+# PSS-Fleet-Helper
+
+A bot assisting in Discord management
