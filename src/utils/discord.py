@@ -1003,10 +1003,11 @@ async def wait_for_message(ctx: _Context,
     end_inquiry = _get_utc_now() + timeout_delta
     try:
         while True:
-            user_reply = await ctx.bot.wait_for('message', timeout=timeout)
-            content = user_reply.content.strip()
-            if not check or check(content, allow_abort, allow_skip, *check_args, **check_kwargs):
-                return user_reply
+            user_reply: _Message = await ctx.bot.wait_for('message', timeout=timeout)
+            if user_reply and user_reply.author != ctx.bot.user and user_reply.channel == ctx.channel:
+                content = user_reply.content.strip()
+                if not check or check(content, allow_abort, allow_skip, *check_args, **check_kwargs):
+                    return user_reply
             timeout = (end_inquiry - _get_utc_now()).total_seconds()
     except _TimeoutError:
         return None
