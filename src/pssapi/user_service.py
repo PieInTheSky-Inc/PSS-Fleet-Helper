@@ -8,6 +8,7 @@ from . import convert as _convert
 from . import core as _core
 from . import utils as _pss_utils
 from . import settings as _settings
+from .errors import PssApiError as _PssApiError
 
 
 # ---------- Constants ----------
@@ -51,7 +52,7 @@ async def device_login() -> _Optional[str]:
     if 'UserService' in login_info.keys():
         result = login_info['UserService']['UserLogin']['accessToken']
     else:
-        raise Exception(login_info.get('errorMessage', 'An error ocurred while logging in.'))
+        raise _PssApiError(login_info.get('errorMessage', 'An error ocurred while logging in.'))
     return result
 
 
