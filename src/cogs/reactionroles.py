@@ -891,7 +891,7 @@ async def inquire_for_role_change_details(ctx: _Context, abort_text: str, reacti
     if reaction_role_change:
         add_message_current_value = reaction_role_change.message_channel_id and (reaction_role_change.message_content or reaction_role_change.message_embed)
         add_message_prompt_message += f'\nCurrent value: {add_message_current_value}'
-    add_message, aborted, skipped = await _utils.discord.inquire_for_true_false(ctx, f'Do you want to add a message that should be posted to a text channel, when a user gets the role `{role.name}` {add_text}ed?', abort_text=abort_text)
+    add_message, aborted, skipped = await _utils.discord.inquire_for_true_false(ctx, add_message_prompt_message, abort_text=abort_text)
     if aborted:
         return None, aborted
     if skipped:
