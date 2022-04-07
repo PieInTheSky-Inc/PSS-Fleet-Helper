@@ -33,7 +33,7 @@ from ..pssapi.errors import ServerMaintenanceError as _ServerMaintenanceError
 # ---------- Cog ----------
 
 class ChatLogger(_Cog):
-    __CHAT_LOG_INTERVAL: float = 120.0
+    __CHAT_LOG_INTERVAL: float = 100.0
 
     def __init__(self, bot: _Bot) -> None:
         if not bot:
