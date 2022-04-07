@@ -215,5 +215,18 @@ class Utility(_Cog):
             await _utils.discord.reply(ctx, None, embed=embed)
 
 
+    @embed.command(name='link')
+    async def embed_link(self, ctx: _Context, url: str, *, display_text: str = None) -> None:
+        """
+
+        """
+        if display_text:
+            link = f'[{display_text}]({url})'
+        else:
+            link = url
+        embed = _Embed(description=link)
+        await _utils.discord.send(ctx, None, embed=embed)
+
+
 def setup(bot: _Bot):
     bot.add_cog(Utility(bot))
