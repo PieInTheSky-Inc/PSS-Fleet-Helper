@@ -89,7 +89,7 @@ class ChatLogger(_Cog):
             if messages:
                 messages = sorted(messages, key=lambda x: x.message_id)
                 for pss_chat_logger in pss_chat_loggers:
-                    channel: _TextChannel = await self.bot.fetch_channel(pss_chat_logger.channel_id)
+                    channel: _TextChannel = self.bot.get_channel(pss_chat_logger.channel_id)
                     if channel:
                         messages = [message for message in messages if message.message_id > pss_chat_logger.last_pss_message_id]
                         lines = []
