@@ -4,6 +4,9 @@ from typing import Dict as _Dict
 from typing import Optional as _Optional
 import pytz as _pytz
 from xml.etree import ElementTree as _ElementTree
+from xml.etree.ElementTree import ParseError as _XmlParseError
+from errors import PssXmlError as _PssXmlError
+
 
 from .data import ID_NAMES_INFO as _ID_NAMES_INFO
 
@@ -67,7 +70,10 @@ def str_to_enum(raw_value: str, enum: _Enum) -> _Optional[_Enum]:
 # ---------- XML conversions ----------
 
 def raw_xml_to_dict(raw_xml: str, include_root: bool = True, fix_attributes: bool = True, preserve_lists: bool = False) -> _EntityDict:
-    root = _ElementTree.fromstring(raw_xml)
+    try:
+        root = _ElementTree.fromstring(raw_xml)
+    except _XmlParseError as e:
+        raise _PssXmlError(raw_xml, e)
     result = __convert_xml_to_dict(root, include_root=include_root, fix_attributes=fix_attributes, preserve_lists=preserve_lists)
     return result
 

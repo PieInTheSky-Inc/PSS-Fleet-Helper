@@ -60,7 +60,7 @@ class ChatLogger(_Cog):
             return
         try:
             access_token = await _login()
-        except (_PssApiError, _XmlParseError) as e:
+        except _PssApiError as e:
             print(e)
             return
 
@@ -73,14 +73,19 @@ class ChatLogger(_Cog):
         delay = remaining_time / channel_key_count * (1 - channel_key_count * .01)
 
         for channel_key, pss_chat_loggers in channel_keys.items():
-            try:
-                messages = await _message_service.list_messages_for_channel_key(channel_key, access_token)
-            except _ServerMaintenanceError:
-                print(f'Server is under maintenance.')
-                return
-            except (_PssApiError, _XmlParseError) as e:
-                print(f'Could not get messages for channel key \'{channel_key}\': {e}')
-                messages = None
+            tries = 2
+            while tries > 0:
+                try:
+                    messages = await _message_service.list_messages_for_channel_key(channel_key, access_token)
+                    break
+                except _ServerMaintenanceError:
+                    print(f'Server is under maintenance.')
+                    return
+                except _PssApiError as e:
+                    print(f'Could not get messages for channel key \'{channel_key}\':\n{e}')
+                    messages = None
+                    tries -= 1
+                    await _asyncio.sleep(.2)
             if messages:
                 messages = sorted(messages, key=lambda x: x.message_id)
                 for pss_chat_logger in pss_chat_loggers:
