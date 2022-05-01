@@ -58,6 +58,7 @@ async def on_command_error(ctx: _Context,
 async def on_ready() -> None:
     print(f'Bot logged in as {BOT.user.name} ({BOT.user.id})')
     print(f'Bot version: {_bot_settings.VERSION}')
+    print(f'py-cord version: {_discord.__version__}')
     for cog_name, cog_path in _bot_settings.COGS_TO_LOAD.items():
         print(f'Loading cog {cog_name} from extension {cog_path}')
         BOT.load_extension(cog_path)
