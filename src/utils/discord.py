@@ -60,6 +60,7 @@ __RX_EMOJI: _re.Pattern = _re.compile('<a?:\w+:(\d+)>')
 __RX_MESSAGE_LINK: _re.Pattern = _re.compile('https://discord.com/channels/(\d+)/(\d+)/(\d+)/?')
 __RX_ROLE_MENTION: _re.Pattern = _re.compile('<@&(\d+)>')
 __RX_USER_MENTION: _re.Pattern = _re.compile('<@\!?(\d+)>')
+__RX_HYPERLINK: _re.Pattern = _re.compile('(https?://)')
 
 PLACEHOLDERS: str = """
 `\{` - `{`
@@ -1048,5 +1049,7 @@ def escape_markdown_and_mentions(s: str) -> str:
     if not s:
         return s
 
-    s = _escape_markdown(s).replace('@', '@​')
+    s = _escape_markdown(s)
+    s = s.replace('@', '@​') # Remove mentions (discord.py / py-cord doesn't escape the @everyone mention)
+    s = __RX_HYPERLINK.sub('\1​', s) # Make hyperlinks unclickable
     return s
