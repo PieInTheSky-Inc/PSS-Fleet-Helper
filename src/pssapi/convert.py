@@ -5,10 +5,10 @@ from typing import Optional as _Optional
 import pytz as _pytz
 from xml.etree import ElementTree as _ElementTree
 from xml.etree.ElementTree import ParseError as _XmlParseError
-from errors import PssXmlError as _PssXmlError
 
 
 from .data import ID_NAMES_INFO as _ID_NAMES_INFO
+from .errors import PssXmlError as _PssXmlError
 
 from .types import EntitiesData as _EntitiesData
 from .types import EntityDict as _EntityDict
