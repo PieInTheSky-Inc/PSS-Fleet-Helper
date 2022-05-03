@@ -1051,5 +1051,5 @@ def escape_markdown_and_mentions(s: str) -> str:
 
     s = _escape_markdown(s)
     s = s.replace('@', '@​') # Remove mentions (discord.py / py-cord doesn't escape the @everyone mention)
-    s = __RX_HYPERLINK.sub('\1​', s) # Make hyperlinks unclickable
+    s = _re.sub(__RX_HYPERLINK, '', s) # Make hyperlinks unclickable
     return s
