@@ -41,10 +41,10 @@ class ActivityType(_StrEnum):
     ModelUpdate = 'ModelUpdate'
     FriendRequestDecline = 'FriendRequestDecline'
     FriendRequestAccept = 'FriendRequestAccept'
-    AllianceAnnouncement = 'AllianceAnnouncement',
-    ReloadUserData = 'ReloadUserData',
-    FriendRequestCancel = 'FriendRequestCancel',
-    Gift = 'Gift',
+    AllianceAnnouncement = 'AllianceAnnouncement'
+    ReloadUserData = 'ReloadUserData'
+    FriendRequestCancel = 'FriendRequestCancel'
+    Gift = 'Gift'
 
 
 class MessageType(_StrEnum):
