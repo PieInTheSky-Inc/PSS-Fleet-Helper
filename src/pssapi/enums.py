@@ -75,4 +75,5 @@ def from_str(value: str, enum: _Type[_StrEnum], raise_error: bool = True) -> _Op
             return enum_value.name
     if raise_error:
         raise TypeError(f'{enum} does not have a member with value: {value}')
+    print(f'Warning: {enum} does not have a member with value: {value}')
     return None
