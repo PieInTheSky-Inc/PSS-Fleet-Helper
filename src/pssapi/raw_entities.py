@@ -75,7 +75,7 @@ class PssMessageRaw():
     def __init__(self, message_info: EntityInfo) -> None:
         self.__message_id: int = _convert.str_to_int(message_info.get('MessageId'))
         self.__activity_argument: str = message_info.get('ActivityArgument')
-        self.__activity_type: _enums.ActivityType = _enums.from_str(message_info.get('ActivityType'), _enums.ActivityType)
+        self.__activity_type: _enums.ActivityType = _enums.from_str(message_info.get('ActivityType'), _enums.ActivityType, raise_error=False)
         self.__alliance_id: int = _convert.str_to_int(message_info.get('AllianceId'))
         self.__alliance_name: str = message_info.get('AllianceName')
         self.__argument: str = message_info.get('Argument')
@@ -83,7 +83,7 @@ class PssMessageRaw():
         self.__channel_id: int = _convert.str_to_int(message_info.get('ChannelId'))
         self.__message: str = message_info.get('Message')
         self.__message_date: _datetime = _convert.str_to_datetime(message_info.get('MessageDate'))
-        self.__message_type: _enums.MessageType = _enums.from_str(message_info.get('MessageType'), _enums.MessageType)
+        self.__message_type: _enums.MessageType = _enums.from_str(message_info.get('MessageType'), _enums.MessageType, raise_error=False)
         self.__ship_design_id: int = _convert.str_to_int(message_info.get('ShipDesignId'))
         self.__trophy: int = _convert.str_to_int(message_info.get('Trophy'))
         self.__user_id: int = _convert.str_to_int(message_info.get('UserId'))

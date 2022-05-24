@@ -67,10 +67,12 @@ class MessageType(_StrEnum):
 
 # ---------- Helper ----------
 
-def from_str(value: str, enum: _Type[_StrEnum]) -> _Optional[_Type[_StrEnum]]:
+def from_str(value: str, enum: _Type[_StrEnum], raise_error: bool = True) -> _Optional[_Type[_StrEnum]]:
     if not value:
         return None
     for enum_value in enum:
         if value == enum_value.value:
             return enum_value.name
-    raise TypeError(f'{enum} does not have a member with value: {value}')
+    if raise_error:
+        raise TypeError(f'{enum} does not have a member with value: {value}')
+    return None
