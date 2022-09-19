@@ -2,6 +2,7 @@ import json as _json
 from typing import List as _List
 
 from discord import Embed as _Embed
+from discord import File as _File
 from discord import Role as _Role
 from discord import TextChannel as _TextChannel
 from discord.ext.commands import Bot as _Bot
@@ -10,6 +11,7 @@ from discord.ext.commands import Context as _Context
 from discord.ext.commands import is_owner as _is_owner
 from discord.ext.commands import group as _command_group
 
+from ..model import database as _db
 from .. import utils as _utils
 
 
@@ -64,6 +66,42 @@ class Utility(_Cog):
                 channel_id_or_mention
             ]
             await _utils.discord.reply_lines(ctx, lines)
+
+
+    @_is_owner()
+    @_command_group(name='db')
+    async def db(self, ctx: _Context) -> None:
+        pass
+
+
+    @_is_owner()
+    @db.command(name='export')
+    async def db_export(self, ctx: _Context) -> None:
+        utc_now = _utils.datetime.get_utc_now()
+        export = await _db.export_to_json()
+
+        file_name = f'pss-fleet-helper-db-export_{utc_now.strftime("%Y%m%d-%H%M%S")}.json'
+        with open(file_name, 'w') as fp:
+            fp.write(export)
+        await ctx.reply('Database export:', file=_File(file_name))
+
+
+    @_is_owner()
+    @db.command(name='import')
+    async def db_import(self, ctx: _Context) -> None:
+        """
+        Attempts to import the data from the provided JSON file.
+        """
+        if not ctx.message.attachments:
+            raise Exception('You need to upload a JSON file to be imported with the command!')
+
+        attachment = ctx.message.attachments[0]
+        file_contents = (await attachment.read()).decode('utf-8')
+        if not file_contents:
+            raise Exception('The file provided must not be empty.')
+
+        await _db.import_from_json(file_contents)
+        await ctx.reply('Database imported successfully!')
 
 
     @_is_owner()

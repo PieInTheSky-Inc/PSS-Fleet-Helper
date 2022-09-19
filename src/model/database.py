@@ -1,4 +1,5 @@
 from datetime import datetime as _datetime
+import json as _json
 import os as _os
 from typing import Any as _Any
 from typing import Dict as _Dict
@@ -28,6 +29,60 @@ DATABASE_SSL_MODE: str = _os.environ.get('DATABASE_SSL_MODE', 'require')
 DATABASE_URL: str = f'{_os.environ.get("DATABASE_URL")}?sslmode={DATABASE_SSL_MODE}'.replace('postgres://', 'postgresql://')
 
 TABLE_NAME_BOT_SETTINGS: str = 'bot_settings'
+
+
+
+
+
+# ---------- Functions ----------
+
+async def export_to_json() -> str:
+    bot_settings = await _export_table('bot_settings')
+    pss_chat_log = await _export_table('pss_chat_log')
+    reaction_role = await _export_table('reaction_role')
+    reaction_role_change = await _export_table('reaction_role_change')
+    reaction_role_requirement = await _export_table('reaction_role_requirement')
+
+    result = {
+        'bot_settings': bot_settings,
+        'pss_chat_log': pss_chat_log,
+        'reaction_role': reaction_role,
+        'reaction_role_change': reaction_role_change,
+        'reaction_role_requirement': reaction_role_requirement,
+    }
+    return _json.dumps(result, indent=4, cls=_utils.json.ViviEncoder)
+
+
+async def import_from_json(json: str) -> None:
+    tables = _json.loads(json, cls=_utils.json.ViviDecoder)
+    for table_name, table_contents in tables.items():
+        await _import_table(table_name, table_contents['column_names'], table_contents['values'])
+
+
+async def _export_table(table_name: str) -> dict:
+    column_names = await get_column_names(table_name)
+    rows = await fetchall(f'SELECT * FROM {table_name}')
+    values = [list(dict(row).values()) for row in rows]
+    return {
+        'column_names': column_names,
+        'values': values
+    }
+
+
+async def _import_table(table_name: str, column_names: _List[str], rows: _List[_List[_Any]]) -> None:
+    """
+    This function will clear the specified table and insert the values provided.
+    """
+    column_names_string = ','.join(column_names)
+    values_string = ', '.join([f'${i}' for i in range(1, len(column_names) + 1)])
+    query = f'INSERT INTO {table_name} ({column_names_string}) VALUES ({values_string})'
+
+    print(f'[_import_table] Clearing table: {table_name}')
+    await execute(f'DELETE FROM {table_name}')
+
+    print(f'[_import_table] Importing data to table: {table_name}')
+    for values in rows:
+        await execute(query, values)
 
 
 
