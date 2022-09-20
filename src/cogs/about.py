@@ -1,25 +1,18 @@
 from discord.ext.commands import Bot as _Bot
-from discord.ext.commands import Cog as _Cog
 from discord.ext.commands import command as _command
 from discord.ext.commands import group as _command_group
 from discord.ext.commands import Context as _Context
 
+from .cog_base import CogBase as _CogBase
 from .. import bot_settings as _bot_settings
 from .. import utils as _utils
 
 
 
-class About(_Cog):
+class About(_CogBase):
     def __init__(self, bot: _Bot) -> None:
-        if not bot:
-            raise ValueError('Parameter \'bot\' must not be None.')
-        self.__bot = bot
+        super().__init__(bot)
         self.about_placeholders.help = self.about_placeholders.help.format(_utils.discord.PLACEHOLDERS.replace('`', ''))
-
-
-    @property
-    def bot(self) -> _Bot:
-        return self.__bot
 
 
     @_command_group(name='about', brief='General info about the bot', invoke_without_command=True)

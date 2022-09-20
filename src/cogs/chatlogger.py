@@ -1,18 +1,16 @@
-from logging import log
 from typing import Dict as _Dict
 from typing import List as _List
-from xml.etree.ElementTree import ParseError as _XmlParseError
 
 import asyncio as _asyncio
 from discord import TextChannel as _TextChannel
 import discord.ext.tasks as _tasks
 from discord.ext.commands import Bot as _Bot
-from discord.ext.commands import Cog as _Cog
 from discord.ext.commands import Context as _Context
 from discord.ext.commands import is_owner as _is_owner
 from discord.ext.commands import guild_only as _guild_only
 from discord.ext.commands import group as _command_group
 
+from .cog_base import CogBase as _CogBase
 from .. import bot_settings as _bot_settings
 from .. import utils as _utils
 from ..utils.discord import escape_markdown_and_mentions as _escape_markdown_and_mentions
@@ -32,19 +30,12 @@ from ..pssapi.errors import ServerMaintenanceError as _ServerMaintenanceError
 
 # ---------- Cog ----------
 
-class ChatLogger(_Cog):
+class ChatLogger(_CogBase):
     __CHAT_LOG_INTERVAL: float = 100.0
 
     def __init__(self, bot: _Bot) -> None:
-        if not bot:
-            raise ValueError('Parameter \'bot\' must not be None.')
-        self.__bot = bot
+        super().__init__(bot)
         self.log_chat.start()
-
-
-    @property
-    def bot(self) -> _Bot:
-        return self.__bot
 
 
     def cog_unload(self):

@@ -1,6 +1,5 @@
 import json as _json
 from typing import Callable as _Callable
-from typing import Dict as _Dict
 from typing import List as _List
 from typing import Optional as _Optional
 from typing import Tuple as _Tuple
@@ -10,13 +9,13 @@ from discord import RawReactionActionEvent as _RawReactionActionEvent
 from discord import Role as _Role
 from discord import TextChannel as _TextChannel
 from discord.ext.commands import Bot as _Bot
-from discord.ext.commands import Cog as _Cog
 from discord.ext.commands import Context as _Context
 from discord.ext.commands import group as _command_group
 from discord.ext.commands import guild_only as _guild_only
 from discord.ext.commands import has_guild_permissions as _has_guild_permissions
 from discord.ext.commands.core import bot_has_guild_permissions as _bot_has_guild_permissions
 
+from .cog_base import CogBase as _CogBase
 from .. import bot_settings as _bot_settings
 from .. import utils as _utils
 from ..converters import ReactionRoleConverter as _ReactionRoleConverter
@@ -35,23 +34,12 @@ from ..model import orm as _orm
 
 # ---------- Cog ----------
 
-class ReactionRoles(_Cog):
+class ReactionRoles(_CogBase):
     """
     Commands for configuring Reaction Roles on this server.
     """
 
-    def __init__(self, bot: _Bot):
-        if not bot:
-            raise ValueError('Parameter \'bot\' must not be None.')
-        self.__bot: _Bot = bot
-
-
-    @property
-    def bot(self) -> _Bot:
-        return self.__bot
-
-
-    @_Cog.listener()
+    @_CogBase.listener()
     async def on_raw_reaction_add(self, payload: _RawReactionActionEvent) -> None:
         if payload.member.guild.me == payload.member:
             return
@@ -73,7 +61,7 @@ class ReactionRoles(_Cog):
                     await reaction_role.apply_add(payload.member)
 
 
-    @_Cog.listener()
+    @_CogBase.listener()
     async def on_raw_reaction_remove(self, payload: _RawReactionActionEvent) -> None:
         guild = self.bot.get_guild(payload.guild_id)
         if not guild:

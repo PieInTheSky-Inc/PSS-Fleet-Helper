@@ -1,32 +1,18 @@
 from discord import Member as _Member
-from discord import User as _User
 from discord import Role as _Role
 from discord.ext.commands import Bot as _Bot
-from discord.ext.commands import Cog as _Cog
 from discord.ext.commands import Context as _Context
 from discord.ext.commands import group as _command_group
 from discord.ext.commands import bot_has_guild_permissions as _bot_has_guild_permissions
 from discord.ext.commands import has_guild_permissions as _has_guild_permissions
 
+from .cog_base import CogBase as _CogBase
 from .. import bot_settings as _bot_settings
 from .. import utils as _utils
 
 
 
-
-
-class RoleManagement(_Cog):
-    def __init__(self, bot: _Bot) -> None:
-        if not bot:
-            raise ValueError('Parameter \'bot\' must not be None.')
-        self.__bot = bot
-
-
-    @property
-    def bot(self) -> _Bot:
-        return self.__bot
-
-
+class RoleManagement(_CogBase):
     @_command_group(name='role', aliases=['roles'], brief='Role management', invoke_without_command=True)
     async def role(self, ctx: _Context) -> None:
         if ctx.invoked_subcommand is None:

@@ -6,28 +6,17 @@ from discord import File as _File
 from discord import Role as _Role
 from discord import TextChannel as _TextChannel
 from discord.ext.commands import Bot as _Bot
-from discord.ext.commands import Cog as _Cog
 from discord.ext.commands import Context as _Context
 from discord.ext.commands import is_owner as _is_owner
 from discord.ext.commands import group as _command_group
 
+from .cog_base import CogBase as _CogBase
 from ..model import database as _db
 from .. import utils as _utils
 
 
 
-class Utility(_Cog):
-    def __init__(self, bot: _Bot) -> None:
-        if not bot:
-            raise ValueError('Parameter \'bot\' must not be None.')
-        self.__bot = bot
-
-
-    @property
-    def bot(self) -> _Bot:
-        return self.__bot
-
-
+class Utility(_CogBase):
     @_is_owner()
     @_command_group(name='check', hidden=True, invoke_without_command=True)
     async def check(self, ctx: _Context) -> None:
