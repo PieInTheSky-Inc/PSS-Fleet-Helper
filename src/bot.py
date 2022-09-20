@@ -18,7 +18,7 @@ from .model import setup_model as _setup_model
 # ---------- Setup ----------
 
 BOT = _Bot(
-    _when_mentioned_or(*_bot_settings.PREFIXES),
+    _when_mentioned_or(*_bot_settings.DEFAULT_PREFIXES),
     intents=_discord.Intents.all(),
     activity=_discord.activity.Activity(type=_discord.ActivityType.playing, name='vivi help')
 )

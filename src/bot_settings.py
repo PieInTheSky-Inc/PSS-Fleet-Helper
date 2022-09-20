@@ -22,7 +22,7 @@ DISCORD_BOT_CLIENT_ID: str = _os.environ.get('VIVIBOT_DISCORD_BOT_CLIENT_ID')
 DISCORD_BOT_TOKEN: str = _os.environ.get('VIVIBOT_DISCORD_BOT_TOKEN')
 
 
-PREFIXES: _List[str] = [
+DEFAULT_PREFIXES: _List[str] = [
     'vivi ',
     'vv '
 ]
