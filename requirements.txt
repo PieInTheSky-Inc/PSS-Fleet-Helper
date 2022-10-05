@@ -2,7 +2,7 @@ aiohttp[speedups]
 asyncpg
 emoji
 psycopg2
-py-cord
+py-cord==2.2.0
 pytz
 sqlalchemy
 strenum
