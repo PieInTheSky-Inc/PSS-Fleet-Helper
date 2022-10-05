@@ -947,6 +947,8 @@ async def inquire_for_role_change_details(ctx: _Context, abort_text: str, reacti
                 role_change_message_content, aborted, skipped = await _utils.discord.inquire_for_text(ctx, '\n'.join(prompt_lines), abort_text=abort_text, skip_text='Skipped.')
                 if aborted:
                     return None, aborted
+                if skipped:
+                    break
 
             inquire_message_embed = True
             if reaction_role_change and reaction_role_change.message_embed:
