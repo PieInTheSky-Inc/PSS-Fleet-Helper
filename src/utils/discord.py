@@ -57,7 +57,7 @@ DEFAULT_INQUIRE_TIMEOUT: float = 120.0
 
 __RX_CHANNEL_MENTION: _re.Pattern = _re.compile('<#(\d+)>')
 __RX_EMOJI: _re.Pattern = _re.compile('<a?:\w+:(\d+)>')
-__RX_MESSAGE_LINK: _re.Pattern = _re.compile('https://discord.com/channels/(\d+)/(\d+)/(\d+)/?')
+__RX_MESSAGE_LINK: _re.Pattern = _re.compile('https://discord(app)?.com/channels/(\d+)/(\d+)/(\d+)/?')
 __RX_ROLE_MENTION: _re.Pattern = _re.compile('<@&(\d+)>')
 __RX_USER_MENTION: _re.Pattern = _re.compile('<@\!?(\d+)>')
 __RX_HYPERLINK: _re.Pattern = _re.compile('(https?://)')
