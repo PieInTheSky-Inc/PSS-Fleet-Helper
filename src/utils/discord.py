@@ -453,8 +453,8 @@ async def get_channel_and_message_from_message_link(ctx: _Context,
     message = None
     match = __RX_MESSAGE_LINK.match(message_link)
     if match:
-        channel_id = int(match.groups()[1])
-        message_id = int(match.groups()[2])
+        channel_id = int(match.groups()[-2])
+        message_id = int(match.groups()[-1])
         channel = get_channel(ctx, channel_id)
         if channel:
             message = await fetch_message(channel, message_id)
@@ -873,7 +873,7 @@ def create_substitutions(guild: _Guild = None, channel: _TextChannel = None, rol
     replacements = {}
     if guild:
         replacements['{server}'] = guild.name
-        replacements['{server.iconUrl}'] = f'{_Asset.BASE}{guild.icon_url._url}' if guild.icon_url._url else ''
+        replacements['{server.iconUrl}'] = f'{_Asset.BASE}{guild.icon.url}' if guild.icon else ''
         replacements['{server.id}'] = str(guild.id)
         replacements['{server.memberCount}'] = str(guild.member_count)
         replacements['{server.name}'] = guild.name
@@ -894,7 +894,7 @@ def create_substitutions(guild: _Guild = None, channel: _TextChannel = None, rol
     if member:
         user: _User = member._user
         replacements['{user}'] = member.mention
-        replacements['{user.avatarUrl}'] = f'{_Asset.BASE}{user.avatar_url._url}' if user.avatar_url._url else ''
+        replacements['{user.avatarUrl}'] = f'{_Asset.BASE}{user.avatar.url}' if user.avatar else ''
         replacements['{user.discriminator}'] = user.discriminator
         replacements['{user.id}'] = str(user.id)
         replacements['{user.displayName}'] = member.display_name
