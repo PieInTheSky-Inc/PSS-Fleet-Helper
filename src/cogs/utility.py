@@ -3,6 +3,7 @@ from typing import List as _List
 
 from discord import Embed as _Embed
 from discord import File as _File
+from discord import Message as _Message
 from discord import Role as _Role
 from discord import TextChannel as _TextChannel
 from discord.ext.commands import Bot as _Bot
@@ -245,7 +246,7 @@ class Utility(_CogBase):
     @embed.command(name='link')
     async def embed_link(self, ctx: _Context, url: str, *, display_text: str = None) -> None:
         """
-
+        Creates an embed containing a hyperlink.
         """
         if display_text:
             link = f'[{display_text}]({url})'
@@ -253,6 +254,37 @@ class Utility(_CogBase):
             link = url
         embed = _Embed(description=link)
         await _utils.discord.send(ctx, None, embed=embed)
+
+
+    @embed.command(name='replace')
+    async def embed_replace(self, ctx: _Context, link: str, *, definition_or_url: str = None) -> None:
+        """
+        Edits an existing message of the bot with an embed.
+        """
+        channel: _TextChannel
+        message: _Message
+        channel, message = await _utils.discord.get_channel_and_message_from_message_link(ctx, link)
+        if not channel:
+            raise Exception('I cannot access the channel referenced in the link.')
+        if not message:
+            raise Exception('I cannot access the message referenced in the link or it does not exist.')
+        if message.author != self.bot.user:
+            raise Exception('I cannot edit the message referenced in the link, because I did not send it.')
+
+        embeds: _List[_Embed] = []
+        if definition_or_url:
+            embeds.append((await _utils.discord.get_embed_from_definition_or_url(definition_or_url)))
+        elif ctx.message.attachments:
+            for attachment in ctx.message.attachments:
+                attachment_content = (await attachment.read()).decode('utf-8')
+                if attachment_content:
+                    embeds.append(_json.loads(attachment_content, cls=_utils.discord.EmbedLeovoelDecoder))
+        else:
+            raise Exception('You need to specify a definition or upload a file containing a definition!')
+
+        if len(embeds) > 10:
+            raise Exception('Too many embeds! Max number of embeds per message is 10.')
+        await message.edit(embeds=embeds)
 
 
 def setup(bot: _Bot):
