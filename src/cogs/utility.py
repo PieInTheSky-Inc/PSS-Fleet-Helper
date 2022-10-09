@@ -13,6 +13,7 @@ from discord.ext.commands import group as _command_group
 
 from .cog_base import CogBase as _CogBase
 from ..model import database as _db
+from .. import bot_settings as _bot_settings
 from .. import utils as _utils
 
 
@@ -257,13 +258,13 @@ class Utility(_CogBase):
 
 
     @embed.command(name='replace')
-    async def embed_replace(self, ctx: _Context, link: str, *, definition_or_url: str = None) -> None:
+    async def embed_replace(self, ctx: _Context, message_link: str, *, definition_or_url: str = None) -> None:
         """
-        Edits an existing message of the bot with an embed.
+        Replaces the embeds in an existing message sent by the bot.
         """
-        channel: _TextChannel
-        message: _Message
-        channel, message = await _utils.discord.get_channel_and_message_from_message_link(ctx, link)
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+
+        channel, message = await _utils.discord.get_channel_and_message_from_message_link(ctx, message_link)
         if not channel:
             raise Exception('I cannot access the channel referenced in the link.')
         if not message:
@@ -285,6 +286,32 @@ class Utility(_CogBase):
         if len(embeds) > 10:
             raise Exception('Too many embeds! Max number of embeds per message is 10.')
         await message.edit(embeds=embeds)
+
+
+    @_command_group(name='message', invoke_without_command=False)
+    async def message(self, ctx: _Context) -> None:
+        """
+
+        """
+        pass
+
+
+    @message.command(name='replace')
+    async def message_replace(self, ctx: _Context, message_link: str, *, content: str) -> None:
+        """
+        Replaces the contents of a message sent by the bot.
+        """
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+
+        channel, message = await _utils.discord.get_channel_and_message_from_message_link(ctx, message_link)
+        if not channel:
+            raise Exception('I cannot access the channel referenced in the link.')
+        if not message:
+            raise Exception('I cannot access the message referenced in the link or it does not exist.')
+        if message.author != self.bot.user:
+            raise Exception('I cannot edit the message referenced in the link, because I did not send it.')
+
+        await message.edit(content=content)
 
 
 def setup(bot: _Bot):
