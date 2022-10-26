@@ -19,6 +19,26 @@ from .. import utils as _utils
 
 
 class Utility(_CogBase):
+    QUERY_UPDATE_SEQUENCES = '''
+DO
+$do$
+BEGIN
+   IF EXISTS (SELECT FROM pss_chat_log) THEN
+      PERFORM setval('pss_chat_log_pss_chat_log_id_seq', (SELECT max(pss_chat_log_id) FROM pss_chat_log));
+   END IF;
+   IF EXISTS (SELECT FROM reaction_role_change) THEN
+      PERFORM setval('reaction_role_change_reaction_role_change_id_seq', (SELECT max(reaction_role_change_id) FROM reaction_role_change));
+   END IF;
+   IF EXISTS (SELECT FROM reaction_role) THEN
+      PERFORM setval('reaction_role_reaction_role_id_seq', (SELECT max(reaction_role_id) FROM reaction_role));
+   END IF;
+   IF EXISTS (SELECT FROM reaction_role_requirement) THEN
+      PERFORM setval('reaction_role_requirement_reaction_role_requirement_id_seq', (SELECT max(reaction_role_requirement_id) FROM reaction_role_requirement));
+   END IF;
+END
+$do$'''
+
+
     @_is_owner()
     @_command_group(name='check', hidden=True, invoke_without_command=True)
     async def check(self, ctx: _Context) -> None:
@@ -211,7 +231,11 @@ class Utility(_CogBase):
             raise Exception('The file provided must not be empty.')
 
         await _db.import_from_json(file_contents)
-        await ctx.reply('Database imported successfully!')
+        updated_sequences = await _db.try_execute(Utility.QUERY_UPDATE_SEQUENCES)
+        if updated_sequences:
+            await ctx.reply('Database imported successfully!')
+        else:
+            await ctx.reply(f'Data has been imported, but the sequences could not be updated! You need to perform the following sql query:\n{Utility.QUERY_UPDATE_SEQUENCES}')
 
 
     @_command_group(name='embed', invoke_without_command=True)
