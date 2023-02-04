@@ -158,7 +158,7 @@ class EmbedLeovoelDecoder(_JSONDecoder):
     """
     Tool at: https://leovoel.github.io/embed-visualizer/
     """
-    __EMBED_PROP_NAMES = ['author', 'color', 'description', 'footer', 'image', 'timestamp', 'title', 'url', 'thumbnail', 'fields']
+    __EMBED_PROP_NAMES = ['author', 'color', 'description', 'footer', 'image', 'timestamp', 'title', 'thumbnail', 'fields']
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(object_hook=self.object_hook, *args, **kwargs)
@@ -183,10 +183,10 @@ class EmbedLeovoelDecoder(_JSONDecoder):
                 result.set_footer(text=footer_info.get('text', _Embed.Empty), icon_url=footer_info.get('icon_url', _Embed.Empty))
             image_info = dct.get('image')
             if image_info:
-                result.set_image(image_info.get('url'))
+                result.set_image(url=image_info.get('url'))
             thumbnail_info = dct.get('thumbnail')
             if thumbnail_info:
-                result.set_thumbnail(thumbnail_info.get('url'))
+                result.set_thumbnail(url=thumbnail_info.get('url'))
             for field in dct.get('fields', []):
                 result.add_field(name=field.get('name'), value=field.get('value'), inline=field.get('inline', True))
             return result
