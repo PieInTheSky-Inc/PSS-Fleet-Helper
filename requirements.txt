@@ -1,8 +1,8 @@
-psycopg2
+psycopg2==2.9.3
 aiohttp[speedups]
 asyncpg
 emoji
 py-cord==2.3.2
 pytz
-sqlalchemy
+sqlalchemy==1.4.41
 strenum
