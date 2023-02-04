@@ -1,6 +1,6 @@
 psycopg2==2.9.3
 aiohttp[speedups]
-asyncpg
+asyncpg==0.26.0
 emoji
 py-cord==2.3.2
 pytz
