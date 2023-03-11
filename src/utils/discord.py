@@ -403,7 +403,8 @@ def get_channel(ctx: _Context,
         if match:
             channel_id = int(match.groups()[0])
     if channel_id:
-        return ctx.guild.get_channel(channel_id)
+        result = ctx.guild.get_channel_or_thread(channel_id)
+        return result
     return None
 
 
