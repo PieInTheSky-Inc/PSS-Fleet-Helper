@@ -436,16 +436,17 @@ def get_emoji(ctx: _Context,
     Attempts to obtain an emoji on the guild, `ctx` originates from.
     Returns either a unicode emoji or a Discord emoji `str` in format: `<:name:id>` or `None` if a Discord emoji does not exist or cannot be accessed.
     """
-    emoji_list = _emoji.emoji_list(emoji)
-    if emoji_list:
-        return emoji_list[0]['emoji']
-    else:
-        match = __RX_EMOJI.match(emoji)
-        if match:
-            emoji_id = int(match.groups()[0])
-            result = ctx.bot.get_emoji(emoji_id)
-            if result and ctx.guild == result.guild:
-                return f'<:{result.name}:{result.id}>'
+    if emoji:
+        emoji_list = _emoji.emoji_list(emoji)
+        if emoji_list:
+            return emoji_list[0]['emoji']
+        else:
+            match = __RX_EMOJI.match(emoji)
+            if match:
+                emoji_id = int(match.groups()[0])
+                result = ctx.bot.get_emoji(emoji_id)
+                if result and ctx.guild == result.guild:
+                    return f'<:{result.name}:{result.id}>'
     return None
 
 
