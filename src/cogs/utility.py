@@ -418,12 +418,24 @@ $do$'''
             raise ValueError('The month must not be greater than 12.')
         if day <= 0:
             raise ValueError('The day must not be zero or negative.')
-        if hour and hour < 0:
-            raise ValueError('The hour must not be negative.')
-        if minute and minute < 0:
-            raise ValueError('The minute must not be negative.')
-        if second and second < 0:
-            raise ValueError('The second must not be negative.')
+        if day > 31:
+            raise ValueError('The day must not be greater than 31.')
+        if hour:
+            if hour < 0:
+                raise ValueError('The hour must not be negative.')
+            if hour > 23:
+                raise ValueError('The hour must not be greater than 23.')
+        if minute:
+            if minute < 0:
+                raise ValueError('The minute must not be negative.')
+            if minute > 59:
+                raise ValueError('The minute must not be greater than 59.')
+        if second:
+            if second < 0:
+                raise ValueError('The second must not be negative.')
+            if second > 59:
+                raise ValueError('The second must not be greater than 59.')
+
         result = _datetime(year, month, day, hour or 0, minute or 0, second or 0, tzinfo=_timezone.utc)
         return result
 
