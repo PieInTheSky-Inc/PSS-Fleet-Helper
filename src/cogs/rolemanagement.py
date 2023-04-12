@@ -260,6 +260,55 @@ class RoleManagement(_CogBase):
                     *not_removed
                 ))
             await _utils.discord.reply_lines(ctx, lines)
+    
+
+    @_bot_has_guild_permissions(manage_roles=True)
+    @_has_guild_permissions(manage_roles=True)
+    @role.group(name='removefromrole', brief='Remove a Role from members with certain role(s)', invoke_without_command=True)
+    async def removefromrole(self, ctx: _Context, role_to_clear: _Role, required_role: _Role, *, required_roles: str = None) -> None:
+        """
+        Remove a Role from all members with the specified roles.
+
+        Usage:
+          vivi role removefromrole [role to add] [required role 1] <required role 2 and more>
+
+        Parameters:
+          role_to_clear: Mandatory. An ID or a mention of a Role on this server.
+          required_role: Mandatory. An ID or a mention of a Role on this server that is required.
+          required_roles: Optional. IDs or mentions of further required roles.
+
+        Examples:
+          vivi role removefromrole @foo @bar - Clears the role @foo from all members with the @bar role.
+          vivi role removefromrole @foo @bar @baz - Clears the role @foo from all members having the roles @bar and @baz.
+        """
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+
+        if role_to_clear.position >= ctx.me.top_role.position:
+            raise Exception(f'Cannot add the role {role_to_clear.mention}: it is either my top role or above.')
+
+        roles = [required_role]
+        if required_roles:
+            for role_id_or_mention in required_roles.split(' '):
+                roles.append(ctx.guild.get_role(role_id_or_mention))
+        members = None
+        for role in roles:
+            if members is None:
+                members = role.members
+            else:
+                members = list(set(members).intersection(role.members))
+        
+        reason = f'User {ctx.author.display_name} (ID: {ctx.author.id}) issued command: role addtorole'
+        confirmator = _utils.Confirmator(ctx, f'This command will remove the role `{role_to_clear}` from {len(members)} members!')
+        if (await confirmator.wait_for_option_selection()):
+            for member in members:
+                await member.remove_roles(role_to_clear, reason=reason)
+
+            lines = [
+                'The command completed successfully.',
+                f'Removed role {role} from {len(members)} members:',
+                *members
+            ]
+            await _utils.discord.reply_lines(ctx, lines)
 
 
 def setup(bot: _Bot):
