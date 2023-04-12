@@ -188,7 +188,7 @@ class ReactionRoles(_CogBase):
     @_bot_has_guild_permissions(manage_roles=True)
     @_has_guild_permissions(manage_roles=True)
     @base.command(name='add', brief='Add a reaction role')
-    async def add(self, ctx: _Context) -> None:
+    async def add(self, ctx: _Context, emoji: str = None, message_link: str = None, *, name: str = None) -> None:
         """
         Add a new Reaction Role to this server. Starts an assistant guiding through the creation process.
 
@@ -210,11 +210,11 @@ class ReactionRoles(_CogBase):
             ]
         await _utils.discord.reply_lines(ctx, welcome_lines, mention_author=True)
 
-        name: str = None
-        emoji: str = None
+        name: str = name or None
+        emoji: str = emoji or None
         channel_id: int = None
         message_id: int = None
-        details, aborted = await inquire_for_reaction_role_details(ctx, abort_text)
+        details, aborted = await inquire_for_reaction_role_details(ctx, abort_text, name=name, emoji=emoji, message_link=message_link)
         if aborted:
             return
         if details:
@@ -717,7 +717,7 @@ async def edit_role_change(reaction_role: _ReactionRole, ctx: _Context, abort_te
     return True, aborted
 
 
-async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reaction_role: _Optional[_ReactionRole] = None) -> _Tuple[_Optional[_Tuple[str, str, int, int]], bool]:
+async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reaction_role: _Optional[_ReactionRole] = None, name: str = None, emoji: str = None, message_link: str = None) -> _Tuple[_Optional[_Tuple[str, str, int, int]], bool]:
     """
     Inquires the Discord user for a message ID, a channel mention or ID, an emoji and a name.
 
@@ -736,8 +736,8 @@ async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reac
     """
     new_str = 'new ' if reaction_role else ''
     skip_text = 'Skipped.' if reaction_role else None
+    aborted = False
 
-    name: str = None
     if reaction_role:
         await _utils.discord.send(ctx, f'> Current name is \'{reaction_role.name}\'.')
     prompt_lines = [f'What should be the {new_str}name for the reaction role?']
@@ -749,11 +749,11 @@ async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reac
             name = None
             break
 
-    emoji: str = None
     if reaction_role:
         await _utils.discord.send(ctx, f'> Current emoji is \'{reaction_role.reaction}\'.')
     prompt_base_lines = [f'Specify the {new_str}emoji to be used as the reaction.']
     prompt_lines = []
+    emoji = _utils.discord.get_emoji(ctx, emoji)
     while not emoji:
         prompt_lines.extend(prompt_base_lines)
         emoji, aborted, skipped = await _utils.discord.inquire_for_emoji(ctx, '\n'.join(prompt_lines), abort_text=abort_text, skip_text=skip_text)
@@ -767,8 +767,15 @@ async def inquire_for_reaction_role_details(ctx: _Context, abort_text: str, reac
         if not emoji:
             prompt_lines = ['This is not a valid emoji or I cannot use this emoji.']
 
-    channel_id: int = None
-    message_id: int = None
+    channel_id = None
+    message_id = None
+    if message_link:
+        channel, message = await _utils.discord.get_channel_and_message_from_message_link(ctx, message_link)
+        if channel:
+            channel_id = channel.id
+        if message:
+            message_id = message.id
+
     if reaction_role:
         await _utils.discord.send(ctx, f'> Current channel is <#{reaction_role.channel_id}>.\n> Current message is {_utils.discord.create_discord_link(ctx.guild.id, reaction_role.channel_id, reaction_role.message_id)}')
     prompt_base_lines = [f'Specify the full link to the {new_str}message, which the reaction shall be added to.']
