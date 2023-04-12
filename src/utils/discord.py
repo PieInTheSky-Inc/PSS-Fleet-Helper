@@ -331,6 +331,7 @@ def create_posts_from_lines(lines: _List[str], char_limit: int) -> _List[str]:
     current_post = ''
 
     for line in lines:
+        line = str(line)
         line_length = len(line)
         new_post_length = 1 + len(current_post) + line_length
         if new_post_length > char_limit:
