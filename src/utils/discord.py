@@ -174,7 +174,9 @@ class EmbedLeovoelDecoder(_JSONDecoder):
                 color = _Colour(color)
             if timestamp is not _Embed.Empty:
                 timestamp = _utc_from_timestamp(timestamp)
+
             result = _Embed(title=title, color=color, url=url, description=description, timestamp=timestamp)
+            
             author_info = dct.get('author')
             if author_info:
                 result.set_author(name=author_info.get('name'), url=author_info.get('url', _Embed.Empty), icon_url=author_info.get('icon_url', _Embed.Empty))
