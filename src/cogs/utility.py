@@ -266,6 +266,30 @@ $do$'''
             raise Exception('You need to specify a definition or upload a file containing a definition!')
         for embed in embeds:
             await _utils.discord.reply(ctx, None, embed=embed)
+    
+
+    @embed.command(name='getdef', brief='Get the embed definition from a post')
+    async def embed_getdef(self, ctx: _Context, url: str)-> None:
+        """
+        Retrieves the definition of an embed from a message.
+        """
+        if not _utils.discord.check_for_message_link(url, allow_abort=False, allow_skip=False):
+            raise Exception('Parameter `url` received an invalid value: value is not a valid message url!')
+
+        channel, message = await _utils.discord.get_channel_and_message_from_message_link(ctx, url)
+        if not message.embeds:
+            raise Exception('The referenced message does not include any embeds.')
+
+        definitions_lines = []
+        for embed in message.embeds:
+            definitions_lines.extend(_json.dumps(embed, cls=_utils.discord.EmbedLeovoelEncoder).split('\n'))
+        
+        if definitions_lines:
+            definitions_lines.insert(0, '```json')
+            definitions_lines.append('```')
+            await _utils.discord.reply_lines(ctx, definitions_lines)
+        else:
+            raise Exception('An unknown error occured. Please contact the bot\'s author.')
 
 
     @embed.command(name='link')
@@ -336,6 +360,7 @@ $do$'''
             raise Exception('I cannot edit the message referenced in the link, because I did not send it.')
 
         await message.edit(content=content)
+        await _utils.discord.reply(ctx, 'Message edited successfully.')
 
 
 def setup(bot: _Bot):
