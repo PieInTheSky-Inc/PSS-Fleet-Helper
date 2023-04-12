@@ -266,7 +266,7 @@ $do$'''
                 if attachment_content:
                     embeds.append(_json.loads(attachment_content, cls=_utils.discord.EmbedLeovoelDecoder))
         else:
-            raise Exception('You need to specify a definition or upload a file containing a definition!')
+            raise ValueError('Parameter \'definition_or_url\' received an invalid value: You need to specify a definition or upload a file containing a definition!')
         for embed in embeds:
             await _utils.discord.reply(ctx, None, embed=embed)
     
@@ -277,7 +277,7 @@ $do$'''
         Retrieves the definition of an embed from a message.
         """
         if not _utils.discord.check_for_message_link(url, allow_abort=False, allow_skip=False):
-            raise Exception('Parameter `url` received an invalid value: value is not a valid message url!')
+            raise ValueError('Parameter `url` received an invalid value: value is not a valid message url!')
 
         channel, message = await _utils.discord.get_channel_and_message_from_message_link(ctx, url)
         if not message.embeds:
@@ -410,20 +410,20 @@ $do$'''
     
 
     def _get_datetime_from_parts(self, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> _datetime:
-        if year < 1970:
-            raise Exception('The year must not be lower than 1970.')
+        if year <= 0:
+            raise ValueError('The year must not be zero or negative.')
         if month <= 0:
-            raise Exception('The month must not be zero or negative.')
+            raise ValueError('The month must not be zero or negative.')
         if month > 12:
-            raise Exception('The month must not be greater than 12.')
+            raise ValueError('The month must not be greater than 12.')
         if day <= 0:
-            raise Exception('The day must not be zero or negative.')
+            raise ValueError('The day must not be zero or negative.')
         if hour and hour < 0:
-            raise Exception('The hour must not be negative.')
+            raise ValueError('The hour must not be negative.')
         if minute and minute < 0:
-            raise Exception('The minute must not be negative.')
+            raise ValueError('The minute must not be negative.')
         if second and second < 0:
-            raise Exception('The second must not be negative.')
+            raise ValueError('The second must not be negative.')
         result = _datetime(year, month, day, hour or 0, minute or 0, second or 0, tzinfo=_timezone.utc)
         return result
 
