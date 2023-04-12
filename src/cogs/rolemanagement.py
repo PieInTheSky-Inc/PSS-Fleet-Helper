@@ -69,6 +69,55 @@ class RoleManagement(_CogBase):
                     *not_added
                 ))
             await _utils.discord.reply_lines(ctx, lines)
+    
+
+    @_bot_has_guild_permissions(manage_roles=True)
+    @_has_guild_permissions(manage_roles=True)
+    @role.group(name='addtorole', brief='Add Role to members with certain role(s)', invoke_without_command=True)
+    async def addtorole(self, ctx: _Context, role_to_add: _Role, required_role: _Role, *, required_roles: str = None) -> None:
+        """
+        Add a Role to all members with the specified roles.
+
+        Usage:
+          vivi role addtorole [role to add] [required role 1] <required role 2 and more>
+
+        Parameters:
+          role_to_add: Mandatory. An ID or a mention of a Role on this server.
+          required_role: Mandatory. An ID or a mention of a Role on this server that is required.
+          required_roles: Optional. IDs or mentions of further required roles.
+
+        Examples:
+          vivi role addtorole @foo @bar - Adds the role @foo to all members with the @bar role.
+          vivi role addtorole @foo @bar @baz - Adds the role @foo to all members having the roles @bar and @baz.
+        """
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
+
+        if role_to_add.position >= ctx.me.top_role.position:
+            raise Exception(f'Cannot add the role {role_to_add.mention}: it is either my top role or above.')
+
+        roles = [required_role]
+        if required_roles:
+            for role_id_or_mention in required_roles.split(' '):
+                roles.append(ctx.guild.get_role(role_id_or_mention))
+        members = None
+        for role in roles:
+            if members is None:
+                members = role.members
+            else:
+                members = list(set(members).intersection(role.members))
+        
+        reason = f'User {ctx.author.display_name} (ID: {ctx.author.id}) issued command: role addtorole'
+        confirmator = _utils.Confirmator(ctx, f'This command will add the role `{role_to_add}` to {len(members)} members!')
+        if (await confirmator.wait_for_option_selection()):
+            for member in members:
+                await member.add_roles(role_to_add, reason=reason)
+
+            lines = [
+                'The command completed successfully.',
+                f'Added role {role} to {len(members)} members:',
+                *members
+            ]
+            await _utils.discord.reply_lines(ctx, lines)
 
 
     @_bot_has_guild_permissions(manage_roles=True)
