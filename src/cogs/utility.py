@@ -381,7 +381,7 @@ $do$'''
         """
         dt = self._get_datetime_from_parts(year, month, day, hour, minute, second)
         timestamp = _utils.discord.get_localized_timestamp(dt, 'D')
-        await _utils.discord.reply(ctx, timestamp)
+        await _utils.discord.reply(ctx, f'{timestamp} `{timestamp}`')
 
 
     @timestamp.command(name='datetime', brief='Get localized datetime')
@@ -391,7 +391,7 @@ $do$'''
         """
         dt = self._get_datetime_from_parts(year, month, day, hour, minute, second)
         timestamp = _utils.discord.get_localized_timestamp(dt, 'f')
-        await _utils.discord.reply(ctx, timestamp)
+        await _utils.discord.reply(ctx, f'{timestamp} `{timestamp}`')
 
 
     @timestamp.command(name='time', brief='Get localized time')
@@ -406,7 +406,7 @@ $do$'''
         else:
             timestamp_format = 't'
         timestamp = _utils.discord.get_localized_timestamp(dt, timestamp_format)
-        await _utils.discord.reply(ctx, timestamp)
+        await _utils.discord.reply(ctx, f'{timestamp} `{timestamp}`')
     
 
     def _get_datetime_from_parts(self, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> _datetime:
