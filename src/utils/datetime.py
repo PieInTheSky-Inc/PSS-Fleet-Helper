@@ -5,11 +5,17 @@ from datetime import timezone as _timezone
 
 # ---------- Constants ----------
 
+UNIX_START_DATE: _datetime = _datetime(1970, 1, 1, tzinfo=_timezone.utc)
 
 
 
 
 # ---------- Functions ----------
+
+def get_unix_timestamp(dt: _datetime) -> int:
+    result = int((dt - UNIX_START_DATE).total_seconds())
+    return result
+
 
 def get_utc_now() -> _datetime:
     return _datetime.now(_timezone.utc)

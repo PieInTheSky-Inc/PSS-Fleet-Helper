@@ -1,5 +1,6 @@
 from aiohttp import InvalidURL as _InvalidURL
 from asyncio import TimeoutError as _TimeoutError
+from datetime import datetime as _datetime
 from datetime import timedelta as _timedelta
 from json import dumps as _json_dumps
 from json import loads as _json_loads
@@ -33,9 +34,7 @@ import emoji as _emoji
 
 from . import settings
 from . import web as _web
-from .datetime import get_utc_now as _get_utc_now
-from .datetime import utc_from_timestamp as _utc_from_timestamp
-from .datetime import utc_to_timestamp as _utc_to_timestamp
+from . import datetime as _utils_datetime
 
 
 
@@ -121,7 +120,7 @@ class EmbedLeovoelEncoder(_JSONEncoder):
                     r, g, b = embed.color.to_rgb()
                     result['color'] = (r << 16) + (g << 8) + b
                 if embed.timestamp:
-                    result['timestamp'] = _utc_to_timestamp(embed.timestamp)
+                    result['timestamp'] = _utils_datetime.utc_to_timestamp(embed.timestamp)
                 if embed.footer:
                     if embed.footer.icon_url:
                         result.setdefault('footer', {})['icon_url'] = embed.footer.icon_url
@@ -173,7 +172,7 @@ class EmbedLeovoelDecoder(_JSONDecoder):
             if color is not _Embed.Empty:
                 color = _Colour(color)
             if timestamp is not _Embed.Empty:
-                timestamp = _utc_from_timestamp(timestamp)
+                timestamp = _utils_datetime.utc_from_timestamp(timestamp)
 
             result = _Embed(title=title, color=color, url=url, description=description, timestamp=timestamp)
             
@@ -463,6 +462,14 @@ async def get_channel_and_message_from_message_link(ctx: _Context,
         if channel:
             message = await fetch_message(channel, message_id)
     return channel, message
+
+
+def get_localized_timestamp(dt: _datetime,
+                            format: str,
+                            ) -> str:
+    unix_timestamp = _utils_datetime.get_unix_timestamp(dt)
+    result = f'<t:{unix_timestamp}:{format}>'
+    return result
 
 
 def get_member(ctx: _Context,
@@ -1005,7 +1012,7 @@ async def wait_for_message(ctx: _Context,
                             **check_kwargs: _Any
                         ) -> _Optional[_Message]:
     timeout_delta = _timedelta(seconds=timeout)
-    end_inquiry = _get_utc_now() + timeout_delta
+    end_inquiry = _utils_datetime.get_utc_now() + timeout_delta
     try:
         while True and timeout and timeout > 0.0:
             user_reply: _Message = await ctx.bot.wait_for('message', timeout=timeout)
@@ -1013,7 +1020,7 @@ async def wait_for_message(ctx: _Context,
                 content = user_reply.content.strip()
                 if not check or check(content, allow_abort, allow_skip, *check_args, **check_kwargs):
                     return user_reply
-            timeout = (end_inquiry - _get_utc_now()).total_seconds()
+            timeout = (end_inquiry - _utils_datetime.get_utc_now()).total_seconds()
     except _TimeoutError:
         return None
 

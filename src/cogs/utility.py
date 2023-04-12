@@ -1,3 +1,5 @@
+from datetime import datetime as _datetime
+from datetime import timezone as _timezone
 import json as _json
 from typing import List as _List
 
@@ -9,6 +11,7 @@ from discord import TextChannel as _TextChannel
 from discord.ext.commands import Bot as _Bot
 from discord.ext.commands import Context as _Context
 from discord.ext.commands import is_owner as _is_owner
+from discord.ext.commands import command as _command
 from discord.ext.commands import group as _command_group
 
 from .cog_base import CogBase as _CogBase
@@ -361,6 +364,71 @@ $do$'''
 
         await message.edit(content=content)
         await _utils.discord.reply(ctx, 'Message edited successfully.')
+
+
+    @_command_group(name='timestamp', brief='Get localized timestamps', invoke_without_command=False)
+    async def timestamp(self, ctx: _Context) -> None:
+        """
+        
+        """
+        pass
+
+
+    @timestamp.command(name='date', brief='Get localized date')
+    async def timestamp_date(self, ctx: _Context, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> None:
+        """
+        Create a localized timestamp from specified date parts, displaying only the date.
+        """
+        dt = self._get_datetime_from_parts(year, month, day, hour, minute, second)
+        timestamp = _utils.discord.get_localized_timestamp(dt, 'D')
+        await _utils.discord.reply(ctx, timestamp)
+
+
+    @timestamp.command(name='datetime', brief='Get localized datetime')
+    async def timestamp_datetime(self, ctx: _Context, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> None:
+        """
+        Create a localized timestamp from specified date parts, displaying the date and time.
+        """
+        dt = self._get_datetime_from_parts(year, month, day, hour, minute, second)
+        timestamp = _utils.discord.get_localized_timestamp(dt, 'f')
+        await _utils.discord.reply(ctx, timestamp)
+
+
+    @timestamp.command(name='time', brief='Get localized time')
+    async def timestamp_time(self, ctx: _Context, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> None:
+        """
+        Create a localized timestamp from specified date parts, displaying only the time.
+        """
+        dt = self._get_datetime_from_parts(year, month, day, hour, minute, second)
+        include_seconds = second is not None
+        if include_seconds:
+            timestamp_format = 'T'
+        else:
+            timestamp_format = 't'
+        timestamp = _utils.discord.get_localized_timestamp(dt, timestamp_format)
+        await _utils.discord.reply(ctx, timestamp)
+    
+
+    def _get_datetime_from_parts(self, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> _datetime:
+        if year < 1970:
+            raise Exception('The year must not be lower than 1970.')
+        if month <= 0:
+            raise Exception('The month must not be zero or negative.')
+        if month > 12:
+            raise Exception('The month must not be greater than 12.')
+        if day <= 0:
+            raise Exception('The day must not be zero or negative.')
+        if hour and hour < 0:
+            raise Exception('The hour must not be negative.')
+        if minute and minute < 0:
+            raise Exception('The minute must not be negative.')
+        if second and second < 0:
+            raise Exception('The second must not be negative.')
+        result = _datetime(year, month, day, hour or 0, minute or 0, second or 0, tzinfo=_timezone.utc)
+        return result
+
+
+
 
 
 def setup(bot: _Bot):
