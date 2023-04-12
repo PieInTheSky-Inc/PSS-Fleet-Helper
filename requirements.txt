@@ -1,8 +1,8 @@
-psycopg2==2.9.3
+psycopg2-binary==2.9.6
 aiohttp[speedups]
 asyncpg==0.26.0
 emoji
 py-cord==2.3.2
 pytz
-sqlalchemy==1.4.41
+sqlalchemy==1.4.47
 strenum
