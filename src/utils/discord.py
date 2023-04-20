@@ -372,6 +372,67 @@ def create_prompt_text(prompt_text: str,
     return f'```{result}```'
 
 
+def create_substitutions(guild: _Guild = None, channel: _TextChannel = None, role: _Role = None, member: _Member = None) -> _Dict[str, str]:
+    """
+    Creates a dictionary of placeholders and their substitutions based on the provided Assets.
+
+    The following substitutions will be created:
+
+    {PLACEHOLDERS}
+    """
+    replacements = {}
+    if guild:
+        replacements['{server}'] = guild.name
+        replacements['{server.iconUrl}'] = f'{_Asset.BASE}{guild.icon.url}' if guild.icon else ''
+        replacements['{server.id}'] = str(guild.id)
+        replacements['{server.memberCount}'] = str(guild.member_count)
+        replacements['{server.name}'] = guild.name
+    if channel:
+        replacements['{channel}'] = channel.mention
+        replacements['{channel.category}'] = channel.category.name if channel.category else ''
+        replacements['{channel.category.id}'] = str(channel.category.id) if channel.category else ''
+        replacements['{channel.category.name}'] = channel.category.name if channel.category else ''
+        replacements['{channel.id}'] = str(channel.id)
+        replacements['{channel.mention}'] = channel.mention
+        replacements['{channel.name}'] = channel.name
+    if role:
+        replacements['{role}'] = role.mention
+        replacements['{role.id}'] = str(role.id)
+        replacements['{role.memberCount}'] = str(len(role.members))
+        replacements['{role.mention}'] = role.mention
+        replacements['{role.name}'] = role.name
+    if member:
+        user: _User = member._user
+        replacements['{user}'] = member.mention
+        replacements['{user.avatarUrl}'] = f'{_Asset.BASE}{user.avatar.url}' if user.avatar else ''
+        replacements['{user.discriminator}'] = user.discriminator
+        replacements['{user.id}'] = str(user.id)
+        replacements['{user.displayName}'] = member.display_name
+        replacements['{user.name}'] = f'{user.name}#{user.discriminator}'
+        replacements['{user.nick}'] = member.nick or ''
+        replacements['{user.username}'] = user.name
+    replacements['\{'] = '{'
+    replacements['\}'] = '}'
+    return replacements
+
+
+create_substitutions.__doc__ = f"""
+Creates a dictionary of placeholders and their substitutions based on the provided Assets.
+
+The following substitutions will be created:
+
+{PLACEHOLDERS}
+""".strip()
+
+
+async def edit_lines(msg: _Message, content_lines: _List[str], **kwargs) -> _Message:
+    posts = create_posts_from_lines(content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
+    for post in posts:
+        if post:
+            return (await msg.edit(content=post, **kwargs))
+    return msg
+
+
 async def fetch_message(channel: _TextChannel,
                         message_id: str
                         ) -> _Optional[_Message]:
@@ -408,6 +469,10 @@ def get_channel(ctx: _Context,
         result = ctx.guild.get_channel_or_thread(channel_id)
         return result
     return None
+
+
+def fits_single_message(lines: _List[str]) -> bool:
+    return len('\n'.join(lines)) <= settings.MESSAGE_MAXIMUM_CHARACTER_COUNT
 
 
 async def get_embed_from_definition_or_url(definition_or_url: str) -> _Embed:
@@ -872,59 +937,6 @@ async def inquire_for_true_false(ctx: _Context,
     Returns (result: `bool`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
     return (await inquire_for_boolean(ctx, prompt_text, timeout=timeout, abort_text=abort_text, skip_text=skip_text))
-
-
-def create_substitutions(guild: _Guild = None, channel: _TextChannel = None, role: _Role = None, member: _Member = None) -> _Dict[str, str]:
-    """
-    Creates a dictionary of placeholders and their substitutions based on the provided Assets.
-
-    The following substitutions will be created:
-
-    {PLACEHOLDERS}
-    """
-    replacements = {}
-    if guild:
-        replacements['{server}'] = guild.name
-        replacements['{server.iconUrl}'] = f'{_Asset.BASE}{guild.icon.url}' if guild.icon else ''
-        replacements['{server.id}'] = str(guild.id)
-        replacements['{server.memberCount}'] = str(guild.member_count)
-        replacements['{server.name}'] = guild.name
-    if channel:
-        replacements['{channel}'] = channel.mention
-        replacements['{channel.category}'] = channel.category.name if channel.category else ''
-        replacements['{channel.category.id}'] = str(channel.category.id) if channel.category else ''
-        replacements['{channel.category.name}'] = channel.category.name if channel.category else ''
-        replacements['{channel.id}'] = str(channel.id)
-        replacements['{channel.mention}'] = channel.mention
-        replacements['{channel.name}'] = channel.name
-    if role:
-        replacements['{role}'] = role.mention
-        replacements['{role.id}'] = str(role.id)
-        replacements['{role.memberCount}'] = str(len(role.members))
-        replacements['{role.mention}'] = role.mention
-        replacements['{role.name}'] = role.name
-    if member:
-        user: _User = member._user
-        replacements['{user}'] = member.mention
-        replacements['{user.avatarUrl}'] = f'{_Asset.BASE}{user.avatar.url}' if user.avatar else ''
-        replacements['{user.discriminator}'] = user.discriminator
-        replacements['{user.id}'] = str(user.id)
-        replacements['{user.displayName}'] = member.display_name
-        replacements['{user.name}'] = f'{user.name}#{user.discriminator}'
-        replacements['{user.nick}'] = member.nick or ''
-        replacements['{user.username}'] = user.name
-    replacements['\{'] = '{'
-    replacements['\}'] = '}'
-    return replacements
-
-
-create_substitutions.__doc__ = f"""
-Creates a dictionary of placeholders and their substitutions based on the provided Assets.
-
-The following substitutions will be created:
-
-{PLACEHOLDERS}
-""".strip()
 
 
 async def reply(ctx: _Context, content: str, mention_author: bool = False, **kwargs) -> _Message:
