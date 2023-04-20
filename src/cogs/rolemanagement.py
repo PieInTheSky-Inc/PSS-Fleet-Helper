@@ -44,7 +44,7 @@ class RoleManagement(_CogBase):
           vivi role add 45 1 2 3 - Adds the Role with ID '45' to the members with the IDs 1, 2 & 3
         """
         _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
-        _utils.assert_.can_add_remove_role(ctx, role_to_add, 'add')
+        _utils.assert_.can_add_remove_role(ctx.me, role_to_add, 'add')
 
         user_ids = set(user_ids.split(' '))
         if user_ids:
@@ -54,7 +54,7 @@ class RoleManagement(_CogBase):
             if (await confirmator.wait_for_option_selection()):
                 users_added = []
                 users_not_added = []
-                reply = _utils.discord.reply_lines(ctx, [f'Adding role. Progress: 0/{len(user_ids)} members'])
+                reply = (await _utils.discord.reply_lines(ctx, [f'Adding role. Progress: 0/{len(user_ids)} members']))[0]
 
                 for i, user_id in enumerate(user_ids):
                     member = ctx.guild.get_member(int(user_id))
@@ -64,7 +64,7 @@ class RoleManagement(_CogBase):
                     else:
                         users_not_added.append(user_id)
 
-                    if self.__print_progress(i):
+                    if i and self.__print_progress(i):
                         _utils.discord.edit_lines(reply, [f'Adding role. Progress: {i}/{len(user_ids)} members'])
 
                 lines = [
@@ -107,15 +107,15 @@ class RoleManagement(_CogBase):
           vivi role addtorole @foo @bar @baz - Adds the role @foo to all members having the roles @bar and @baz.
         """
         _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
-        _utils.assert_.can_add_remove_role(ctx, role_to_add, 'add')
+        _utils.assert_.can_add_remove_role(ctx.me, role_to_add, 'add')
 
         roles = [required_role]
         if required_roles:
             roles.extend(ctx.guild.get_role(role_id_or_mention) for role_id_or_mention in required_roles.split(' '))
                 
         members_with_role_to_add = set(role_to_add.members)
-        members = members_with_role_to_add.difference(self.__get_members_with_roles(ctx, *roles))
-        members = list(members) # the IDE won't recognize members being a list of Member objects, if converted in the step above
+        members_with_required_roles = set(self.__get_members_with_roles(ctx, *roles))
+        members = list(members_with_required_roles.difference(members_with_role_to_add))
         
         if members:
             reason = f'User {ctx.author.display_name} (ID: {ctx.author.id}) issued command: role addtorole'
@@ -132,7 +132,7 @@ class RoleManagement(_CogBase):
                     except:
                         pass
 
-                    if self.__print_progress(i):
+                    if i and self.__print_progress(i):
                         await _utils.discord.edit_lines(reply, [f'Adding role. Progress: {i}/{len(members)} members'])
 
                 lines = [
@@ -164,7 +164,7 @@ class RoleManagement(_CogBase):
         """
         if ctx.invoked_subcommand is None:
             _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
-            _utils.assert_.can_add_remove_role(ctx, role_to_remove, 'clear')
+            _utils.assert_.can_add_remove_role(ctx.me, role_to_remove, 'clear')
 
             members = list(role_to_remove.members)
 
@@ -184,7 +184,7 @@ class RoleManagement(_CogBase):
                         except:
                             users_not_cleared.append(f'{member.display_name} ({member.id})')
 
-                        if self.__print_progress(i):
+                        if i and self.__print_progress(i):
                             await _utils.discord.edit_lines(reply, [f'Clearing role. Progress: {i}/{len(members)} members'])
 
                     lines = [
@@ -249,7 +249,7 @@ class RoleManagement(_CogBase):
                     else:
                         users_not_removed.append(user_id)
 
-                    if self.__print_progress(i):
+                    if i and self.__print_progress(i):
                         await _utils.discord.edit_lines(reply, [f'Clearing roles. Progress: {i}/{len(user_ids)} members'])
 
                 lines = ['The command completed successfully.']
@@ -293,7 +293,7 @@ class RoleManagement(_CogBase):
           vivi role remove 45 1 2 3 - Removes the Role with ID '45' from Members with the User ID 1, 2 & 3.
         """
         _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
-        _utils.assert_.can_add_remove_role(ctx, role_to_remove, 'remove')
+        _utils.assert_.can_add_remove_role(ctx.me, role_to_remove, 'remove')
 
         user_ids = set(user_ids.split(' '))
 
@@ -317,7 +317,7 @@ class RoleManagement(_CogBase):
                     else:
                         users_not_removed.append(user_id)
 
-                    if self.__print_progress(i):
+                    if i and self.__print_progress(i):
                         await _utils.discord.edit_lines(reply, [f'Removing role. Progress: {i}/{len(user_ids)} members'])
 
                 lines = [
@@ -362,7 +362,7 @@ class RoleManagement(_CogBase):
           vivi role removefromrole @foo @bar @baz - Clears the role @foo from all members having the roles @bar and @baz.
         """
         _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
-        _utils.assert_.can_add_remove_role(ctx, role_to_remove, 'remove')
+        _utils.assert_.can_add_remove_role(ctx.me, role_to_remove, 'remove')
 
         roles = [required_role]
         if required_roles:
@@ -385,7 +385,7 @@ class RoleManagement(_CogBase):
                     except:
                         pass
 
-                    if self.__print_progress(i):
+                    if i and self.__print_progress(i):
                         await _utils.discord.edit_lines(reply, [f'Removing role. Progress: {i}/{len(members)} members'])
 
                 lines = [
