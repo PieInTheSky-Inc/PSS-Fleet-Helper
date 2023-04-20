@@ -59,8 +59,14 @@ class RoleManagement(_CogBase):
                 for i, user_id in enumerate(user_ids):
                     member = ctx.guild.get_member(int(user_id))
                     if member:
-                        await member.add_roles(role_to_add, reason=reason)
-                        users_added.append(f'{member.display_name} ({user_id})')
+                        if role_to_add not in member.roles:
+                            try:
+                                await member.add_roles(role_to_add, reason=reason)
+                                users_added.append(f'{member.display_name} ({user_id})')
+                            except:
+                                users_not_added.append(f'{member.display_name} ({user_id})')
+                        else:
+                            users_added.append(f'{member.display_name} ({user_id})')
                     else:
                         users_not_added.append(user_id)
 
@@ -309,11 +315,14 @@ class RoleManagement(_CogBase):
                 for i, user_id in enumerate(user_ids):
                     member = ctx.guild.get_member(int(user_id))
                     if member:
-                        try:
-                            await member.remove_roles(role_to_remove, reason=reason)
+                        if role_to_remove in member.roles:
+                            try:
+                                await member.remove_roles(role_to_remove, reason=reason)
+                                users_removed.append(f'{member.display_name} ({user_id})')
+                            except:
+                                users_not_removed.append(f'{member.display_name} ({user_id})')
+                        else:
                             users_removed.append(f'{member.display_name} ({user_id})')
-                        except:
-                            users_not_removed.append(f'{member.display_name} ({user_id})')
                     else:
                         users_not_removed.append(user_id)
 
