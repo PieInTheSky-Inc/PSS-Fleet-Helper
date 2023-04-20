@@ -1,5 +1,7 @@
 from typing import List as _List
 
+from discord import Member as _Member
+from discord import Role as _Role
 from discord.ext.commands import Context as _Context
 from discord.ext.commands.errors import MissingPermissions as _MissingPermissions
 
@@ -23,6 +25,15 @@ def authorized_channel_or_server_manager(ctx: _Context, authorized_channel_ids: 
         return True
     if raise_on_error:
         raise Exception([_UnauthorizedChannelError, _MissingPermissions(['manage_guild'])])
+    return False
+
+
+def can_add_remove_role(me: _Member, role: _Role, action: str = None, raise_on_error: bool = True) -> bool:
+    if role.position < me.top_role.position:
+        return True
+    if raise_on_error:
+        action = action or 'add/remove'
+        raise Exception(f'I can\'t {action} the role {role.mention}: it is either my top role or above.')
     return False
 
 
