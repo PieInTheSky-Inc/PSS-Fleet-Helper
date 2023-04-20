@@ -5,6 +5,7 @@ from . import discord
 from . import format
 from . import json
 from . import parse
+from . import settings
 from . import web
 from .confirmator import Confirmator
 from .miscellaneous import *
