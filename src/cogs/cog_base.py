@@ -1,17 +1,16 @@
-from discord.ext.commands import Bot as _Bot
 from discord.ext.commands import Cog as _Cog
 
-from .. import utils as _utils
+from .. import model as _model
 
 
 
 class CogBase(_Cog):
-    def __init__(self, bot: _Bot) -> None:
+    def __init__(self, bot: _model.PssApiDiscordBot) -> None:
         if not bot:
             raise ValueError('Parameter \'bot\' must not be None.')
         self.__bot = bot
 
 
     @property
-    def bot(self) -> _Bot:
+    def bot(self) -> _model.PssApiDiscordBot:
         return self.__bot

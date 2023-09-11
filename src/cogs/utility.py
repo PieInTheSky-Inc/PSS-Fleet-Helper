@@ -3,21 +3,14 @@ from datetime import timezone as _timezone
 import json as _json
 from typing import List as _List
 
-from discord import Embed as _Embed
-from discord import File as _File
-from discord import Message as _Message
-from discord import Role as _Role
-from discord import TextChannel as _TextChannel
-from discord.ext.commands import Bot as _Bot
-from discord.ext.commands import Context as _Context
-from discord.ext.commands import is_owner as _is_owner
-from discord.ext.commands import command as _command
-from discord.ext.commands import group as _command_group
+import discord as _discord
+import discord.ext.commands as _commands
 
 from .cog_base import CogBase as _CogBase
 from ..model import database as _db
 from .. import bot_settings as _bot_settings
 from .. import utils as _utils
+from .. import model as _model
 
 
 
@@ -42,9 +35,9 @@ END
 $do$'''
 
 
-    @_is_owner()
-    @_command_group(name='check', hidden=True, invoke_without_command=True)
-    async def check(self, ctx: _Context) -> None:
+    @_commands.is_owner()
+    @_commands.group(name='check', hidden=True, invoke_without_command=True)
+    async def check(self, ctx: _commands.Context) -> None:
         """
         Provides commands for checking user input. Check out the subcommands.
 
@@ -55,9 +48,9 @@ $do$'''
             await ctx.send_help('check')
 
 
-    @_is_owner()
+    @_commands.is_owner()
     @check.command(name='channel')
-    async def check_channel(self, ctx: _Context, channel_id_or_mention: str) -> None:
+    async def check_channel(self, ctx: _commands.Context, channel_id_or_mention: str) -> None:
         """
         Checks, if a channel with the provided ID or mention exists on this guild and can be accessed by the bot.
 
@@ -82,9 +75,9 @@ $do$'''
             await _utils.discord.reply_lines(ctx, lines)
 
 
-    @_is_owner()
+    @_commands.is_owner()
     @check.command(name='emoji')
-    async def check_emoji(self, ctx: _Context, emoji: str) -> None:
+    async def check_emoji(self, ctx: _commands.Context, emoji: str) -> None:
         """
         Checks, if a given emoji exists on this guild or is a standard emoji and can be accessed by the bot.
 
@@ -109,9 +102,9 @@ $do$'''
             await _utils.discord.reply_lines(ctx, lines)
 
 
-    @_is_owner()
+    @_commands.is_owner()
     @check.command(name='member')
-    async def check_member(self, ctx: _Context, *, member_id_mention_or_name: str) -> None:
+    async def check_member(self, ctx: _commands.Context, *, member_id_mention_or_name: str) -> None:
         """
         Checks, if a given member exists on this guild.
 
@@ -138,9 +131,9 @@ $do$'''
             await _utils.discord.reply_lines(ctx, lines)
 
 
-    @_is_owner()
+    @_commands.is_owner()
     @check.command(name='message')
-    async def check_message(self, ctx: _Context, channel: _TextChannel, message_id: str) -> None:
+    async def check_message(self, ctx: _commands.Context, channel: _discord.TextChannel, message_id: str) -> None:
         """
         Checks, if a message with the given ID exists in the given channel and can be accessed by the bot.
 
@@ -166,9 +159,9 @@ $do$'''
             await _utils.discord.reply_lines(ctx, lines)
 
 
-    @_is_owner()
+    @_commands.is_owner()
     @check.command(name='role')
-    async def check_role(self, ctx: _Context, role_id_or_mention: str) -> None:
+    async def check_role(self, ctx: _commands.Context, role_id_or_mention: str) -> None:
         """
         Checks, if a role with the given ID or mention exists on this guild and prints information about it.
 
@@ -182,7 +175,7 @@ $do$'''
           vivi check role 1
           vivi check role @foobar
         """
-        result: _Role = _utils.discord.get_role(ctx, role_id_or_mention)
+        result: _discord.Role = _utils.discord.get_role(ctx, role_id_or_mention)
         if result:
             lines = [
                 result.mention,
@@ -201,27 +194,27 @@ $do$'''
             await _utils.discord.reply_lines(ctx, lines)
 
 
-    @_is_owner()
-    @_command_group(name='db')
-    async def db(self, ctx: _Context) -> None:
+    @_commands.is_owner()
+    @_commands.group(name='db')
+    async def db(self, ctx: _commands.Context) -> None:
         pass
 
 
-    @_is_owner()
+    @_commands.is_owner()
     @db.command(name='export')
-    async def db_export(self, ctx: _Context) -> None:
+    async def db_export(self, ctx: _commands.Context) -> None:
         utc_now = _utils.datetime.get_utc_now()
         export = await _db.export_to_json()
 
         file_name = f'pss-fleet-helper-db-export_{utc_now.strftime("%Y%m%d-%H%M%S")}.json'
         with open(file_name, 'w') as fp:
             fp.write(export)
-        await ctx.reply('Database export:', file=_File(file_name))
+        await ctx.reply('Database export:', file=_discord.File(file_name))
 
 
-    @_is_owner()
+    @_commands.is_owner()
     @db.command(name='import')
-    async def db_import(self, ctx: _Context) -> None:
+    async def db_import(self, ctx: _commands.Context) -> None:
         """
         Attempts to import the data from the provided JSON file.
         """
@@ -241,8 +234,8 @@ $do$'''
             await ctx.reply(f'Data has been imported, but the sequences could not be updated! You need to perform the following sql query:\n{Utility.QUERY_UPDATE_SEQUENCES}')
 
 
-    @_command_group(name='embed', invoke_without_command=True)
-    async def embed(self, ctx: _Context, *, definition_or_url: str = None) -> None:
+    @_commands.group(name='embed', invoke_without_command=True)
+    async def embed(self, ctx: _commands.Context, *, definition_or_url: str = None) -> None:
         """
         Test the look of an embed.
         Create and edit embed definitions: https://leovoel.github.io/embed-visualizer/
@@ -257,7 +250,7 @@ $do$'''
         You can also copy the code onto pastebin.com and type the url to that file instead.
         You can also type the link to any file on the web containing an embed definition.
         """
-        embeds: _List[_Embed] = []
+        embeds: _List[_discord.Embed] = []
         if definition_or_url:
             embeds.append((await _utils.discord.get_embed_from_definition_or_url(definition_or_url)))
         elif ctx.message.attachments:
@@ -272,7 +265,7 @@ $do$'''
     
 
     @embed.command(name='getdef', brief='Get the embed definition from a post')
-    async def embed_getdef(self, ctx: _Context, url: str)-> None:
+    async def embed_getdef(self, ctx: _commands.Context, url: str)-> None:
         """
         Retrieves the definition of an embed from a message.
         """
@@ -296,7 +289,7 @@ $do$'''
 
 
     @embed.command(name='link')
-    async def embed_link(self, ctx: _Context, url: str, *, display_text: str = None) -> None:
+    async def embed_link(self, ctx: _commands.Context, url: str, *, display_text: str = None) -> None:
         """
         Creates an embed containing a hyperlink.
         """
@@ -304,12 +297,12 @@ $do$'''
             link = f'[{display_text}]({url})'
         else:
             link = url
-        embed = _Embed(description=link)
+        embed = _discord.Embed(description=link)
         await _utils.discord.send(ctx, None, embed=embed)
 
 
     @embed.command(name='replace')
-    async def embed_replace(self, ctx: _Context, message_link: str, *, definition_or_url: str = None) -> None:
+    async def embed_replace(self, ctx: _commands.Context, message_link: str, *, definition_or_url: str = None) -> None:
         """
         Replaces the embeds in an existing message sent by the bot.
         """
@@ -323,7 +316,7 @@ $do$'''
         if message.author != self.bot.user:
             raise Exception('I cannot edit the message referenced in the link, because I did not send it.')
 
-        embeds: _List[_Embed] = []
+        embeds: _List[_discord.Embed] = []
         if definition_or_url:
             embeds.append((await _utils.discord.get_embed_from_definition_or_url(definition_or_url)))
         elif ctx.message.attachments:
@@ -339,8 +332,8 @@ $do$'''
         await message.edit(embeds=embeds)
 
 
-    @_command_group(name='message', invoke_without_command=False)
-    async def message(self, ctx: _Context) -> None:
+    @_commands.group(name='message', invoke_without_command=False)
+    async def message(self, ctx: _commands.Context) -> None:
         """
 
         """
@@ -348,7 +341,7 @@ $do$'''
 
 
     @message.command(name='replace')
-    async def message_replace(self, ctx: _Context, message_link: str, *, content: str) -> None:
+    async def message_replace(self, ctx: _commands.Context, message_link: str, *, content: str) -> None:
         """
         Replaces the contents of a message sent by the bot.
         """
@@ -366,8 +359,8 @@ $do$'''
         await _utils.discord.reply(ctx, 'Message edited successfully.')
 
 
-    @_command_group(name='timestamp', brief='Get localized timestamps', invoke_without_command=False)
-    async def timestamp(self, ctx: _Context) -> None:
+    @_commands.group(name='timestamp', brief='Get localized timestamps', invoke_without_command=False)
+    async def timestamp(self, ctx: _commands.Context) -> None:
         """
         
         """
@@ -375,7 +368,7 @@ $do$'''
 
 
     @timestamp.command(name='date', brief='Get localized date')
-    async def timestamp_date(self, ctx: _Context, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> None:
+    async def timestamp_date(self, ctx: _commands.Context, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> None:
         """
         Create a localized timestamp from specified date parts, displaying only the date.
         """
@@ -385,7 +378,7 @@ $do$'''
 
 
     @timestamp.command(name='datetime', brief='Get localized datetime')
-    async def timestamp_datetime(self, ctx: _Context, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> None:
+    async def timestamp_datetime(self, ctx: _commands.Context, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> None:
         """
         Create a localized timestamp from specified date parts, displaying the date and time.
         """
@@ -395,7 +388,7 @@ $do$'''
 
 
     @timestamp.command(name='time', brief='Get localized time')
-    async def timestamp_time(self, ctx: _Context, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> None:
+    async def timestamp_time(self, ctx: _commands.Context, year: int, month: int, day: int, hour: int = None, minute: int = None, second: int = None) -> None:
         """
         Create a localized timestamp from specified date parts, displaying only the time.
         """
@@ -443,5 +436,5 @@ $do$'''
 
 
 
-def setup(bot: _Bot):
+def setup(bot: _model.PssApiDiscordBot):
     bot.add_cog(Utility(bot))
