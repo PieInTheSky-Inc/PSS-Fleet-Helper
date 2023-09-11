@@ -23,8 +23,9 @@ DISCORD_BOT_TOKEN: str = _os.environ.get('VIVIBOT_DISCORD_BOT_TOKEN')
 
 
 DEFAULT_PREFIXES: _List[str] = [
+    'fh ',
     'vivi ',
-    'vv '
+    'vv ',
 ]
 
 
