@@ -59,7 +59,7 @@ class ChatLogger(_CogBase):
             tries = 2
             while tries > 0:
                 try:
-                    messages = await self.bot.pssapi_client.message_service.list_messages_for_channel_key(channel_key, access_token)
+                    messages = await self.bot.pssapi_client.message_service.list_messages_for_channel_key(access_token, channel_key)
                     break
                 except _pssapi.utils.exceptions.ServerMaintenanceError:
                     print(f'Server is under maintenance.')
