@@ -21,7 +21,7 @@ class RoleManagement(_CogBase):
             await ctx.send_help('role')
 
 
-    @_commands.bot_commands.has_guild_permissions(manage_roles=True)
+    @_commands.bot_has_guild_permissions(manage_roles=True)
     @_commands.has_guild_permissions(manage_roles=True)
     @role.command(name='add', brief='Add Role to members')
     async def add(self, ctx: _commands.Context, role_to_add: _discord.Role, *, user_ids: str) -> None:
@@ -89,7 +89,7 @@ class RoleManagement(_CogBase):
                 await _utils.discord.edit_lines(reply, lines)
     
 
-    @_commands.bot_commands.has_guild_permissions(manage_roles=True)
+    @_commands.bot_has_guild_permissions(manage_roles=True)
     @_commands.has_guild_permissions(manage_roles=True)
     @role.group(name='addtorole', brief='Add Role to members with certain role(s)', invoke_without_command=True)
     async def addtorole(self, ctx: _commands.Context, role_to_add: _discord.Role, required_role: _discord.Role, *, required_roles: str = None) -> None:
@@ -147,7 +147,7 @@ class RoleManagement(_CogBase):
                 await _utils.discord.edit_lines(reply, lines)
 
 
-    @_commands.bot_commands.has_guild_permissions(manage_roles=True)
+    @_commands.bot_has_guild_permissions(manage_roles=True)
     @_commands.has_guild_permissions(manage_roles=True)
     @role.group(name='clear', brief='Remove a role from all members', invoke_without_command=True)
     async def clear(self, ctx: _commands.Context, role_to_remove: _discord.Role) -> None:
@@ -211,7 +211,7 @@ class RoleManagement(_CogBase):
                 await _utils.discord.reply(ctx, f'There are no members with the role {role_to_remove}.')
 
 
-    @_commands.bot_commands.has_guild_permissions(manage_roles=True)
+    @_commands.bot_has_guild_permissions(manage_roles=True)
     @_commands.has_guild_permissions(manage_roles=True)
     @clear.command(name='users', brief='Remove all roles from specified members')
     async def clear_users(self, ctx: _commands.Context, *, user_ids: str) -> None:
@@ -276,7 +276,7 @@ class RoleManagement(_CogBase):
                 await _utils.discord.edit_lines(reply, lines)
 
 
-    @_commands.bot_commands.has_guild_permissions(manage_roles=True)
+    @_commands.bot_has_guild_permissions(manage_roles=True)
     @_commands.has_guild_permissions(manage_roles=True)
     @role.command(name='remove', brief='Remove a role from specified members')
     async def remove(self, ctx: _commands.Context, role_to_remove: _discord.Role, *, user_ids: str) -> None:
@@ -347,7 +347,7 @@ class RoleManagement(_CogBase):
                 await _utils.discord.edit_lines(reply, lines)
     
 
-    @_commands.bot_commands.has_guild_permissions(manage_roles=True)
+    @_commands.bot_has_guild_permissions(manage_roles=True)
     @_commands.has_guild_permissions(manage_roles=True)
     @role.group(name='removefromrole', brief='Remove a Role from members with certain role(s)', invoke_without_command=True)
     async def removefromrole(self, ctx: _commands.Context, role_to_remove: _discord.Role, required_role: _discord.Role, *, required_roles: str = None) -> None:
