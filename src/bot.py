@@ -20,7 +20,7 @@ FLEET_HELPER = _model.PssApiDiscordBot(
 
 # ---------- Event handlers ----------
 
-@FLEET_HELPER.discord_bot.event
+@FLEET_HELPER.event
 async def on_command_error(ctx: _commands.Context,
                             err: Exception
                         ) -> None:
@@ -47,14 +47,14 @@ async def on_command_error(ctx: _commands.Context,
     await _utils.discord.reply_lines(ctx, error_lines, delete_after)
 
 
-@FLEET_HELPER.discord_bot.event
+@FLEET_HELPER.event
 async def on_ready() -> None:
-    print(f'Bot logged in as {FLEET_HELPER.discord_bot.user.name} ({FLEET_HELPER.discord_bot.user.id})')
+    print(f'Bot logged in as {FLEET_HELPER.user.name} ({FLEET_HELPER.user.id})')
     print(f'Bot version: {_bot_settings.VERSION}')
     print(f'py-cord version: {_discord.__version__}')
     for cog_name, cog_path in _bot_settings.COGS_TO_LOAD.items():
         print(f'Loading cog {cog_name} from extension {cog_path}')
-        FLEET_HELPER.discord_bot.load_extension(cog_path)
+        FLEET_HELPER.load_extension(cog_path)
 
 
 
@@ -67,4 +67,4 @@ async def initialize() -> None:
 def run_bot():
     loop = _asyncio.get_event_loop()
     loop.run_until_complete(initialize())
-    FLEET_HELPER.discord_bot.run(_bot_settings.DISCORD_BOT_TOKEN)
+    FLEET_HELPER.run(_bot_settings.DISCORD_BOT_TOKEN)
