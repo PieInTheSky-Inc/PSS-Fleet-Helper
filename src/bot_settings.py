@@ -18,8 +18,8 @@ COGS_TO_LOAD: _Dict[str, str] = {
 }
 
 
-DISCORD_BOT_CLIENT_ID: str = _os.environ.get('VIVIBOT_DISCORD_BOT_CLIENT_ID')
-DISCORD_BOT_TOKEN: str = _os.environ.get('VIVIBOT_DISCORD_BOT_TOKEN')
+DISCORD_BOT_CLIENT_ID: str = _os.environ.get('VIVIBOT_DISCORD_BOT_CLIENT_ID', _os.environ.get('FLEETHELPER_DISCORD_BOT_CLIENT_ID'))
+DISCORD_BOT_TOKEN: str = _os.environ.get('VIVIBOT_DISCORD_BOT_TOKEN', _os.environ.get('FLEETHELPER_DISCORD_BOT_TOKEN'))
 
 
 DEFAULT_PREFIXES: _List[str] = [
