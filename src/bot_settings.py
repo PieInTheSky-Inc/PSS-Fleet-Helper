@@ -12,6 +12,7 @@ COGS_BASE_PATH: str = 'src.cogs'
 COGS_TO_LOAD: _Dict[str, str] = {
     'About': f'{COGS_BASE_PATH}.about',
     'ChatLogger': f'{COGS_BASE_PATH}.chatlogger',
+    'Fleets': f'{COGS_BASE_PATH}.fleet',
     'RoleManagement': f'{COGS_BASE_PATH}.rolemanagement',
     'ReactionRoles': f'{COGS_BASE_PATH}.reactionroles',
     'Utility': f'{COGS_BASE_PATH}.utility',
