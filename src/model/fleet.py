@@ -26,19 +26,25 @@ class Fleet(_orm.ModelBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__fleet: _pssapi.entities.Alliance = None
+        self.__alliance: _pssapi.entities.Alliance = None
     
     @property
-    def fleet(self) -> _pssapi.entities.Alliance:
-        return self.__fleet
+    def alliance(self) -> _pssapi.entities.Alliance:
+        return self.__alliance
     
     async def get_fleet(self, pss_api_client: _pssapi.PssApiClient, access_token: str) -> _pssapi.entities.Alliance:
-        self.__fleet = pss_api_client.alliance_service.get_alliance(access_token, self.id)
-        return self.__fleet
+        self.__alliance = await pss_api_client.alliance_service.get_alliance(access_token, self.id)
+        return self.__alliance
     
     @classmethod
-    def get_fleet_search_description(cls, alliance: _pssapi.entities.Alliance) -> str:
+    def get_alliance_search_description(cls, alliance: _pssapi.entities.Alliance) -> str:
         return f'{alliance.alliance_name} (ID: {alliance.id}, rank {alliance.ranking} at {alliance.trophy} 🏆)'
+    
+    @classmethod
+    def get_fleet_search_description(cls, fleet: 'Fleet') -> str:
+        if fleet.short_name:
+            return f'{fleet.alliance.alliance_name} [{fleet.short_name}] (ID: {fleet.alliance.id}, rank {fleet.alliance.ranking} at {fleet.alliance.trophy} 🏆)'
+        return f'{fleet.alliance.alliance_name} (ID: {fleet.alliance.id}, rank {fleet.alliance.ranking} at {fleet.alliance.trophy} 🏆)'
     
     @classmethod
     def make(cls,
