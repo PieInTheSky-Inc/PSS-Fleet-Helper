@@ -1,22 +1,20 @@
-from discord.ext.commands import Bot as _Bot
-from discord.ext.commands import command as _command
-from discord.ext.commands import group as _command_group
-from discord.ext.commands import Context as _Context
+import discord.ext.commands as _commands
 
 from .cog_base import CogBase as _CogBase
 from .. import bot_settings as _bot_settings
 from .. import utils as _utils
+from .. import model as _model
 
 
 
 class About(_CogBase):
-    def __init__(self, bot: _Bot) -> None:
+    def __init__(self, bot: _model.PssApiDiscordBot) -> None:
         super().__init__(bot)
         self.about_placeholders.help = self.about_placeholders.help.format(_utils.discord.PLACEHOLDERS.replace('`', ''))
 
 
-    @_command_group(name='about', brief='General info about the bot', invoke_without_command=True)
-    async def about(self, ctx: _Context) -> None:
+    @_commands.group(name='about', brief='General info about the bot', invoke_without_command=True)
+    async def about(self, ctx: _commands.Context) -> None:
         """
         Returns general information about this bot.
 
@@ -34,7 +32,7 @@ class About(_CogBase):
 
 
     @about.command(name='placeholders', aliases=['substitutions', 'sub'], brief='List available placeholders', )
-    async def about_placeholders(self, ctx: _Context) -> None:
+    async def about_placeholders(self, ctx: _commands.Context) -> None:
         """
         Available placeholders:
         {}
@@ -42,8 +40,8 @@ class About(_CogBase):
         await ctx.send_help('about placeholders')
 
 
-    @_command(name='invite', brief='Produce invite link')
-    async def cmd_invite(self, ctx: _Context) -> None:
+    @_commands.command(name='invite', brief='Produce invite link')
+    async def cmd_invite(self, ctx: _commands.Context) -> None:
         """
         Produces a link to invite this bot to your server.
 
@@ -54,5 +52,5 @@ class About(_CogBase):
         await _utils.discord.reply(ctx, invite_link)
 
 
-def setup(bot: _Bot):
+def setup(bot: _model.PssApiDiscordBot):
     bot.add_cog(About(bot))

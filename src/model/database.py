@@ -16,8 +16,49 @@ from .. import utils as _utils
 
 # ---------- Typehints ----------
 
-"""column name, column type, is primary key, not null, default (can be None)"""
-ColumnDefinition = _Tuple[str, str, bool, bool, _Any]
+class ColumnType():
+    BIGINT: str = 'BIGINT'
+    BOOLEAN: str = 'BOOLEAN'
+    FLOAT: str = 'FLOAT'
+    SERIAL: str = 'SERIAL'
+    TEXT: str = 'TEXT'
+    TIMESTAMPTZ: str = 'TIMESTAMPTZ'
+
+    AUTO_INCREMENT: str = SERIAL
+    """Postgres Data Type: SERIAL"""
+    DATETIME: str = TIMESTAMPTZ
+    """Postgres Data Type: TIMESTAMPTZ"""
+    DOUBLE: str = FLOAT
+    """Postgres Data Type: FLOAT"""
+    INT: str = BIGINT
+    """Postgres Data Type: BIGINT"""
+    INTEGER: str = BIGINT
+    """Postgres Data Type: BIGINT"""
+    STRING: str = TEXT
+    """Postgres Data Type: TEXT"""
+
+
+class ColumnDefinition():
+    def __init__(self, column_name: str, column_type: str, is_primary_key: bool, not_null: bool, default = None):
+        self.column_name: str = column_name
+        self.column_type: str = column_type
+        self.is_primary_key: bool = is_primary_key
+        self.not_null: bool = not_null
+        self.default = default
+    
+    def __iter__(self) -> _Tuple[str, str, bool, bool, _Any]:
+        yield self.column_name
+        yield self.column_type
+        yield self.is_primary_key
+        yield self.not_null
+        yield self.default
+
+    def __repr__(self) -> str:
+        attributes = ', '.join(self.__iter__())
+        return f'ColumnDefinition[{attributes}]'
+    
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
 # ---------- Constants ----------

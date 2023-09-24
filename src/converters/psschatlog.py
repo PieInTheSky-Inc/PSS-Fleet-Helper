@@ -2,10 +2,9 @@ from typing import List as _List
 
 from discord import Guild as _Guild
 from discord import TextChannel as _TextChannel
-from discord.ext.commands import Bot as _Bot
 
-from .. import utils as _utils
 from ..model import PssChatLogger as _PssChatLogger
+from .. import model as _model
 
 
 
@@ -20,7 +19,7 @@ class PssChatLoggerConverter():
         return self.__pss_chat_log
 
 
-    async def to_text(self, for_admin: bool = False, bot: _Bot = None) -> _List[str]:
+    async def to_text(self, for_admin: bool = False, bot: _model.PssApiDiscordBot = None) -> _List[str]:
         if self.__text is not None:
             return self.__text
 

@@ -1,48 +1,40 @@
 import asyncio as _asyncio
 
 import discord as _discord
-from discord.ext.commands import Bot as _Bot
-from discord.ext.commands import Context as _Context
-from discord.ext.commands.errors import CommandInvokeError as _CommandInvokeError
-from discord.ext.commands.errors import CommandNotFound as _CommandNotFound
-from discord.ext.commands import when_mentioned_or as _when_mentioned_or
-
-from src.model.errors import UnauthorizedChannelError as _UnauthorizedChannelError
+import discord.ext.commands as _commands
+import pssapi as _pssapi
 
 from . import bot_settings as _bot_settings
 from . import utils as _utils
-from .model import setup_model as _setup_model
+from . import model as _model
 
 
 
 # ---------- Setup ----------
 
-BOT = _Bot(
-    _when_mentioned_or(*_bot_settings.DEFAULT_PREFIXES),
-    intents=_discord.Intents.all(),
-    activity=_discord.activity.Activity(type=_discord.ActivityType.playing, name='vivi help')
+FLEET_HELPER = _model.PssApiDiscordBot(
+    language_key=_pssapi.enums.LanguageKey.ENGLISH
 )
 
 
 
 # ---------- Event handlers ----------
 
-@BOT.event
-async def on_command_error(ctx: _Context,
+@FLEET_HELPER.event
+async def on_command_error(ctx: _commands.Context,
                             err: Exception
                         ) -> None:
-    if _bot_settings.THROW_COMMAND_ERRORS:
-        raise err
+    original_err = err
 
-    if isinstance(err, _UnauthorizedChannelError):
+    if isinstance(err, _model.errors.UnauthorizedChannelError):
         return
 
-    if isinstance(err, _CommandNotFound):
+    if isinstance(err, _commands.errors.CommandNotFound):
         if not _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS, raise_on_error=False):
             return
 
     delete_after: float = None
-    if isinstance(err, _CommandInvokeError):
+    if isinstance(err, _commands.errors.CommandInvokeError):
         err = err.original
         delete_after = 10.0
     error_type = type(err).__name__
@@ -53,25 +45,28 @@ async def on_command_error(ctx: _Context,
 
     await _utils.discord.reply_lines(ctx, error_lines, delete_after)
 
+    if _bot_settings.THROW_COMMAND_ERRORS:
+        raise original_err
 
-@BOT.event
+
+@FLEET_HELPER.event
 async def on_ready() -> None:
-    print(f'Bot logged in as {BOT.user.name} ({BOT.user.id})')
+    print(f'Bot logged in as {FLEET_HELPER.user.name} ({FLEET_HELPER.user.id})')
     print(f'Bot version: {_bot_settings.VERSION}')
     print(f'py-cord version: {_discord.__version__}')
     for cog_name, cog_path in _bot_settings.COGS_TO_LOAD.items():
         print(f'Loading cog {cog_name} from extension {cog_path}')
-        BOT.load_extension(cog_path)
+        FLEET_HELPER.load_extension(cog_path)
 
 
 
 # ---------- Module init ----------
 
 async def initialize() -> None:
-    await _setup_model()
+    await _model.setup_model()
 
 
 def run_bot():
     loop = _asyncio.get_event_loop()
     loop.run_until_complete(initialize())
-    BOT.run(_bot_settings.DISCORD_BOT_TOKEN)
+    FLEET_HELPER.run(_bot_settings.DISCORD_BOT_TOKEN)

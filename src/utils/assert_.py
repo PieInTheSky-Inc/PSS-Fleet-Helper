@@ -10,6 +10,9 @@ from ..model.errors import UnauthorizedChannelError as _UnauthorizedChannelError
 
 
 def authorized_channel(ctx: _Context, authorized_channel_ids: _List[int], raise_on_error: bool = True) -> bool:
+    """
+    Asserts that the command has been issued in an authorized channel.
+    """
     if ctx.channel.id not in authorized_channel_ids:
         if raise_on_error:
             raise _UnauthorizedChannelError()
@@ -19,6 +22,9 @@ def authorized_channel(ctx: _Context, authorized_channel_ids: _List[int], raise_
 
 
 def authorized_channel_or_server_manager(ctx: _Context, authorized_channel_ids: _List[int], raise_on_error: bool = True) -> bool:
+    """
+    Asserts that the command has been issued in an authorized channel or by a server manager.
+    """
     if server_manager(ctx, raise_on_error=False):
         return True
     elif authorized_channel(ctx, authorized_channel_ids, raise_on_error=False):
@@ -29,6 +35,9 @@ def authorized_channel_or_server_manager(ctx: _Context, authorized_channel_ids: 
 
 
 def can_add_remove_role(me: _Member, role: _Role, action: str = None, raise_on_error: bool = True) -> bool:
+    """
+    Asserts that the bot is allowed to add or remove the specified role.
+    """
     if role.position < me.top_role.position:
         return True
     if raise_on_error:
@@ -38,6 +47,9 @@ def can_add_remove_role(me: _Member, role: _Role, action: str = None, raise_on_e
 
 
 def server_manager(ctx: _Context, raise_on_error: bool = True) -> bool:
+    """
+    Asserts that the command has been issued by a server manager.
+    """
     if ctx.guild and ctx.author.guild_permissions.manage_guild:
         if raise_on_error:
             raise _MissingPermissions(['manage_guild'])
