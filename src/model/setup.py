@@ -2,10 +2,9 @@ import asyncio as _asyncio
 from typing import Callable as _Callable
 
 from . import database as _database
-from .chat_log import PssChatLogger as _PssChatLogger
-from .reaction_role import ReactionRole as _ReactionRole
-from .reaction_role import ReactionRoleChange as _ReactionRoleChange
-from .reaction_role import ReactionRoleRequirement as _ReactionRoleRequirement
+from . import chat_log as _chat_log
+from . import fleet as _fleet
+from . import reaction_role as _reaction_role
 from .. import utils as _utils
 
 
@@ -27,6 +26,7 @@ async def __setup_db_schema() -> None:
         ('0.2.0', __update_db_schema_0_2_0),
         ('0.3.0', __update_db_schema_0_3_0),
         ('0.4.0', __update_db_schema_0_4_0),
+        ('0.7.0', __update_db_schema_0_7_0),
     ]
     for version, callable in init_functions:
         if not (await __update_schema(version, callable)):
@@ -35,17 +35,44 @@ async def __setup_db_schema() -> None:
     print('DB initialization succeeded')
 
 
+async def __update_db_schema_0_7_0() -> bool:
+    target_version = '0.7.0'
+    column_definitions_fleet = [
+        _database.ColumnDefinition(_fleet.Fleet.ID_COLUMN_NAME, _database.ColumnType.BIGINT, True, True),
+        _database.ColumnDefinition('created_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition('modified_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition('guild_id', _database.ColumnType.INT, False, True),
+        _database.ColumnDefinition('short_name', _database.ColumnType.STRING, False, False),
+    ]
+
+    schema_version = await _database.get_schema_version()
+    if schema_version:
+        compare_0_7_0 = _utils.compare_versions(schema_version, target_version)
+        if compare_0_7_0 < 1:
+            return True
+
+    print(f'[update_schema_0_7_0] Updating to database schema v{target_version}')
+
+    success_chat_log = await _database.try_create_table(_fleet.Fleet.TABLE_NAME, column_definitions_fleet)
+    if not success_chat_log:
+        print(f'[update_schema_0_7_0] Could not create table \'{_chat_log.PssChatLogger.TABLE_NAME}\'')
+        return False
+
+    success = await _database.try_set_schema_version(target_version)
+    return success
+
+
 async def __update_db_schema_0_4_0() -> bool:
     target_version = '0.4.0'
     column_definitions_chat_log = [
-        (_PssChatLogger.ID_COLUMN_NAME, 'SERIAL', True, True, None),
-        ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        ('guild_id', 'BIGINT', False, True, None),
-        ('channel_id', 'BIGINT', False, True, None),
-        ('pss_channel_key', 'TEXT', False, True, None),
-        ('last_pss_message_id', 'BIGINT', False, True, 0),
-        ('name', 'TEXT', False, True, None),
+        _database.ColumnDefinition(_chat_log.PssChatLogger.ID_COLUMN_NAME, _database.ColumnType.AUTO_INCREMENT, True, True),
+        _database.ColumnDefinition('created_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition('modified_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition('guild_id', _database.ColumnType.INT, False, True),
+        _database.ColumnDefinition('channel_id', _database.ColumnType.INT, False, True),
+        _database.ColumnDefinition('pss_channel_key', _database.ColumnType.STRING, False, True),
+        _database.ColumnDefinition('last_pss_message_id', _database.ColumnType.INT, False, True, default=0),
+        _database.ColumnDefinition('name', _database.ColumnType.STRING, False, True),
     ]
 
     schema_version = await _database.get_schema_version()
@@ -56,9 +83,9 @@ async def __update_db_schema_0_4_0() -> bool:
 
     print(f'[update_schema_0_4_0] Updating to database schema v{target_version}')
 
-    success_chat_log = await _database.try_create_table(_PssChatLogger.TABLE_NAME, column_definitions_chat_log)
+    success_chat_log = await _database.try_create_table(_chat_log.PssChatLogger.TABLE_NAME, column_definitions_chat_log)
     if not success_chat_log:
-        print(f'[update_schema_0_4_0] Could not create table \'{_PssChatLogger.TABLE_NAME}\'')
+        print(f'[update_schema_0_4_0] Could not create table \'{_chat_log.PssChatLogger.TABLE_NAME}\'')
         return False
 
     success = await _database.try_set_schema_version(target_version)
@@ -67,7 +94,7 @@ async def __update_db_schema_0_4_0() -> bool:
 
 async def __update_db_schema_0_3_0() -> bool:
     target_version = '0.3.0'
-    column_definition = ('message_embed', 'TEXT', False, False, None)
+    column_definition = _database.ColumnDefinition('message_embed', 'TEXT', False, False)
 
     schema_version = await _database.get_schema_version()
     if schema_version:
@@ -77,9 +104,9 @@ async def __update_db_schema_0_3_0() -> bool:
 
     print(f'[update_schema_0_3_0] Updating to database schema v{target_version}')
 
-    success_reaction_role = await _database.try_add_column(_ReactionRoleChange.TABLE_NAME, *column_definition)
+    success_reaction_role = await _database.try_add_column(_reaction_role.ReactionRoleChange.TABLE_NAME, *column_definition)
     if not success_reaction_role:
-        print(f'[update_schema_0_3_0] Could not add column \'{column_definition[0]}\' to table \'{_ReactionRoleChange.TABLE_NAME}\'')
+        print(f'[update_schema_0_3_0] Could not add column \'{column_definition[0]}\' to table \'{_reaction_role.ReactionRoleChange.TABLE_NAME}\'')
         return False
 
     success = await _database.try_set_schema_version(target_version)
@@ -89,33 +116,33 @@ async def __update_db_schema_0_3_0() -> bool:
 async def __update_db_schema_0_2_0() -> bool:
     target_version = '0.2.0'
     column_definitions_reaction_role = [
-        (_ReactionRole.ID_COLUMN_NAME, 'SERIAL', True, True, None),
-        ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        ('guild_id', 'BIGINT', False, True, None),
-        ('channel_id', 'BIGINT', False, True, None),
-        ('message_id', 'BIGINT', False, True, None),
-        ('name', 'TEXT', False, True, None),
-        ('reaction', 'TEXT', False, True, None),
-        ('is_active', 'BOOLEAN', False, True, False),
+        _database.ColumnDefinition(_reaction_role.ReactionRole.ID_COLUMN_NAME, _database.ColumnType.AUTO_INCREMENT, True, True),
+        _database.ColumnDefinition('created_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition('modified_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition('guild_id', _database.ColumnType.INT, False, True),
+        _database.ColumnDefinition('channel_id', _database.ColumnType.INT, False, True),
+        _database.ColumnDefinition('message_id', _database.ColumnType.INT, False, True),
+        _database.ColumnDefinition('name', _database.ColumnType.STRING, False, True),
+        _database.ColumnDefinition('reaction', _database.ColumnType.STRING, False, True),
+        _database.ColumnDefinition('is_active', _database.ColumnType.BOOLEAN, False, True, default=False),
     ]
     column_definitions_reaction_role_change = [
-        (_ReactionRoleChange.ID_COLUMN_NAME, 'SERIAL', True, True, None),
-        ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        (_ReactionRole.ID_COLUMN_NAME, 'INT', False, True, None),
-        ('role_id', 'BIGINT', False, True, None),
-        ('add', 'BOOLEAN', False, True, True), # True to add, False to remove
-        ('allow_toggle', 'BOOLEAN', False, True, False),
-        ('message_content', 'TEXT', False, False, None),
-        ('message_channel_id', 'BIGINT', False, False, None),
+        _database.ColumnDefinition(_reaction_role.ReactionRoleChange.ID_COLUMN_NAME, _database.ColumnType.AUTO_INCREMENT, True, True),
+        _database.ColumnDefinition('created_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition('modified_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition(_reaction_role.ReactionRole.ID_COLUMN_NAME, _database.ColumnType.INT, False, True),
+        _database.ColumnDefinition('role_id', _database.ColumnType.INT, False, True),
+        _database.ColumnDefinition('add', _database.ColumnType.BOOLEAN, False, True, default=True), # True to add, False to remove
+        _database.ColumnDefinition('allow_toggle', _database.ColumnType.BOOLEAN, False, True, default=False),
+        _database.ColumnDefinition('message_content', _database.ColumnType.STRING, False, True),
+        _database.ColumnDefinition('message_channel_id', _database.ColumnType.INT, False, True),
     ]
     column_definitions_reaction_role_requirement = [
-        (_ReactionRoleRequirement.ID_COLUMN_NAME, 'SERIAL', True, True, None),
-        ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        (_ReactionRole.ID_COLUMN_NAME, 'INT', False, True, None),
-        ('role_id', 'BIGINT', False, True, None),
+        _database.ColumnDefinition(_reaction_role.ReactionRoleRequirement.ID_COLUMN_NAME, _database.ColumnType.AUTO_INCREMENT, True, True),
+        _database.ColumnDefinition('created_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition('modified_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition(_reaction_role.ReactionRole.ID_COLUMN_NAME, _database.ColumnType.INT, False, True),
+        _database.ColumnDefinition('role_id', _database.ColumnType.INT, False, True),
     ]
 
     schema_version = await _database.get_schema_version()
@@ -126,22 +153,22 @@ async def __update_db_schema_0_2_0() -> bool:
 
     print(f'[update_schema_0_2_0] Updating to database schema v{target_version}')
 
-    success_reaction_role = await _database.try_create_table(_ReactionRole.TABLE_NAME, column_definitions_reaction_role)
+    success_reaction_role = await _database.try_create_table(_reaction_role.ReactionRole.TABLE_NAME, column_definitions_reaction_role)
     if not success_reaction_role:
-        print(f'[update_schema_0_2_0] Could not create table \'{_ReactionRole.TABLE_NAME}\'')
+        print(f'[update_schema_0_2_0] Could not create table \'{_reaction_role.ReactionRole.TABLE_NAME}\'')
         return False
 
-    success_reaction_role_change = await _database.try_create_table(_ReactionRoleChange.TABLE_NAME, column_definitions_reaction_role_change)
+    success_reaction_role_change = await _database.try_create_table(_reaction_role.ReactionRoleChange.TABLE_NAME, column_definitions_reaction_role_change)
     if not success_reaction_role_change:
-        print(f'[update_schema_0_2_0] Could not create table \'{_ReactionRoleChange.TABLE_NAME}\'. Rolling back changes made.')
-        await _database.drop_table(_ReactionRole.TABLE_NAME)
+        print(f'[update_schema_0_2_0] Could not create table \'{_reaction_role.ReactionRoleChange.TABLE_NAME}\'. Rolling back changes made.')
+        await _database.drop_table(_reaction_role.ReactionRole.TABLE_NAME)
         return False
 
-    success_reaction_role_requirement = await _database.try_create_table(_ReactionRoleRequirement.TABLE_NAME, column_definitions_reaction_role_requirement)
+    success_reaction_role_requirement = await _database.try_create_table(_reaction_role.ReactionRoleRequirement.TABLE_NAME, column_definitions_reaction_role_requirement)
     if not success_reaction_role_requirement:
-        print(f'[update_schema_0_2_0] Could not create table \'{_ReactionRoleRequirement.TABLE_NAME}\'. Rolling back changes made.')
-        await _database.drop_table(_ReactionRole.TABLE_NAME)
-        await _database.drop_table(_ReactionRoleChange.TABLE_NAME)
+        print(f'[update_schema_0_2_0] Could not create table \'{_reaction_role.ReactionRoleRequirement.TABLE_NAME}\'. Rolling back changes made.')
+        await _database.drop_table(_reaction_role.ReactionRole.TABLE_NAME)
+        await _database.drop_table(_reaction_role.ReactionRoleChange.TABLE_NAME)
         return False
 
     success = await _database.try_set_schema_version(target_version)
@@ -151,14 +178,14 @@ async def __update_db_schema_0_2_0() -> bool:
 async def __create_db_schema() -> bool:
     target_version = '0.1.0'
     column_definition_bot_settings = [
-        ('setting_name', 'TEXT' , True, True, None),
-        ('created_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        ('modified_at', 'TIMESTAMPTZ', False, True, 'CURRENT_TIMESTAMP'),
-        ('setting_boolean', 'BOOLEAN', False, False, None),
-        ('setting_float', 'FLOAT', False, False, None),
-        ('setting_int', 'INT', False, False, None),
-        ('setting_text', 'TEXT', False, False, None),
-        ('setting_timestamp', 'TIMESTAMPTZ', False, False, None),
+        _database.ColumnDefinition('setting_name', _database.ColumnType.STRING, True, True),
+        _database.ColumnDefinition('created_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition('modified_at', _database.ColumnType.DATETIME, False, True, default='CURRENT_TIMESTAMP'),
+        _database.ColumnDefinition('setting_boolean', _database.ColumnType.BOOLEAN, False, False),
+        _database.ColumnDefinition('setting_float', _database.ColumnType.FLOAT, False, False),
+        _database.ColumnDefinition('setting_int', _database.ColumnType.INT, False, False),
+        _database.ColumnDefinition('setting_text', _database.ColumnType.STRING, False, False),
+        _database.ColumnDefinition('setting_timestamp', _database.ColumnType.DATETIME, False, False),
     ]
 
     schema_version = await _database.get_schema_version()
