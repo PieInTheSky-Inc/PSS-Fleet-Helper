@@ -24,8 +24,7 @@ FLEET_HELPER = _model.PssApiDiscordBot(
 async def on_command_error(ctx: _commands.Context,
                             err: Exception
                         ) -> None:
-    if _bot_settings.THROW_COMMAND_ERRORS:
-        raise err
+    original_err = err
 
     if isinstance(err, _model.errors.UnauthorizedChannelError):
         return
@@ -45,6 +44,9 @@ async def on_command_error(ctx: _commands.Context,
         error_lines.append(error_text)
 
     await _utils.discord.reply_lines(ctx, error_lines, delete_after)
+
+    if _bot_settings.THROW_COMMAND_ERRORS:
+        raise original_err
 
 
 @FLEET_HELPER.event
