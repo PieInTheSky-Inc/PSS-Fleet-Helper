@@ -27,12 +27,34 @@ async def __setup_db_schema() -> None:
         ('0.3.0', __update_db_schema_0_3_0),
         ('0.4.0', __update_db_schema_0_4_0),
         ('0.7.0', __update_db_schema_0_7_0),
+        ('0.7.1', __update_db_schema_0_7_1),
     ]
     for version, callable in init_functions:
         if not (await __update_schema(version, callable)):
             raise Exception('DB initialization failed')
 
     print('DB initialization succeeded')
+
+
+async def __update_db_schema_0_7_1() -> bool:
+    target_version = '0.7.1'
+    column_definition_fleet_fleet_name = _database.ColumnDefinition('fleet_name', _database.ColumnType.STRING, False, False)
+
+    schema_version = await _database.get_schema_version()
+    if schema_version:
+        compare_0_7_1 = _utils.compare_versions(schema_version, target_version)
+        if compare_0_7_1 < 1:
+            return True
+
+    print(f'[update_schema_0_7_1] Updating to database schema v{target_version}')
+
+    success_fleet = await _database.try_add_column(_fleet.Fleet.TABLE_NAME, *column_definition_fleet_fleet_name)
+    if not success_fleet:
+        print(f'[update_schema_0_7_1] Could not update table \'{_fleet.Fleet.TABLE_NAME}\'')
+        return False
+
+    success = await _database.try_set_schema_version(target_version)
+    return success
 
 
 async def __update_db_schema_0_7_0() -> bool:
@@ -53,9 +75,9 @@ async def __update_db_schema_0_7_0() -> bool:
 
     print(f'[update_schema_0_7_0] Updating to database schema v{target_version}')
 
-    success_chat_log = await _database.try_create_table(_fleet.Fleet.TABLE_NAME, column_definitions_fleet)
-    if not success_chat_log:
-        print(f'[update_schema_0_7_0] Could not create table \'{_chat_log.PssChatLogger.TABLE_NAME}\'')
+    success_fleet = await _database.try_create_table(_fleet.Fleet.TABLE_NAME, column_definitions_fleet)
+    if not success_fleet:
+        print(f'[update_schema_0_7_0] Could not create table \'{_fleet.Fleet.TABLE_NAME}\'')
         return False
 
     success = await _database.try_set_schema_version(target_version)

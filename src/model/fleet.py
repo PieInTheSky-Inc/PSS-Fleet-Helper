@@ -22,6 +22,7 @@ class Fleet(_orm.ModelBase):
 
     id = _db.Column(ID_COLUMN_NAME, _db.Integer, primary_key=True, nullable=False)
     guild_id = _db.Column('guild_id', _db.Integer, nullable=False)
+    fleet_name = _db.Column('fleet_name', _db.Text, nullable=False)
     short_name = _db.Column('short_name', _db.Text, nullable=True)
 
     def __init__(self, *args, **kwargs):
@@ -50,11 +51,13 @@ class Fleet(_orm.ModelBase):
     def make(cls,
              alliance_id: int,
              guild_id: int,
+             alliance_name: str,
              short_name: str = None,
     ) -> 'Fleet':
         result = Fleet(
             id=alliance_id,
             guild_id=guild_id,
+            fleet_name=alliance_name,
             short_name=short_name or None,
             )
         return result
