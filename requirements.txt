@@ -6,4 +6,4 @@ py-cord==2.4.1
 pytz
 pssapi==0.2.1
 sqlalchemy==1.4.47
-strenum
+pss-fleet-data-client @ git+https://github.com/PSS-Tools-Development/pss-fleet-data-client.git@v1.0.5
