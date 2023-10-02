@@ -530,10 +530,8 @@ class ReactionRoles(_CogBase):
                 guild_id=ctx.guild.id
             )
         if reaction_roles:
-            outputs = [(await _converters.ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles]
-            for output in outputs:
-                for post in output:
-                    await _utils.discord.reply(ctx, post)
+            lines = '\n\n'.join([(await _converters.ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles])
+            await _utils.discord.reply_lines(ctx, lines)
         else:
             raise Exception('There are no Reaction Roles configured for this server.')
 
