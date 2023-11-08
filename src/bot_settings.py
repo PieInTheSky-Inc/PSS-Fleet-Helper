@@ -33,4 +33,4 @@ DEFAULT_PREFIXES: _List[str] = [
 THROW_COMMAND_ERRORS: bool = bool(int(_os.environ.get('THROW_COMMAND_ERRORS', 0)))
 
 
-VERSION: str = '0.7.1'
+VERSION: str = '0.7.2'
