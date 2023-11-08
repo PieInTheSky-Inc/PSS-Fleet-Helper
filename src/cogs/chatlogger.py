@@ -1,3 +1,4 @@
+import datetime as _datetime
 from typing import Dict as _Dict
 from typing import List as _List
 
@@ -28,16 +29,50 @@ class ChatLogger(_CogBase):
 
     def __init__(self, bot: _model.PssApiDiscordBot) -> None:
         super().__init__(bot)
-        self.log_chat.start()
+        self.__last_log_chat_run_at: _datetime.datetime = None
+        self.watch_log_chat.start()
 
 
     def cog_unload(self):
-        self.log_chat.cancel()
+        if self.watch_log_chat.is_running() and self.watch_log_chat._can_be_cancelled():
+            self.watch_log_chat.cancel()
+
+        if self.log_chat.is_running() and self.log_chat._can_be_cancelled():
+            self.log_chat.cancel()
+
+
+    @_tasks.loop(seconds=__CHAT_LOG_INTERVAL/4)
+    async def watch_log_chat(self):
+        utc_now = _utils.datetime.get_utc_now()
+
+        if not self.log_chat.is_running():
+            self.log_chat.start()
+            return
+
+            if self.__last_log_chat_run_at is None:
+                self.log_chat.start()
+            elif (utc_now - self.__last_log_chat_run_at).total_seconds > ChatLogger.__CHAT_LOG_INTERVAL:
+                try:
+                    self.log_chat.cancel()
+                    print('[watch_log_chat] Successfully cancelled the task \'log_chat\'.')
+                except Exception as ex:
+                    print('[watch_log_chat] Could not cancel the task \'log_chat\':')
+                    print(ex)
+                
+                if not self.log_chat.is_running():
+                    try:
+                        self.log_chat.start()
+                        print('[watch_log_chat] Successfully started the task \'log_chat\'.')
+                    except Exception as ex:
+                        print('[watch_log_chat] Could not start the task \'log_chat\':')
+                        print(ex)
 
 
     @_tasks.loop(seconds=__CHAT_LOG_INTERVAL)
     async def log_chat(self):
         utc_now = _utils.datetime.get_utc_now()
+        self.__last_log_chat_run_at = utc_now
+
         pss_chat_loggers: _List[_model.chat_log.PssChatLogger] = []
         try:
             with _model.orm.create_session() as session:
