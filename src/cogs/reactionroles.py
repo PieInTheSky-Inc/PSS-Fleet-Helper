@@ -6,6 +6,7 @@ from typing import Tuple as _Tuple
 
 import discord as _discord
 import discord.ext.commands as _commands
+import psycopg2 as _psycopg2
 
 from .cog_base import CogBase as _CogBase
 from .. import bot_settings as _bot_settings
@@ -31,14 +32,20 @@ class ReactionRoles(_CogBase):
         if payload.member.guild.me == payload.member:
             return
 
-        with _model.orm.create_session() as session:
-            reaction_roles: _List[_model.ReactionRole] = _model.orm.get_all_filtered_by(
-                _model.ReactionRole,
-                session,
-                guild_id=payload.member.guild.id,
-                is_active=True,
-                message_id=payload.message_id
-            )
+        try:
+            with _model.orm.create_session() as session:
+                reaction_roles: _List[_model.ReactionRole] = _model.orm.get_all_filtered_by(
+                    _model.ReactionRole,
+                    session,
+                    guild_id=payload.member.guild.id,
+                    is_active=True,
+                    message_id=payload.message_id
+                )
+        except _psycopg2.OperationalError as ex:
+            print('[on_raw_reaction_add] Could not retrieve Reaction Roles from database:')
+            print(ex)
+            return
+        
         member_roles_ids = [role.id for role in payload.member.roles]
         for reaction_role in reaction_roles:
             emoji_match = reaction_role.reaction == payload.emoji.name or reaction_role.reaction == f'<:{payload.emoji.name}:{payload.emoji.id}>'
@@ -58,14 +65,20 @@ class ReactionRoles(_CogBase):
         if not member or member == guild.me:
             return
 
-        with _model.orm.create_session() as session:
-            reaction_roles: _List[_model.ReactionRole] = _model.orm.get_all_filtered_by(
-                _model.ReactionRole,
-                session,
-                guild_id=payload.guild_id,
-                is_active=True,
-                message_id=payload.message_id
-            )
+        try:
+            with _model.orm.create_session() as session:
+                reaction_roles: _List[_model.ReactionRole] = _model.orm.get_all_filtered_by(
+                    _model.ReactionRole,
+                    session,
+                    guild_id=payload.guild_id,
+                    is_active=True,
+                    message_id=payload.message_id
+                )
+        except _psycopg2.OperationalError as ex:
+            print('[on_raw_reaction_remove] Could not retrieve Reaction Roles from database:')
+            print(ex)
+            return
+    
         member_roles_ids = [role.id for role in member.roles]
         for reaction_role in reaction_roles:
             emoji_match = reaction_role.reaction == payload.emoji.name or reaction_role.reaction == f'<:{payload.emoji.name}:{payload.emoji.id}>'
