@@ -5,6 +5,7 @@ import asyncio as _asyncio
 import discord as _discord
 import discord.ext.tasks as _tasks
 import discord.ext.commands as _commands
+import psycopg2 as _psycopg2
 import pssapi as _pssapi
 
 from .cog_base import CogBase as _CogBase
@@ -37,14 +38,21 @@ class ChatLogger(_CogBase):
     @_tasks.loop(seconds=__CHAT_LOG_INTERVAL)
     async def log_chat(self):
         utc_now = _utils.datetime.get_utc_now()
-        with _model.orm.create_session() as session:
-            pss_chat_loggers = _model.orm.get_all(_model.chat_log.PssChatLogger, session)
-        if not pss_chat_loggers:
+        pss_chat_loggers: _List[_model.chat_log.PssChatLogger] = []
+        try:
+            with _model.orm.create_session() as session:
+                pss_chat_loggers = _model.orm.get_all(_model.chat_log.PssChatLogger, session)
+            if not pss_chat_loggers:
+                return
+        except _psycopg2.OperationalError as ex:
+            print('[log_chat] Could not retrieve configured Chat Loggers from database:')
+            print(ex)
             return
+
         try:
             access_token = await self.bot.pssapi_login()
-        except _pssapi.utils.exceptions.PssApiError as e:
-            print(e)
+        except _pssapi.utils.exceptions.PssApiError as ex:
+            print(ex)
             return
 
         channel_keys: _Dict[str, _List[_model.chat_log.PssChatLogger]] = {}
@@ -64,8 +72,8 @@ class ChatLogger(_CogBase):
                 except _pssapi.utils.exceptions.ServerMaintenanceError:
                     print(f'Server is under maintenance.')
                     return
-                except _pssapi.utils.exceptions.PssApiError as e:
-                    print(f'Could not get messages for channel key \'{channel_key}\':\n{e}')
+                except _pssapi.utils.exceptions.PssApiError as ex:
+                    print(f'Could not get messages for channel key \'{channel_key}\':\n{ex}')
                     messages = None
                     tries -= 1
                     await _asyncio.sleep(.2)
@@ -87,9 +95,15 @@ class ChatLogger(_CogBase):
                             except:
                                 continue
                             pss_chat_logger.last_pss_message_id = max(message.message_id for message in messages)
-                            with _model.orm.create_session() as session:
-                                pss_chat_logger = _model.orm.merge(session, pss_chat_logger)
-                                pss_chat_logger.save(session)
+                try:
+                    with _model.orm.create_session() as session:
+                        for pss_chat_logger in pss_chat_loggers:
+                            pss_chat_logger = _model.orm.merge(session, pss_chat_logger)
+                            pss_chat_logger.save(session)
+                except _psycopg2.OperationalError as ex:
+                    print('[log_chat] Could not update Chat Loggers in database:')
+                    print(ex)
+
             if channel_key_count > 1:
                 await _asyncio.sleep(delay)
 
