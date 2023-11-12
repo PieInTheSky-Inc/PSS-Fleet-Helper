@@ -1,3 +1,5 @@
+from typing import Iterable as _Iterable
+
 # ---------- Functions ----------
 
 def compare_versions(version_1: str, version_2: str) -> int:
@@ -19,3 +21,11 @@ def compare_versions(version_1: str, version_2: str) -> int:
         elif version_1_split[i] > version_2_split[i]:
             return -1
     return 0
+
+
+def intersparse(iterable: _Iterable, delimiter: object):
+    it = iter(iterable)
+    yield next(it)
+    for x in it:
+        yield delimiter
+        yield x
