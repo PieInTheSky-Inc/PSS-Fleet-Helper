@@ -543,7 +543,10 @@ class ReactionRoles(_CogBase):
                 guild_id=ctx.guild.id
             )
         if reaction_roles:
-            lines = '\n\n'.join([(await _converters.ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles])
+            lines = _utils.miscellaneous.intersparse(
+                ['\n'.join(await _converters.ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles],
+                '\n\n'
+            )
             await _utils.discord.reply_lines(ctx, lines)
         else:
             raise Exception('There are no Reaction Roles configured for this server.')
