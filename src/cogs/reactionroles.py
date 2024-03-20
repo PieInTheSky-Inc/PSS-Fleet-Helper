@@ -547,7 +547,7 @@ class ReactionRoles(_CogBase):
                 ['\n'.join(await _converters.ReactionRoleConverter(reaction_role).to_text(ctx.guild, include_messages)) for reaction_role in reaction_roles],
                 '\n'
             )
-            await _utils.discord.reply_lines(ctx, lines)
+            await _utils.discord.reply_lines(ctx, lines, send_file_if_too_long=True)
         else:
             raise Exception('There are no Reaction Roles configured for this server.')
 

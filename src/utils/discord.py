@@ -7,6 +7,7 @@ from json import loads as _json_loads
 from json import JSONEncoder as _JSONEncoder
 from json import JSONDecodeError as _JSONDecodeError
 from json import JSONDecoder as _JSONDecoder
+import os as _os
 import re as _re
 from typing import Any as _Any
 from typing import Dict as _Dict
@@ -19,6 +20,7 @@ from typing import Union as _Union
 from discord import Asset as _Asset
 from discord import Colour as _Colour
 from discord import Embed as _Embed
+from discord import File as _File
 from discord import Guild as _Guild
 from discord import Member as _Member
 from discord import Message as _Message
@@ -35,6 +37,7 @@ import emoji as _emoji
 from . import settings
 from . import web as _web
 from . import datetime as _utils_datetime
+from . import format as _utils_format
 
 
 
@@ -944,11 +947,21 @@ async def reply(ctx: _Context, content: str, mention_author: bool = False, **kwa
         return (await ctx.reply(content=content, mention_author=mention_author, **kwargs))
 
 
-async def reply_lines(ctx: _Context, content_lines: _List[str], mention_author: bool = False, **kwargs) -> _List[_Message]:
+async def reply_lines(ctx: _Context, content_lines: _List[str], mention_author: bool = False, send_file_if_too_long: bool = False, **kwargs) -> _List[_Message]:
     posts = create_posts_from_lines(content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
+    posts = [post for post in posts if post]
     result = []
-    for post in posts:
-        if post:
+    if send_file_if_too_long and len(posts) > 1:
+        file_name = f'{_utils_datetime.get_utc_now().toordinal()}.txt'
+        file_contents = '\n'.join(post for post in posts)
+        with open(file_name, 'w') as fp:
+            fp.write(file_contents)
+        try:
+            result.append((await ctx.reply(file=_File(file_name))))
+        finally:
+            _os.remove(file_name)
+    else:
+        for post in posts:
             result.append((await ctx.reply(content=post, mention_author=mention_author, **kwargs)))
     return result
 
