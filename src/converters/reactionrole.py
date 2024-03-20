@@ -26,12 +26,19 @@ class ReactionRoleConverter():
             f'Is active = {self.__reaction_role.is_active}',
         ]
         if self.__reaction_role.role_requirements:
-            required_roles = ', '.join([guild.get_role(role_requirement.role_id).name for role_requirement in self.__reaction_role.role_requirements])
+            required_roles_list = []
+            for role_requirement in self.__reaction_role.role_requirements:
+                required_role = guild.get_role(role_requirement.role_id)
+                if required_role:
+                    required_roles_list.append(required_role.name)
+                else:
+                    required_roles_list.append('<deleted role>')
+            required_roles = ', '.join(required_roles_list)
             details.append(f'Required role(s) = {required_roles}')
         details.append(f'_Role Changes_')
         review_messages = []
         for i, role_change in enumerate(self.__reaction_role.role_changes, 1):
-            role = guild.get_role(role_change.role_id)
+            changed_role = guild.get_role(role_change.role_id)
             add_text = 'add' if role_change.add else 'remove'
             send_message_str = ''
             if  role_change.message_channel_id:
@@ -41,7 +48,11 @@ class ReactionRoleConverter():
                 if include_messages:
                     review_messages.append((i, role_change.message_content))
             allow_toggle_text = 'toggleable' if role_change.allow_toggle else 'non-toggleable'
-            details.append(f'{i} = {add_text} {allow_toggle_text} role `{role.name}`{send_message_str}')
+            if changed_role:
+                changed_role_name = changed_role.name
+            else:
+                changed_role_name = '<deleted role>'
+            details.append(f'{i} = {add_text} {allow_toggle_text} role `{changed_role_name}`{send_message_str}')
         result = ['\n'.join(details)]
         for role_change_number, msg in review_messages:
             result.append(f'__Message for Role Change **\#{role_change_number}** of Reaction Role **{self.__reaction_role.name}**:__\n{msg}')
