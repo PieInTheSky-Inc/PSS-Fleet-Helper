@@ -1,5 +1,5 @@
 pss-statistics*-db-export*
-pssapi_bak/
+docker.env
 
 # VS Code
 .vscode
