@@ -1,10 +1,11 @@
-FROM python:3.11
+FROM python:3.11-slim
 
-RUN mkdir -p /usr/bot
-WORKDIR /usr/bot
+WORKDIR /bot
 
-COPY . .
+COPY requirements.txt ./
+RUN PYTHONDONTWRITEBYTECODE=1 pip3 install --no-cache-dir -r requirements.txt
 
-RUN pip3 install -r requirements.txt
+COPY src ./src
+COPY main.py ./main.py
 
 CMD [ "python3", "main.py" ]
