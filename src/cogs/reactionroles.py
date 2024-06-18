@@ -644,7 +644,7 @@ async def add_role_requirement(reaction_role: _model.ReactionRole, ctx: _command
     if aborted:
         return False, aborted
 
-    role_requirement = await reaction_role.add_requirement(required_role_id)
+    role_requirement = reaction_role.add_requirement(required_role_id)
     await _utils.discord.reply(ctx, f'```Added role requirement with ID \'{role_requirement.id}\' to Reaction Role {reaction_role}.```')
     return True, aborted
 
