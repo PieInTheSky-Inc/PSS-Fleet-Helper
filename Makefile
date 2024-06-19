@@ -1,3 +1,13 @@
+.PHONY: check
+check:
+	rye run flake8 .
+	
+.PHONY: format
+format:
+	rye run autoflake .
+	rye run isort .
+	rye run black .
+
 .PHONY: docker
 docker:
 	-docker stop container-pss-fleet-helper
