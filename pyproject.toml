@@ -1,6 +1,6 @@
 [project]
 name = "pss-fleet-helper"
-version = "0.7.4"
+version = "0.8.0"
 description = "A bot assisting in Discord management."
 authors = [
     { name = "The worst.", email = "theworstpss@gmail.com" }
