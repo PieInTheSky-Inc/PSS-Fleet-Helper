@@ -16,5 +16,5 @@ def test_all() -> None:
     test_reaction_roles()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_all()
