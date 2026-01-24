@@ -1,5 +1,4 @@
 import math as _math
-from typing import Optional as _Optional
 
 import discord as _discord
 import discord.ext.commands as _commands
@@ -28,7 +27,7 @@ class PssApiDiscordBot(_commands.Bot):
     def pssapi_client(self) -> _pssapi.PssApiClient:
         return self.__pssapi_client
 
-    async def pssapi_login(self) -> _Optional[str]:
+    async def pssapi_login(self) -> str | None:
         utc_now = _pssapi.utils.get_utc_now()
         if _settings.DEVICE_IDS:
             device_count = len(_settings.DEVICE_IDS)

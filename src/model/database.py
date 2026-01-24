@@ -2,8 +2,7 @@ import json as _json
 import os as _os
 from datetime import datetime as _datetime
 from threading import Lock as _Lock
-from typing import Any as _Any
-from typing import Optional as _Optional
+from typing import Any
 
 import asyncpg as _asyncpg
 
@@ -50,7 +49,7 @@ class ColumnDefinition:
         self.not_null: bool = not_null
         self.default = default
 
-    def __iter__(self) -> tuple[str, str, bool, bool, _Any]:
+    def __iter__(self) -> tuple[str, str, bool, bool, Any]:
         yield self.column_name
         yield self.column_type
         yield self.is_primary_key
@@ -109,7 +108,7 @@ async def _export_table(table_name: str) -> dict:
     return {"column_names": column_names, "values": values}
 
 
-async def _import_table(table_name: str, column_names: list[str], rows: list[list[_Any]]) -> None:
+async def _import_table(table_name: str, column_names: list[str], rows: list[list[Any]]) -> None:
     """
     This function will clear the specified table and insert the values provided.
     """
@@ -154,7 +153,7 @@ async def disconnect() -> None:
             await __CONNECTION_POOL.close()
 
 
-async def delete_rows(table_name: str, id_column_name: str, ids: list[_Any]) -> bool:
+async def delete_rows(table_name: str, id_column_name: str, ids: list[Any]) -> bool:
     __log_db_function_enter("delete_rows", table_name=table_name, id_column_name=id_column_name, ids=ids)
 
     result = False
@@ -179,7 +178,7 @@ async def insert_row(table_name: str, id_column_name: str, **kwargs) -> _asyncpg
 
 def __split_kwargs_into_columns_and_values(
     **kwargs,
-) -> tuple[list[_Any], list[str], list[_Any]]:
+) -> tuple[list[Any], list[str], list[Any]]:
     column_names = []
     placeholders = []
     args = []
@@ -190,7 +189,7 @@ def __split_kwargs_into_columns_and_values(
     return (column_names, placeholders, args)
 
 
-async def update_row(table_name: str, id_column_name: str, id: _Any, **kwargs) -> bool:
+async def update_row(table_name: str, id_column_name: str, id: Any, **kwargs) -> bool:
     __log_db_function_enter(
         "delete_rows",
         table_name=table_name,
@@ -215,7 +214,7 @@ async def drop_table(table_name: str) -> None:
     execute(query)
 
 
-async def execute(query: str, args: list[_Any] = None) -> list[_asyncpg.Record]:
+async def execute(query: str, args: list[Any] = None) -> list[_asyncpg.Record]:
     __log_db_function_enter("execute", query=f"'{query}'", args=args)
 
     result = None
@@ -296,7 +295,7 @@ async def try_add_column(
     column_type: str,
     is_primary: bool,
     not_null: bool,
-    default: _Optional[_Any] = None,
+    default: Any | None = None,
 ) -> bool:
     __log_db_function_enter(
         "try_add_column",
@@ -442,7 +441,7 @@ async def get_settings(
     return result
 
 
-async def set_setting(setting_name: str, value: _Any, utc_now: _datetime = None) -> bool:
+async def set_setting(setting_name: str, value: Any, utc_now: _datetime = None) -> bool:
     __log_db_function_enter("set_setting", setting_name=f"'{setting_name}'", value=value, utc_now=utc_now)
 
     kwargs = {"setting_name": setting_name}
@@ -470,7 +469,7 @@ async def set_setting(setting_name: str, value: _Any, utc_now: _datetime = None)
 def print_db_query_error(
     function_name: str,
     query: str,
-    args: list[_Any],
+    args: list[Any],
     error: _asyncpg.exceptions.PostgresError,
 ) -> None:
     if args:

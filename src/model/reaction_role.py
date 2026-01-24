@@ -1,5 +1,4 @@
 from typing import Iterable as _Iterable
-from typing import Optional as _Optional
 
 import sqlalchemy as _db
 from discord import Member as _Member
@@ -52,9 +51,9 @@ class ReactionRole(_orm.ModelBase):
         role_id: int,
         add: bool,
         allow_toggle: bool,
-        message_content: _Optional[str] = None,
-        message_channel_id: _Optional[int] = None,
-        message_embed: _Optional[str] = None,
+        message_content: str | None = None,
+        message_channel_id: int | None = None,
+        message_embed: str | None = None,
     ) -> "ReactionRoleChange":
         change = ReactionRoleChange.make(
             add,
@@ -153,11 +152,11 @@ class ReactionRole(_orm.ModelBase):
 
     def update(
         self,
-        name: _Optional[str] = None,
-        channel_id: _Optional[int] = None,
-        message_id: _Optional[int] = None,
-        is_active: _Optional[bool] = None,
-        reaction: _Optional[str] = None,
+        name: str | None = None,
+        channel_id: int | None = None,
+        message_id: int | None = None,
+        is_active: bool | None = None,
+        reaction: str | None = None,
     ) -> None:
         if name is not None:
             self.name = name
@@ -242,9 +241,9 @@ class ReactionRoleChange(_orm.ModelBase):
         add: bool,
         allow_toggle: bool,
         role_id: int,
-        message_channel_id: _Optional[int] = None,
-        message_content: _Optional[str] = None,
-        message_embed: _Optional[str] = None,
+        message_channel_id: int | None = None,
+        message_content: str | None = None,
+        message_embed: str | None = None,
     ) -> "ReactionRoleChange":
         result = ReactionRoleChange(
             add=add,

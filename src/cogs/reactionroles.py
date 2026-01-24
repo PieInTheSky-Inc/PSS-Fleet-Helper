@@ -1,6 +1,5 @@
 import json as _json
 from typing import Callable as _Callable
-from typing import Optional as _Optional
 
 import discord as _discord
 import discord.ext.commands as _commands
@@ -758,11 +757,11 @@ async def edit_role_change(reaction_role: _model.ReactionRole, ctx: _commands.Co
 async def inquire_for_reaction_role_details(
     ctx: _commands.Context,
     abort_text: str,
-    reaction_role: _Optional[_model.ReactionRole] = None,
+    reaction_role: _model.ReactionRole | None = None,
     name: str = None,
     emoji: str = None,
     message_link: str = None,
-) -> tuple[_Optional[tuple[str, str, int, int]], bool]:
+) -> tuple[tuple[str, str, int, int] | None, bool]:
     """
     Inquires the Discord user for a message ID, a channel mention or ID, an emoji and a name.
 
@@ -860,7 +859,7 @@ async def inquire_for_role_change_details(
     abort_text: str,
     reaction_role_change: _model.ReactionRoleChange = None,
 ) -> tuple[
-    _Optional[tuple[int, bool, bool, _Optional[str], _Optional[int], _Optional[str]]],
+    tuple[int, bool, bool, str | None, int | None, str | None] | None,
     bool,
 ]:
     """
@@ -871,9 +870,9 @@ async def inquire_for_role_change_details(
                 role_id: int,
                 add: bool,
                 allow_toggle: bool,
-                message_text: _Optional[str],
-                message_channel_id: _Optional[int],
-                message_embed: _Optional[str]
+                message_text: Optional[str],
+                message_channel_id: Optional[int],
+                message_embed: Optional[str]
             ]
         ],
         aborted: bool
@@ -1093,7 +1092,7 @@ async def inquire_for_role_change_remove(
     ctx: _commands.Context,
     reaction_role_changes: list[_model.ReactionRoleChange],
     abort_text: str,
-) -> _Optional[_model.ReactionRoleChange]:
+) -> _model.ReactionRoleChange | None:
     current_role_changes = {change.id: change for change in reaction_role_changes}
     options = {change_id: _converters.ReactionRoleChangeConverter.to_text(ctx, current_role_changes[change_id]) for change_id in sorted(current_role_changes.keys())}
     selector = _utils.Selector[str](ctx, None, options)
@@ -1105,7 +1104,7 @@ async def inquire_for_role_change_remove(
     return current_role_changes[selected_id]
 
 
-async def inquire_for_role_requirement_add(ctx: _commands.Context, abort_text: str) -> tuple[_Optional[int], bool]:
+async def inquire_for_role_requirement_add(ctx: _commands.Context, abort_text: str) -> tuple[int | None, bool]:
     """
     Returns: (role_id: Optional[int], aborted: bool)
     """

@@ -1,6 +1,5 @@
 from datetime import datetime as _datetime
 from typing import Generic as _Generic
-from typing import Optional as _Optional
 from typing import Type as _Type
 from typing import TypeVar as _TypeVar
 
@@ -70,7 +69,7 @@ def get_all(cls: _Type[_T], session: _scoped_session) -> list[_T]:
     return get_query(cls, session).all()
 
 
-def get_by_id(cls: _Type[_T], session: _scoped_session, id: int) -> _Optional[_T]:
+def get_by_id(cls: _Type[_T], session: _scoped_session, id: int) -> _T | None:
     return get_query(cls, session).get(id)
 
 
@@ -78,7 +77,7 @@ def get_all_filtered_by(cls: _Type[_T], session: _scoped_session, **kwargs) -> l
     return get_query(cls, session).filter_by(**kwargs).all()
 
 
-def get_first_filtered_by(cls: _Type[_T], session: _scoped_session, **kwargs) -> _Optional[_T]:
+def get_first_filtered_by(cls: _Type[_T], session: _scoped_session, **kwargs) -> _T | None:
     return get_query(cls, session).filter_by(**kwargs).first()
 
 

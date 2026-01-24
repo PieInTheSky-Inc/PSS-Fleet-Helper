@@ -1,8 +1,7 @@
 import asyncio as _asyncio
-from typing import Any as _Any
+from typing import Any
 from typing import Callable as _Callable
 from typing import Generic as _Generic
-from typing import Optional as _Optional
 from typing import TypeVar as _TypeVar
 from typing import Union as _Union
 
@@ -22,18 +21,18 @@ class Selector(_Generic[_T]):
         self,
         ctx: _Context,
         search_term: str,
-        available_options: _Union[list[_T], dict[_Any, _T]],
-        short_text_function: _Optional[_Callable[[_T], str]] = None,
-        title: _Optional[str] = None,
+        available_options: _Union[list[_T], dict[Any, _T]],
+        short_text_function: _Callable[[_T], str] | None = None,
+        title: str | None = None,
         timeout: float = _DEFAULT_INQUIRE_TIMEOUT,
     ) -> None:
         self.__got_options_dict: bool = isinstance(available_options, dict)
-        self.__available_options: _Union[list[_T], dict[_Any, _T]] = dict(available_options) if self.__got_options_dict else list(available_options)
+        self.__available_options: _Union[list[_T], dict[Any, _T]] = dict(available_options) if self.__got_options_dict else list(available_options)
         self.__context: _Context = ctx
         self.__search_term: str = search_term
         self.__short_text_function: _Callable[[_T], str] = short_text_function
         self.__timeout: int = timeout
-        self.__current_options: dict[_Any, _T] = self.__available_options if self.__got_options_dict else {i: option for i, option in enumerate(self.__available_options, 1)}
+        self.__current_options: dict[Any, _T] = self.__available_options if self.__got_options_dict else {i: option for i, option in enumerate(self.__available_options, 1)}
         self.__message: _Message = None
         self.__title: str = title or Selector.__get_title(self.__search_term)
 
@@ -80,7 +79,7 @@ class Selector(_Generic[_T]):
 
     @staticmethod
     async def __get_options_display(
-        options: _Union[dict[_Any, _T], list[_T]],
+        options: _Union[dict[Any, _T], list[_T]],
         short_text_function: _Callable[[_T], str],
     ) -> str:
         lines = []

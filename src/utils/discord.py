@@ -8,8 +8,7 @@ from json import JSONDecoder as _JSONDecoder
 from json import JSONEncoder as _JSONEncoder
 from json import dumps as _json_dumps
 from json import loads as _json_loads
-from typing import Any as _Any
-from typing import Optional as _Optional
+from typing import Any
 from typing import Protocol as _Protocol
 from typing import Union as _Union
 
@@ -309,7 +308,7 @@ def check_for_true_false(message: _Message) -> bool:
     return check_for_boolean_string(message, __DEFAULT_TRUE_VALUES, __DEFAULT_FALSE_VALUES)
 
 
-def create_discord_link(guild_id: int, channel_id: _Optional[int] = None, message_id: _Optional[int] = None) -> str:
+def create_discord_link(guild_id: int, channel_id: int | None = None, message_id: int | None = None) -> str:
     result = f"https://discord.com/channels/{guild_id}"
     if channel_id:
         result += f"/{channel_id}"
@@ -422,7 +421,7 @@ async def edit_lines(msg: _Message, content_lines: list[str], **kwargs) -> _Mess
     return msg
 
 
-async def fetch_message(channel: _TextChannel, message_id: str) -> _Optional[_Message]:
+async def fetch_message(channel: _TextChannel, message_id: str) -> _Message | None:
     """
     Attempts to obtain a message in the specified `channel`.
     """
@@ -438,7 +437,7 @@ async def fetch_message(channel: _TextChannel, message_id: str) -> _Optional[_Me
     return None
 
 
-def get_channel(ctx: _Context, channel_id_or_mention: str) -> _Optional[_Messageable]:
+def get_channel(ctx: _Context, channel_id_or_mention: str) -> _Messageable | None:
     """
     Attempts to obtain a channel on the guild, `ctx` originates from.
     """
@@ -479,7 +478,7 @@ async def get_embed_from_definition_or_url(definition_or_url: str) -> _Embed:
         raise Exception("This is not a valid embed definition or this url points to a file not containing a valid embed definition.") from e
 
 
-def get_emoji(ctx: _Context, emoji: str) -> _Optional[str]:
+def get_emoji(ctx: _Context, emoji: str) -> str | None:
     """
     Attempts to obtain an emoji on the guild, `ctx` originates from.
     Returns either a unicode emoji or a Discord emoji `str` in format: `<:name:id>` or `None` if a Discord emoji does not exist or cannot be accessed.
@@ -498,7 +497,7 @@ def get_emoji(ctx: _Context, emoji: str) -> _Optional[str]:
     return None
 
 
-async def get_channel_and_message_from_message_link(ctx: _Context, message_link: str) -> tuple[_Optional[_TextChannel], _Optional[_Message]]:
+async def get_channel_and_message_from_message_link(ctx: _Context, message_link: str) -> tuple[_TextChannel | None, _Message | None]:
     channel = None
     message = None
     match = __RX_MESSAGE_LINK.match(message_link)
@@ -520,7 +519,7 @@ def get_localized_timestamp(
     return result
 
 
-def get_member(ctx: _Context, member_id_mention_or_name: str) -> _Optional[_Role]:
+def get_member(ctx: _Context, member_id_mention_or_name: str) -> _Role | None:
     """
     Attempts to obtain a member on the guild, `ctx` originates from.
     """
@@ -540,7 +539,7 @@ def get_member(ctx: _Context, member_id_mention_or_name: str) -> _Optional[_Role
     return result
 
 
-def get_role(ctx: _Context, role_id_or_mention: str) -> _Optional[_Role]:
+def get_role(ctx: _Context, role_id_or_mention: str) -> _Role | None:
     """
     Attempts to obtain a role on the guild, `ctx` originates from.
     """
@@ -557,7 +556,7 @@ def get_role(ctx: _Context, role_id_or_mention: str) -> _Optional[_Role]:
     return None
 
 
-def get_text_channel(ctx: _Context, channel_id_or_mention: str) -> _Optional[_TextChannel]:
+def get_text_channel(ctx: _Context, channel_id_or_mention: str) -> _TextChannel | None:
     """
     Attempts to obtain a text channel on the guild, `ctx` originates from.
     Only returns the channel, if the bot has permissions to see it.
@@ -572,9 +571,9 @@ async def inquire_for_add_remove(
     ctx: _Context,
     prompt_message: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[bool], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[bool | None, bool, bool]:
     """
     Returns (`Optional[discord.Role]`, user_has_aborted, `False`)
     """
@@ -592,13 +591,13 @@ async def inquire_for_add_remove(
 async def inquire_for_boolean(
     ctx: _Context,
     prompt_text: str,
-    true_values: _Optional[list[str]] = None,
-    false_values: _Optional[list[str]] = None,
+    true_values: list[str | None] = None,
+    false_values: list[str | None] = None,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-    respond_to_message: _Optional[_Message] = None,
-) -> tuple[_Optional[bool], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+    respond_to_message: _Message | None = None,
+) -> tuple[bool | None, bool, bool]:
     f"""
     `true_values` defaults to `.model.utils.discord.__DEFAULT_TRUE_VALUES` if `None` or empty.
     `false_values` defaults to `.model.utils.discord.__DEFAULT_FALSE_VALUES` if `None` or empty.
@@ -652,9 +651,9 @@ async def inquire_for_embed_definition(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[str], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[str | None, bool, bool]:
     """
     Returns (embed_definition: `Optional[str]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -690,9 +689,9 @@ async def inquire_for_emoji(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[str], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[str | None, bool, bool]:
     """
     Returns (emoji: `Optional[str]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -720,9 +719,9 @@ async def inquire_for_integer(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[int], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[int | None, bool, bool]:
     """
     Returns (integer: `Optional[int]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -750,9 +749,9 @@ async def inquire_for_member(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[_Role], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[_Role | None, bool, bool]:
     """
     Returns (channel: `Optional[discord.TextChannel]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -787,9 +786,9 @@ async def inquire_for_message_confirmation(
     respond_to_message: _Message,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[bool], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[bool | None, bool, bool]:
     """
     Returns (result: `bool`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -808,9 +807,9 @@ async def inquire_for_message_id(
     channel: _TextChannel,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[_Role], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[_Role | None, bool, bool]:
     """
     Returns (role: `Optional[discord.Role]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -838,9 +837,9 @@ async def inquire_for_message_link(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[str], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[str | None, bool, bool]:
     """
     Returns (message_link: `Optional[str]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -868,9 +867,9 @@ async def inquire_for_role(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[_Role], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[_Role | None, bool, bool]:
     """
     Returns (role: `Optional[discord.Role]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -904,9 +903,9 @@ async def inquire_for_text(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[str], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[str | None, bool, bool]:
     """
     Returns (input: `Optional[str]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -934,9 +933,9 @@ async def inquire_for_text_channel(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[_Role], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[_Role | None, bool, bool]:
     """
     Returns (channel: `Optional[discord.TextChannel]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -970,9 +969,9 @@ async def inquire_for_true_false(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> tuple[_Optional[bool], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[bool | None, bool, bool]:
     """
     Returns (result: `bool`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -1048,7 +1047,7 @@ async def try_delete_message(message: _Message) -> bool:
         return False
 
 
-def update_embed_definition(embed_definition: str, substitutions: _Optional[dict[str, _Any]]) -> str:
+def update_embed_definition(embed_definition: str, substitutions: dict[str, Any | None]) -> str:
     embed_dct = _json_loads(embed_definition)
 
     for key, value in substitutions.items():
@@ -1076,11 +1075,11 @@ async def wait_for_message(
     ctx: _Context,
     allow_abort: bool,
     allow_skip: bool,
-    *check_args: _Any,
-    check: _Optional[WaitForCheck] = None,
+    *check_args: Any,
+    check: WaitForCheck | None = None,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    **check_kwargs: _Any,
-) -> _Optional[_Message]:
+    **check_kwargs: Any,
+) -> _Message | None:
     timeout_delta = _timedelta(seconds=timeout)
     end_inquiry = _utils_datetime.get_utc_now() + timeout_delta
     try:
@@ -1113,8 +1112,8 @@ async def __send_aborted_or_skipped(
     skip_reply_to: _Message,
     aborted: bool,
     skipped: bool,
-    abort_text: _Optional[str],
-    skip_text: _Optional[str],
+    abort_text: str | None,
+    skip_text: str | None,
 ) -> None:
     if aborted and bool(abort_text):
         await abort_reply_to.reply(abort_text, mention_author=False)
