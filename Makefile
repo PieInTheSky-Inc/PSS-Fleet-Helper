@@ -1,12 +1,12 @@
 .PHONY: check
 check:
-	rye run flake8 .
+	uv run flake8 .
 	
 .PHONY: format
 format:
-	rye run autoflake .
-	rye run isort .
-	rye run black .
+	uv run autoflake .
+	uv run isort .
+	uv run black .
 
 .PHONY: docker
 docker:
