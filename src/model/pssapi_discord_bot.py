@@ -51,7 +51,7 @@ class PssApiDiscordBot(_commands.Bot):
             utc_now,
             _settings.PSS_DEVICE_LOGIN_CHECKSUM_KEY,
         )
-        user_login = await self.pssapi_client.user_service.device_login_11(
+        user_login = await self.pssapi_client.user_service.device_login_15(
             checksum,
             utc_now,
             device_id,
