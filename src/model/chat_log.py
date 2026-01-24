@@ -1,5 +1,3 @@
-from typing import Iterable as _Iterable
-
 import sqlalchemy as _db
 
 from . import orm as _orm
@@ -20,9 +18,7 @@ class PssChatLogger(_orm.ModelBase):
     guild_id = _db.Column("guild_id", _db.Integer, nullable=False)
     channel_id = _db.Column("channel_id", _db.Integer, nullable=False)
     pss_channel_key = _db.Column("pss_channel_key", _db.Text, nullable=False)
-    last_pss_message_id = _db.Column(
-        "last_pss_message_id", _db.Integer, nullable=False, default=0
-    )
+    last_pss_message_id = _db.Column("last_pss_message_id", _db.Integer, nullable=False, default=0)
     name = _db.Column("name", _db.Text, nullable=False)
 
     def __repr__(self) -> str:
@@ -32,9 +28,7 @@ class PssChatLogger(_orm.ModelBase):
         return f"'{self.name}' (ID: {self.id})"
 
     @classmethod
-    def make(
-        cls, guild_id: int, log_to_channel_id: int, pss_channel_key: str, name: str
-    ) -> "PssChatLogger":
+    def make(cls, guild_id: int, log_to_channel_id: int, pss_channel_key: str, name: str) -> "PssChatLogger":
         result = PssChatLogger(
             guild_id=guild_id,
             channel_id=log_to_channel_id,

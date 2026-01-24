@@ -1,6 +1,6 @@
 [project]
 name = "pss-fleet-helper"
-version = "0.8.0"
+version = "0.8.1"
 description = "A bot assisting in Discord management."
 authors = [
     { name = "The worst.", email = "theworstpss@gmail.com" }
@@ -20,9 +20,8 @@ requires-python = ">= 3.11"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.rye]
+[tool.uv]
 managed = true
-virtual = true
 dev-dependencies = [
     "autoflake>=2.3.1",
     "autopep8>=2.2.0",
@@ -42,3 +41,25 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pss_fleet_helper"]
+
+[tool.autoflake]
+in-place = true
+remove-all-unused-imports = true
+ignore-init-module-imports = true
+recursive = true
+
+[tool.isort]
+src_paths = ["./src"]
+profile = "black"
+line_length = 200
+lines_after_imports = 2
+
+[tool.black]
+line-length = 200
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.vulture]
+min_confidence = 100
+paths = ["./src/pssapi"]
+sort_by_size = true

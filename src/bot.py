@@ -5,9 +5,8 @@ import discord.ext.commands as _commands
 import pssapi as _pssapi
 
 from . import bot_settings as _bot_settings
-from . import utils as _utils
 from . import model as _model
-
+from . import utils as _utils
 
 # ---------- Setup ----------
 
@@ -25,9 +24,7 @@ async def on_command_error(ctx: _commands.Context, err: Exception) -> None:
         return
 
     if isinstance(err, _commands.errors.CommandNotFound):
-        if not _utils.assert_.authorized_channel(
-            ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS, raise_on_error=False
-        ):
+        if not _utils.assert_.authorized_channel(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS, raise_on_error=False):
             return
 
     delete_after: float = None

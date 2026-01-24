@@ -1,15 +1,12 @@
 from typing import Iterable as _Iterable
-from typing import List as _List
-from typing import Optional as _Optional
-from typing import Tuple as _Tuple
 
+import sqlalchemy as _db
 from discord import Member as _Member
 from discord import TextChannel as _TextChannel
 from discord.ext.commands import Context as _Context
-import sqlalchemy as _db
 
-from . import orm as _orm
 from .. import utils as _utils
+from . import orm as _orm
 
 
 class ReactionRole(_orm.ModelBase):
@@ -54,9 +51,9 @@ class ReactionRole(_orm.ModelBase):
         role_id: int,
         add: bool,
         allow_toggle: bool,
-        message_content: _Optional[str] = None,
-        message_channel_id: _Optional[int] = None,
-        message_embed: _Optional[str] = None,
+        message_content: str | None = None,
+        message_channel_id: int | None = None,
+        message_embed: str | None = None,
     ) -> "ReactionRoleChange":
         change = ReactionRoleChange.make(
             add,
@@ -77,7 +74,7 @@ class ReactionRole(_orm.ModelBase):
     async def apply_add(self, member: _Member) -> None:
         roles_to_add = []
         roles_to_remove = []
-        messages_to_post: _List[_Tuple[_TextChannel, str]] = []
+        messages_to_post: list[tuple[_TextChannel, str]] = []
         for change in self.role_changes:
             role = member.guild.get_role(change.role_id)
             if role:
@@ -88,31 +85,19 @@ class ReactionRole(_orm.ModelBase):
                 elif not change.add and role in member.roles:
                     roles_to_remove.append(role)
                     role_change = True
-                if (
-                    role_change
-                    and change.message_channel_id
-                    and (change.message_content or change.message_embed)
-                ):
+                if role_change and change.message_channel_id and (change.message_content or change.message_embed):
                     channel = member.guild.get_channel(change.message_channel_id)
-                    messages_to_post.append(
-                        (channel, change.message_content, change.message_embed, role)
-                    )
+                    messages_to_post.append((channel, change.message_content, change.message_embed, role))
         await member.add_roles(*roles_to_add)
         await member.remove_roles(*roles_to_remove)
         for channel, text, embed_definition, role in messages_to_post:
-            substitutions = _utils.discord.create_substitutions(
-                guild=member.guild, role=role, member=member
-            )
+            substitutions = _utils.discord.create_substitutions(guild=member.guild, role=role, member=member)
             if text:
                 for key, value in substitutions.items():
                     text = text.replace(key, value)
             if embed_definition:
-                embed_definition = _utils.discord.update_embed_definition(
-                    embed_definition, substitutions
-                )
-                embed = await _utils.discord.get_embed_from_definition_or_url(
-                    embed_definition
-                )
+                embed_definition = _utils.discord.update_embed_definition(embed_definition, substitutions)
+                embed = await _utils.discord.get_embed_from_definition_or_url(embed_definition)
             else:
                 embed = None
             await channel.send(text, embed=embed)
@@ -136,24 +121,18 @@ class ReactionRole(_orm.ModelBase):
             if change.id == role_change_id:
                 change.delete()
                 return
-        raise Exception(
-            f"There is no role change with ID '{role_change_id}' related to the Reaction Role {self}."
-        )
+        raise Exception(f"There is no role change with ID '{role_change_id}' related to the Reaction Role {self}.")
 
     def remove_requirement(self, role_requirement_id: int) -> None:
         for requirement in self.role_requirements:
             if requirement.id == role_requirement_id:
                 requirement.delete()
                 return
-        raise Exception(
-            f"There is no role requirement with ID '{role_requirement_id}' related to the Reaction Role {self}."
-        )
+        raise Exception(f"There is no role requirement with ID '{role_requirement_id}' related to the Reaction Role {self}.")
 
     async def try_activate(self, ctx: _Context) -> bool:
         try:
-            reaction_message = await ctx.guild.get_channel(
-                self.channel_id
-            ).fetch_message(self.message_id)
+            reaction_message = await ctx.guild.get_channel(self.channel_id).fetch_message(self.message_id)
             await reaction_message.add_reaction(self.reaction)
             success = True
         except:
@@ -163,9 +142,7 @@ class ReactionRole(_orm.ModelBase):
 
     async def try_deactivate(self, ctx: _Context) -> bool:
         try:
-            reaction_message = await ctx.guild.get_channel(
-                self.channel_id
-            ).fetch_message(self.message_id)
+            reaction_message = await ctx.guild.get_channel(self.channel_id).fetch_message(self.message_id)
             await reaction_message.remove_reaction(self.reaction, ctx.guild.me)
             success = True
         except:
@@ -175,11 +152,11 @@ class ReactionRole(_orm.ModelBase):
 
     def update(
         self,
-        name: _Optional[str] = None,
-        channel_id: _Optional[int] = None,
-        message_id: _Optional[int] = None,
-        is_active: _Optional[bool] = None,
-        reaction: _Optional[str] = None,
+        name: str | None = None,
+        channel_id: int | None = None,
+        message_id: int | None = None,
+        is_active: bool | None = None,
+        reaction: str | None = None,
     ) -> None:
         if name is not None:
             self.name = name
@@ -264,9 +241,9 @@ class ReactionRoleChange(_orm.ModelBase):
         add: bool,
         allow_toggle: bool,
         role_id: int,
-        message_channel_id: _Optional[int] = None,
-        message_content: _Optional[str] = None,
-        message_embed: _Optional[str] = None,
+        message_channel_id: int | None = None,
+        message_content: str | None = None,
+        message_embed: str | None = None,
     ) -> "ReactionRoleChange":
         result = ReactionRoleChange(
             add=add,
@@ -297,9 +274,7 @@ class ReactionRoleRequirement(_orm.ModelBase):
         _db.ForeignKey(f"{ReactionRole.TABLE_NAME}.{ReactionRole.ID_COLUMN_NAME}"),
         nullable=False,
     )
-    reaction_role = _db.orm.relationship(
-        "ReactionRole", back_populates="role_requirements"
-    )
+    reaction_role = _db.orm.relationship("ReactionRole", back_populates="role_requirements")
     role_id = _db.Column("role_id", _db.Integer, nullable=False)
 
     def __repr__(self) -> str:

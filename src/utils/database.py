@@ -1,7 +1,5 @@
 from datetime import datetime as _datetime
-from typing import Any as _Any
-from typing import List as _List
-
+from typing import Any
 
 # ---------- Constants ----------
 
@@ -21,7 +19,7 @@ def convert_boolean(value: bool) -> str:
         return "NULL"
 
 
-def convert_text(value: _Any) -> str:
+def convert_text(value: Any) -> str:
     """Convert from python object to postgresql TEXT"""
     if value is None:
         result = "NULL"
@@ -48,7 +46,7 @@ def get_column_definition(
     column_type: str,
     is_primary: bool = False,
     not_null: bool = False,
-    default: _Any = None,
+    default: Any = None,
 ) -> str:
     modifiers = []
     column_name_txt = column_name.lower()
@@ -65,23 +63,21 @@ def get_column_definition(
     return result.strip()
 
 
-def get_where_and_string(where_strings: _List[str]) -> str:
+def get_where_and_string(where_strings: list[str]) -> str:
     if where_strings:
         return " AND ".join(where_strings)
     else:
         return ""
 
 
-def get_where_or_string(where_strings: _List[str]) -> str:
+def get_where_or_string(where_strings: list[str]) -> str:
     if where_strings:
         return " OR ".join(where_strings)
     else:
         return ""
 
 
-def get_where_string(
-    column_name: str, column_value: _Any, is_text_type: bool = False
-) -> str:
+def get_where_string(column_name: str, column_value: Any, is_text_type: bool = False) -> str:
     column_name = column_name.lower()
     if column_value is None:
         return f"{column_name} IS NULL"

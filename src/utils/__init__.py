@@ -1,12 +1,4 @@
-from . import assert_
-from . import database
-from . import datetime
-from . import discord
-from . import format
-from . import json
-from . import parse
-from . import settings
-from . import web
+from . import assert_, database, datetime, discord, format, json, parse, settings, web
 from .confirmator import Confirmator
 from .miscellaneous import *
 from .selector import Selector

@@ -1,11 +1,7 @@
-from typing import Dict as _Dict
-
 import sqlalchemy as _db
 
-from . import orm as _orm
 from . import database as _database
-from .. import utils as _utils
-
+from . import orm as _orm
 
 CONFIG: "Config" = None
 
@@ -26,9 +22,7 @@ class BotSetting(_orm.ModelBase):
 
 class Config(object):
     def __init__(self) -> None:
-        self.__bot_settings: _Dict[str, BotSetting] = {
-            bot_setting.name: bot_setting for bot_setting in BotSetting.query.all()
-        }
+        self.__bot_settings: dict[str, BotSetting] = {bot_setting.name: bot_setting for bot_setting in BotSetting.query.all()}
         if "schema_version" not in self.__bot_settings.keys():
             raise Exception("Setting 'schema_version' is not set!")
 

@@ -1,7 +1,6 @@
 from datetime import datetime as _datetime
 from datetime import timezone as _timezone
 
-
 # ---------- Constants ----------
 
 UNIX_START_DATE: _datetime = _datetime(1970, 1, 1, tzinfo=_timezone.utc)

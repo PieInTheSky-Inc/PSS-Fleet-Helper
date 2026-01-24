@@ -1,10 +1,9 @@
+import json as _json
 from datetime import date as _date
 from datetime import datetime as _datetime
-import json as _json
 
 from . import format as _format
 from . import parse as _parse
-
 
 # ---------- Classes ----------
 
@@ -21,16 +20,12 @@ class ViviEncoder(_json.JSONEncoder):
         if isinstance(obj, _datetime):
             return {
                 "__type__": "datetime",
-                "__value__": _format.datetime(
-                    obj, include_time=False, include_tz=False, include_tz_brackets=False
-                ),
+                "__value__": _format.datetime(obj, include_time=False, include_tz=False, include_tz_brackets=False),
             }
         if isinstance(obj, _date):
             return {
                 "__type__": "date",
-                "__value__": _format.datetime(
-                    obj, include_time=False, include_tz=False, include_tz_brackets=False
-                ),
+                "__value__": _format.datetime(obj, include_time=False, include_tz=False, include_tz_brackets=False),
             }
         return _json.JSONEncoder.default(self, obj)
 

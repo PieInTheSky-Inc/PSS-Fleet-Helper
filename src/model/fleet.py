@@ -1,16 +1,7 @@
-from typing import Iterable as _Iterable
-from typing import List as _List
-from typing import Optional as _Optional
-from typing import Tuple as _Tuple
-
-from discord import Member as _Member
-from discord import TextChannel as _TextChannel
-from discord.ext.commands import Context as _Context
-import sqlalchemy as _db
 import pssapi as _pssapi
+import sqlalchemy as _db
 
 from . import orm as _orm
-from .. import utils as _utils
 
 
 class Fleet(_orm.ModelBase):
@@ -31,18 +22,12 @@ class Fleet(_orm.ModelBase):
     def alliance(self) -> _pssapi.entities.Alliance:
         return self.__alliance
 
-    async def get_fleet(
-        self, pss_api_client: _pssapi.PssApiClient, access_token: str
-    ) -> _pssapi.entities.Alliance:
-        self.__alliance = await pss_api_client.alliance_service.get_alliance(
-            access_token, self.id
-        )
+    async def get_fleet(self, pss_api_client: _pssapi.PssApiClient, access_token: str) -> _pssapi.entities.Alliance:
+        self.__alliance = await pss_api_client.alliance_service.get_alliance(access_token, self.id)
         return self.__alliance
 
     @classmethod
-    def get_alliance_search_description(
-        cls, alliance: _pssapi.entities.Alliance
-    ) -> str:
+    def get_alliance_search_description(cls, alliance: _pssapi.entities.Alliance) -> str:
         return f"{alliance.alliance_name} (ID: {alliance.id}, rank {alliance.ranking} at {alliance.trophy} 🏆)"
 
     @classmethod

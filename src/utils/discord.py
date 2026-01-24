@@ -1,22 +1,19 @@
-from aiohttp import InvalidURL as _InvalidURL
+import os as _os
+import re as _re
 from asyncio import TimeoutError as _TimeoutError
 from datetime import datetime as _datetime
 from datetime import timedelta as _timedelta
-from json import dumps as _json_dumps
-from json import loads as _json_loads
-from json import JSONEncoder as _JSONEncoder
 from json import JSONDecodeError as _JSONDecodeError
 from json import JSONDecoder as _JSONDecoder
-import os as _os
-import re as _re
-from typing import Any as _Any
-from typing import Dict as _Dict
-from typing import List as _List
-from typing import Optional as _Optional
+from json import JSONEncoder as _JSONEncoder
+from json import dumps as _json_dumps
+from json import loads as _json_loads
+from typing import Any
 from typing import Protocol as _Protocol
-from typing import Tuple as _Tuple
 from typing import Union as _Union
 
+import emoji as _emoji
+from aiohttp import InvalidURL as _InvalidURL
 from discord import Asset as _Asset
 from discord import Colour as _Colour
 from discord import Embed as _Embed
@@ -32,41 +29,33 @@ from discord.errors import Forbidden as _Forbidden
 from discord.errors import NotFound as _NotFound
 from discord.ext.commands import Context as _Context
 from discord.utils import escape_markdown as _escape_markdown
-import emoji as _emoji
 
+from . import datetime as _utils_datetime
 from . import settings
 from . import web as _web
-from . import datetime as _utils_datetime
-from . import format as _utils_format
-
 
 # ---------- Typehints ----------
 
 
 class WaitForCheck(_Protocol):
-    def __call__(
-        self, message_content: str, allow_abort: bool, allow_skip: bool, *args, **kwargs
-    ) -> bool:
+    def __call__(self, message_content: str, allow_abort: bool, allow_skip: bool, *args, **kwargs) -> bool:
         pass
 
 
 # ---------- Constants ----------
 
-__DEFAULT_FALSE_VALUES: _List[str] = ["no", "n", "false", "0", "👎"]
-__DEFAULT_TRUE_VALUES: _List[str] = ["yes", "y", "true", "1", "👍"]
+__DEFAULT_FALSE_VALUES: list[str] = ["no", "n", "false", "0", "👎"]
+__DEFAULT_TRUE_VALUES: list[str] = ["yes", "y", "true", "1", "👍"]
 DEFAULT_INQUIRE_TIMEOUT: float = 120.0
 
 __RX_CHANNEL_MENTION: _re.Pattern = _re.compile("<#(\d+)>")
 __RX_EMOJI: _re.Pattern = _re.compile("<a?:\w+:(\d+)>")
-__RX_MESSAGE_LINK: _re.Pattern = _re.compile(
-    "https://discord(app)?.com/channels/(\d+)/(\d+)/(\d+)/?"
-)
+__RX_MESSAGE_LINK: _re.Pattern = _re.compile("https://discord(app)?.com/channels/(\d+)/(\d+)/(\d+)/?")
 __RX_ROLE_MENTION: _re.Pattern = _re.compile("<@&(\d+)>")
 __RX_USER_MENTION: _re.Pattern = _re.compile("<@\!?(\d+)>")
 __RX_HYPERLINK: _re.Pattern = _re.compile("(https?://)")
 
-PLACEHOLDERS: str = (
-    """
+PLACEHOLDERS: str = """
 `\{` - `{`
 `\}` - `}`
 
@@ -99,7 +88,6 @@ PLACEHOLDERS: str = (
 `{user.nick}` - User nick if set, else empty
 `{user.username}` - User name
 """.strip()
-)
 
 
 # ---------- JSON De- & Encoding ----------
@@ -125,14 +113,10 @@ class EmbedLeovoelEncoder(_JSONEncoder):
                     r, g, b = embed.color.to_rgb()
                     result["color"] = (r << 16) + (g << 8) + b
                 if embed.timestamp:
-                    result["timestamp"] = _utils_datetime.utc_to_timestamp(
-                        embed.timestamp
-                    )
+                    result["timestamp"] = _utils_datetime.utc_to_timestamp(embed.timestamp)
                 if embed.footer:
                     if embed.footer.icon_url:
-                        result.setdefault("footer", {})[
-                            "icon_url"
-                        ] = embed.footer.icon_url
+                        result.setdefault("footer", {})["icon_url"] = embed.footer.icon_url
                     if embed.footer.text:
                         result.setdefault("footer", {})["text"] = embed.footer.text
                 if embed.thumbnail and embed.thumbnail.url:
@@ -141,9 +125,7 @@ class EmbedLeovoelEncoder(_JSONEncoder):
                     result.setdefault("image", {})["url"] = embed.image.url
                 if embed.author:
                     if embed.author.icon_url:
-                        result.setdefault("author", {})[
-                            "icon_url"
-                        ] = embed.author.icon_url
+                        result.setdefault("author", {})["icon_url"] = embed.author.icon_url
                     if embed.author.name:
                         result.setdefault("author", {})["name"] = embed.author.name
                     if embed.author.url:
@@ -186,7 +168,7 @@ class EmbedLeovoelDecoder(_JSONDecoder):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(object_hook=self.object_hook, *args, **kwargs)
 
-    def object_hook(self, dct: _Dict) -> _Union[_Dict, _Embed]:
+    def object_hook(self, dct: dict) -> _Union[dict, _Embed]:
         if any(prop in dct.keys() for prop in EmbedLeovoelDecoder.__EMBED_PROP_NAMES):
             title = dct.get("title", _Embed.Empty)
             color = dct.get("color", dct.get("colour", _Embed.Empty))
@@ -239,20 +221,16 @@ class EmbedLeovoelDecoder(_JSONDecoder):
 # ---------- Public Functions ----------
 
 
-def check_for_add_remove(
-    message_content: str, allow_abort: bool = True, allow_skip: bool = False
-) -> bool:
-    return check_for_boolean_string(
-        message_content, allow_abort, allow_skip, ["add"], ["remove"]
-    )
+def check_for_add_remove(message_content: str, allow_abort: bool = True, allow_skip: bool = False) -> bool:
+    return check_for_boolean_string(message_content, allow_abort, allow_skip, ["add"], ["remove"])
 
 
 def check_for_boolean_string(
     message_content: str,
     allow_abort: bool,
     allow_skip: bool,
-    true_values: _List[str],
-    false_values: _List[str],
+    true_values: list[str],
+    false_values: list[str],
 ) -> bool:
     if not true_values:
         raise ValueError(f"Parameter 'true_values' must not be None or empty!")
@@ -260,17 +238,10 @@ def check_for_boolean_string(
         raise ValueError(f"Parameter 'false_values' must not be None or empty!")
 
     content_lower = message_content.lower()
-    return (
-        message_content in true_values
-        or message_content in false_values
-        or (allow_abort and content_lower == "abort")
-        or (allow_skip and content_lower == "skip")
-    )
+    return message_content in true_values or message_content in false_values or (allow_abort and content_lower == "abort") or (allow_skip and content_lower == "skip")
 
 
-def check_for_channel_id_or_mention(
-    message_content: str, allow_abort: bool, allow_skip: bool
-) -> bool:
+def check_for_channel_id_or_mention(message_content: str, allow_abort: bool, allow_skip: bool) -> bool:
     try:
         int(message_content)
         return True
@@ -279,28 +250,20 @@ def check_for_channel_id_or_mention(
     if __RX_CHANNEL_MENTION.match(message_content):
         return True
     content_lower = message_content.lower()
-    return (allow_abort and content_lower == "abort") or (
-        allow_skip and content_lower == "skip"
-    )
+    return (allow_abort and content_lower == "abort") or (allow_skip and content_lower == "skip")
 
 
-def check_for_integer(
-    message_content: str, allow_abort: bool, allow_skip: bool
-) -> bool:
+def check_for_integer(message_content: str, allow_abort: bool, allow_skip: bool) -> bool:
     try:
         int(message_content)
         return True
     except:
         pass
     content_lower = message_content.lower()
-    return (allow_abort and content_lower == "abort") or (
-        allow_skip and content_lower == "skip"
-    )
+    return (allow_abort and content_lower == "abort") or (allow_skip and content_lower == "skip")
 
 
-def check_for_member_id_name_or_mention(
-    message_content: str, allow_abort: bool, allow_skip: bool
-) -> bool:
+def check_for_member_id_name_or_mention(message_content: str, allow_abort: bool, allow_skip: bool) -> bool:
     try:
         int(message_content)
         return True
@@ -309,39 +272,27 @@ def check_for_member_id_name_or_mention(
     if __RX_USER_MENTION.match(message_content):
         return True
     content_lower = message_content.lower()
-    return (allow_abort and content_lower == "abort") or (
-        allow_skip and content_lower == "skip"
-    )
+    return (allow_abort and content_lower == "abort") or (allow_skip and content_lower == "skip")
 
 
-def check_for_message_id(
-    message_content: str, allow_abort: bool = True, allow_skip: bool = False
-) -> bool:
+def check_for_message_id(message_content: str, allow_abort: bool = True, allow_skip: bool = False) -> bool:
     try:
         int(message_content)
         return True
     except:
         pass
     content_lower = message_content.lower()
-    return (allow_abort and content_lower == "abort") or (
-        allow_skip and content_lower == "skip"
-    )
+    return (allow_abort and content_lower == "abort") or (allow_skip and content_lower == "skip")
 
 
-def check_for_message_link(
-    message_content: str, allow_abort: bool = True, allow_skip: bool = False
-) -> bool:
+def check_for_message_link(message_content: str, allow_abort: bool = True, allow_skip: bool = False) -> bool:
     if __RX_MESSAGE_LINK.match(message_content):
         return True
     content_lower = message_content.lower()
-    return (allow_abort and content_lower == "abort") or (
-        allow_skip and content_lower == "skip"
-    )
+    return (allow_abort and content_lower == "abort") or (allow_skip and content_lower == "skip")
 
 
-def check_for_role_id_or_mention(
-    message_content: str, allow_abort: bool, allow_skip: bool
-) -> bool:
+def check_for_role_id_or_mention(message_content: str, allow_abort: bool, allow_skip: bool) -> bool:
     try:
         int(message_content)
         return True
@@ -350,20 +301,14 @@ def check_for_role_id_or_mention(
     if __RX_ROLE_MENTION.match(message_content):
         return True
     content_lower = message_content.lower()
-    return (allow_abort and content_lower == "abort") or (
-        allow_skip and content_lower == "skip"
-    )
+    return (allow_abort and content_lower == "abort") or (allow_skip and content_lower == "skip")
 
 
 def check_for_true_false(message: _Message) -> bool:
-    return check_for_boolean_string(
-        message, __DEFAULT_TRUE_VALUES, __DEFAULT_FALSE_VALUES
-    )
+    return check_for_boolean_string(message, __DEFAULT_TRUE_VALUES, __DEFAULT_FALSE_VALUES)
 
 
-def create_discord_link(
-    guild_id: int, channel_id: _Optional[int] = None, message_id: _Optional[int] = None
-) -> str:
+def create_discord_link(guild_id: int, channel_id: int | None = None, message_id: int | None = None) -> str:
     result = f"https://discord.com/channels/{guild_id}"
     if channel_id:
         result += f"/{channel_id}"
@@ -372,7 +317,7 @@ def create_discord_link(
     return result
 
 
-def create_posts_from_lines(lines: _List[str], char_limit: int) -> _List[str]:
+def create_posts_from_lines(lines: list[str], char_limit: int) -> list[str]:
     result = []
     current_post = ""
 
@@ -397,9 +342,7 @@ def create_posts_from_lines(lines: _List[str], char_limit: int) -> _List[str]:
     return result
 
 
-def create_prompt_text(
-    prompt_text: str, options_text: str, allow_abort: bool, allow_skip: bool
-) -> str:
+def create_prompt_text(prompt_text: str, options_text: str, allow_abort: bool, allow_skip: bool) -> str:
     options = []
     if options_text:
         options.append(options_text)
@@ -417,7 +360,7 @@ def create_substitutions(
     channel: _TextChannel = None,
     role: _Role = None,
     member: _Member = None,
-) -> _Dict[str, str]:
+) -> dict[str, str]:
     """
     Creates a dictionary of placeholders and their substitutions based on the provided Assets.
 
@@ -428,23 +371,15 @@ def create_substitutions(
     replacements = {}
     if guild:
         replacements["{server}"] = guild.name
-        replacements["{server.iconUrl}"] = (
-            f"{_Asset.BASE}{guild.icon.url}" if guild.icon else ""
-        )
+        replacements["{server.iconUrl}"] = f"{_Asset.BASE}{guild.icon.url}" if guild.icon else ""
         replacements["{server.id}"] = str(guild.id)
         replacements["{server.memberCount}"] = str(guild.member_count)
         replacements["{server.name}"] = guild.name
     if channel:
         replacements["{channel}"] = channel.mention
-        replacements["{channel.category}"] = (
-            channel.category.name if channel.category else ""
-        )
-        replacements["{channel.category.id}"] = (
-            str(channel.category.id) if channel.category else ""
-        )
-        replacements["{channel.category.name}"] = (
-            channel.category.name if channel.category else ""
-        )
+        replacements["{channel.category}"] = channel.category.name if channel.category else ""
+        replacements["{channel.category.id}"] = str(channel.category.id) if channel.category else ""
+        replacements["{channel.category.name}"] = channel.category.name if channel.category else ""
         replacements["{channel.id}"] = str(channel.id)
         replacements["{channel.mention}"] = channel.mention
         replacements["{channel.name}"] = channel.name
@@ -457,9 +392,7 @@ def create_substitutions(
     if member:
         user: _User = member._user
         replacements["{user}"] = member.mention
-        replacements["{user.avatarUrl}"] = (
-            f"{_Asset.BASE}{user.avatar.url}" if user.avatar else ""
-        )
+        replacements["{user.avatarUrl}"] = f"{_Asset.BASE}{user.avatar.url}" if user.avatar else ""
         replacements["{user.discriminator}"] = user.discriminator
         replacements["{user.id}"] = str(user.id)
         replacements["{user.displayName}"] = member.display_name
@@ -480,17 +413,15 @@ The following substitutions will be created:
 """.strip()
 
 
-async def edit_lines(msg: _Message, content_lines: _List[str], **kwargs) -> _Message:
-    posts = create_posts_from_lines(
-        content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT
-    )
+async def edit_lines(msg: _Message, content_lines: list[str], **kwargs) -> _Message:
+    posts = create_posts_from_lines(content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
     for post in posts:
         if post:
             return await msg.edit(content=post, **kwargs)
     return msg
 
 
-async def fetch_message(channel: _TextChannel, message_id: str) -> _Optional[_Message]:
+async def fetch_message(channel: _TextChannel, message_id: str) -> _Message | None:
     """
     Attempts to obtain a message in the specified `channel`.
     """
@@ -506,7 +437,7 @@ async def fetch_message(channel: _TextChannel, message_id: str) -> _Optional[_Me
     return None
 
 
-def get_channel(ctx: _Context, channel_id_or_mention: str) -> _Optional[_Messageable]:
+def get_channel(ctx: _Context, channel_id_or_mention: str) -> _Messageable | None:
     """
     Attempts to obtain a channel on the guild, `ctx` originates from.
     """
@@ -524,7 +455,7 @@ def get_channel(ctx: _Context, channel_id_or_mention: str) -> _Optional[_Message
     return None
 
 
-def fits_single_message(lines: _List[str]) -> bool:
+def fits_single_message(lines: list[str]) -> bool:
     return len("\n".join(lines)) <= settings.MESSAGE_MAXIMUM_CHARACTER_COUNT
 
 
@@ -539,19 +470,15 @@ async def get_embed_from_definition_or_url(definition_or_url: str) -> _Embed:
     try:
         url_definition = await _web.get_data_from_url(url)
     except _InvalidURL as e:
-        raise Exception(
-            "This is not a valid url pointing to a file containing an embed definition."
-        ) from e
+        raise Exception("This is not a valid url pointing to a file containing an embed definition.") from e
 
     try:
         return _json_loads(url_definition, cls=EmbedLeovoelDecoder)
     except _JSONDecodeError as e:
-        raise Exception(
-            "This is not a valid embed definition or this url points to a file not containing a valid embed definition."
-        ) from e
+        raise Exception("This is not a valid embed definition or this url points to a file not containing a valid embed definition.") from e
 
 
-def get_emoji(ctx: _Context, emoji: str) -> _Optional[str]:
+def get_emoji(ctx: _Context, emoji: str) -> str | None:
     """
     Attempts to obtain an emoji on the guild, `ctx` originates from.
     Returns either a unicode emoji or a Discord emoji `str` in format: `<:name:id>` or `None` if a Discord emoji does not exist or cannot be accessed.
@@ -570,9 +497,7 @@ def get_emoji(ctx: _Context, emoji: str) -> _Optional[str]:
     return None
 
 
-async def get_channel_and_message_from_message_link(
-    ctx: _Context, message_link: str
-) -> _Tuple[_Optional[_TextChannel], _Optional[_Message]]:
+async def get_channel_and_message_from_message_link(ctx: _Context, message_link: str) -> tuple[_TextChannel | None, _Message | None]:
     channel = None
     message = None
     match = __RX_MESSAGE_LINK.match(message_link)
@@ -594,7 +519,7 @@ def get_localized_timestamp(
     return result
 
 
-def get_member(ctx: _Context, member_id_mention_or_name: str) -> _Optional[_Role]:
+def get_member(ctx: _Context, member_id_mention_or_name: str) -> _Role | None:
     """
     Attempts to obtain a member on the guild, `ctx` originates from.
     """
@@ -614,7 +539,7 @@ def get_member(ctx: _Context, member_id_mention_or_name: str) -> _Optional[_Role
     return result
 
 
-def get_role(ctx: _Context, role_id_or_mention: str) -> _Optional[_Role]:
+def get_role(ctx: _Context, role_id_or_mention: str) -> _Role | None:
     """
     Attempts to obtain a role on the guild, `ctx` originates from.
     """
@@ -631,18 +556,13 @@ def get_role(ctx: _Context, role_id_or_mention: str) -> _Optional[_Role]:
     return None
 
 
-def get_text_channel(
-    ctx: _Context, channel_id_or_mention: str
-) -> _Optional[_TextChannel]:
+def get_text_channel(ctx: _Context, channel_id_or_mention: str) -> _TextChannel | None:
     """
     Attempts to obtain a text channel on the guild, `ctx` originates from.
     Only returns the channel, if the bot has permissions to see it.
     """
     result: _TextChannel = get_channel(ctx, channel_id_or_mention)
-    if (
-        isinstance(result, _TextChannel)
-        and result.permissions_for(ctx.guild.me).view_channel
-    ):
+    if isinstance(result, _TextChannel) and result.permissions_for(ctx.guild.me).view_channel:
         return result
     return None
 
@@ -651,9 +571,9 @@ async def inquire_for_add_remove(
     ctx: _Context,
     prompt_message: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[bool], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[bool | None, bool, bool]:
     """
     Returns (`Optional[discord.Role]`, user_has_aborted, `False`)
     """
@@ -671,13 +591,13 @@ async def inquire_for_add_remove(
 async def inquire_for_boolean(
     ctx: _Context,
     prompt_text: str,
-    true_values: _Optional[_List[str]] = None,
-    false_values: _Optional[_List[str]] = None,
+    true_values: list[str | None] = None,
+    false_values: list[str | None] = None,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-    respond_to_message: _Optional[_Message] = None,
-) -> _Tuple[_Optional[bool], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+    respond_to_message: _Message | None = None,
+) -> tuple[bool | None, bool, bool]:
     f"""
     `true_values` defaults to `.model.utils.discord.__DEFAULT_TRUE_VALUES` if `None` or empty.
     `false_values` defaults to `.model.utils.discord.__DEFAULT_FALSE_VALUES` if `None` or empty.
@@ -704,9 +624,7 @@ async def inquire_for_boolean(
         allow_skip,
     )
     if respond_to_message:
-        prompt_message = await respond_to_message.reply(
-            full_prompt_text, mention_author=False
-        )
+        prompt_message = await respond_to_message.reply(full_prompt_text, mention_author=False)
     else:
         prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(
@@ -720,18 +638,12 @@ async def inquire_for_boolean(
     )
     if user_reply:
         content_lower = user_reply.content.strip().lower()
-        aborted, skipped = await __check_for_abort_or_skip(
-            content_lower, allow_abort, allow_skip
-        )
+        aborted, skipped = await __check_for_abort_or_skip(content_lower, allow_abort, allow_skip)
         if not (aborted or skipped):
-            result = content_lower in true_values_lower or not (
-                content_lower in false_values_lower
-            )
+            result = content_lower in true_values_lower or not (content_lower in false_values_lower)
     else:
         aborted = True
-    await __send_aborted_or_skipped(
-        ctx.message, prompt_message, aborted, skipped, abort_text, skip_text
-    )
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return result, aborted, skipped
 
 
@@ -739,9 +651,9 @@ async def inquire_for_embed_definition(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[str], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[str | None, bool, bool]:
     """
     Returns (embed_definition: `Optional[str]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -761,23 +673,15 @@ async def inquire_for_embed_definition(
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = await __check_for_abort_or_skip(
-            content.lower(), allow_abort, allow_skip
-        )
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             if not content and user_reply.attachments:
                 content = (await user_reply.attachments[0].read()).decode("utf-8")
             embed = await get_embed_from_definition_or_url(content)
-            result = (
-                _json_dumps(embed, cls=EmbedLeovoelEncoder, separators=(",", ":"))
-                if embed and content
-                else None
-            )
+            result = _json_dumps(embed, cls=EmbedLeovoelEncoder, separators=(",", ":")) if embed and content else None
     else:
         aborted = True
-    await __send_aborted_or_skipped(
-        ctx.message, prompt_message, aborted, skipped, abort_text, skip_text
-    )
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return result, aborted, skipped
 
 
@@ -785,9 +689,9 @@ async def inquire_for_emoji(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[str], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[str | None, bool, bool]:
     """
     Returns (emoji: `Optional[str]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -797,23 +701,17 @@ async def inquire_for_emoji(
     aborted = False
     skipped = False
 
-    full_prompt_text = create_prompt_text(
-        prompt_text, "an emoji", allow_abort, allow_skip
-    )
+    full_prompt_text = create_prompt_text(prompt_text, "an emoji", allow_abort, allow_skip)
     prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = await __check_for_abort_or_skip(
-            content.lower(), allow_abort, allow_skip
-        )
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             result = get_emoji(ctx, content)
     else:
         aborted = True
-    await __send_aborted_or_skipped(
-        ctx.message, prompt_message, aborted, skipped, abort_text, skip_text
-    )
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return result, aborted, skipped
 
 
@@ -821,9 +719,9 @@ async def inquire_for_integer(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[int], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[int | None, bool, bool]:
     """
     Returns (integer: `Optional[int]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -833,25 +731,17 @@ async def inquire_for_integer(
     aborted = False
     skipped = False
 
-    full_prompt_text = create_prompt_text(
-        prompt_text, "an integer", allow_abort, allow_skip
-    )
+    full_prompt_text = create_prompt_text(prompt_text, "an integer", allow_abort, allow_skip)
     prompt_message = await reply(ctx, full_prompt_text)
-    user_reply = await wait_for_message(
-        ctx, allow_abort, allow_skip, check=check_for_integer, timeout=timeout
-    )
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_integer, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = await __check_for_abort_or_skip(
-            content.lower(), allow_abort, allow_skip
-        )
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             result = int(content)
     else:
         aborted = True
-    await __send_aborted_or_skipped(
-        ctx.message, prompt_message, aborted, skipped, abort_text, skip_text
-    )
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return result, aborted, skipped
 
 
@@ -859,9 +749,9 @@ async def inquire_for_member(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[_Role], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[_Role | None, bool, bool]:
     """
     Returns (channel: `Optional[discord.TextChannel]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -871,9 +761,7 @@ async def inquire_for_member(
     aborted = False
     skipped = False
 
-    full_prompt_text = create_prompt_text(
-        prompt_text, "a member mention, name or ID", allow_abort, allow_skip
-    )
+    full_prompt_text = create_prompt_text(prompt_text, "a member mention, name or ID", allow_abort, allow_skip)
     prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(
         ctx,
@@ -884,16 +772,12 @@ async def inquire_for_member(
     )
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = await __check_for_abort_or_skip(
-            content.lower(), allow_abort, allow_skip
-        )
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             member = get_member(content)
     else:
         aborted = True
-    await __send_aborted_or_skipped(
-        ctx.message, prompt_message, aborted, skipped, abort_text, skip_text
-    )
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return member, aborted, skipped
 
 
@@ -902,9 +786,9 @@ async def inquire_for_message_confirmation(
     respond_to_message: _Message,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[bool], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[bool | None, bool, bool]:
     """
     Returns (result: `bool`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -923,9 +807,9 @@ async def inquire_for_message_id(
     channel: _TextChannel,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[_Role], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[_Role | None, bool, bool]:
     """
     Returns (role: `Optional[discord.Role]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -935,25 +819,17 @@ async def inquire_for_message_id(
     aborted = False
     skipped = False
 
-    full_prompt_text = create_prompt_text(
-        prompt_text, "a message ID", allow_abort, allow_skip
-    )
+    full_prompt_text = create_prompt_text(prompt_text, "a message ID", allow_abort, allow_skip)
     prompt_message = await reply(ctx, full_prompt_text)
-    user_reply = await wait_for_message(
-        ctx, allow_abort, allow_skip, check=check_for_message_id, timeout=timeout
-    )
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_message_id, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = await __check_for_abort_or_skip(
-            content.lower(), allow_abort, allow_skip
-        )
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             message = await fetch_message(channel, content)
     else:
         aborted = True
-    await __send_aborted_or_skipped(
-        ctx.message, prompt_message, aborted, skipped, abort_text, skip_text
-    )
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return message, aborted, skipped
 
 
@@ -961,9 +837,9 @@ async def inquire_for_message_link(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[str], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[str | None, bool, bool]:
     """
     Returns (message_link: `Optional[str]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -973,25 +849,17 @@ async def inquire_for_message_link(
     aborted = False
     skipped = False
 
-    full_prompt_text = create_prompt_text(
-        prompt_text, "an full link to a Discord message", allow_abort, allow_skip
-    )
+    full_prompt_text = create_prompt_text(prompt_text, "an full link to a Discord message", allow_abort, allow_skip)
     prompt_message = await reply(ctx, full_prompt_text)
-    user_reply = await wait_for_message(
-        ctx, allow_abort, allow_skip, check=check_for_message_link, timeout=timeout
-    )
+    user_reply = await wait_for_message(ctx, allow_abort, allow_skip, check=check_for_message_link, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = await __check_for_abort_or_skip(
-            content.lower(), allow_abort, allow_skip
-        )
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             result = content
     else:
         aborted = True
-    await __send_aborted_or_skipped(
-        ctx.message, prompt_message, aborted, skipped, abort_text, skip_text
-    )
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return result, aborted, skipped
 
 
@@ -999,9 +867,9 @@ async def inquire_for_role(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[_Role], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[_Role | None, bool, bool]:
     """
     Returns (role: `Optional[discord.Role]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -1011,9 +879,7 @@ async def inquire_for_role(
     aborted = False
     skipped = False
 
-    full_prompt_text = create_prompt_text(
-        prompt_text, "a role mention or ID", allow_abort, allow_skip
-    )
+    full_prompt_text = create_prompt_text(prompt_text, "a role mention or ID", allow_abort, allow_skip)
     prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(
         ctx,
@@ -1024,16 +890,12 @@ async def inquire_for_role(
     )
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = await __check_for_abort_or_skip(
-            content.lower(), allow_abort, allow_skip
-        )
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             role = get_role(ctx, content)
     else:
         aborted = True
-    await __send_aborted_or_skipped(
-        ctx.message, prompt_message, aborted, skipped, abort_text, skip_text
-    )
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return role, aborted, skipped
 
 
@@ -1041,9 +903,9 @@ async def inquire_for_text(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[str], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[str | None, bool, bool]:
     """
     Returns (input: `Optional[str]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -1053,23 +915,17 @@ async def inquire_for_text(
     aborted = False
     skipped = False
 
-    full_prompt_text = create_prompt_text(
-        prompt_text, "any text", allow_abort, allow_skip
-    )
+    full_prompt_text = create_prompt_text(prompt_text, "any text", allow_abort, allow_skip)
     prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(ctx, allow_abort, allow_skip, timeout=timeout)
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = await __check_for_abort_or_skip(
-            content.lower(), allow_abort, allow_skip
-        )
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             result = content
     else:
         aborted = True
-    await __send_aborted_or_skipped(
-        ctx.message, prompt_message, aborted, skipped, abort_text, skip_text
-    )
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return result, aborted, skipped
 
 
@@ -1077,9 +933,9 @@ async def inquire_for_text_channel(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[_Role], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[_Role | None, bool, bool]:
     """
     Returns (channel: `Optional[discord.TextChannel]`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
@@ -1089,9 +945,7 @@ async def inquire_for_text_channel(
     aborted = False
     skipped = False
 
-    full_prompt_text = create_prompt_text(
-        prompt_text, "a channel mention or ID", allow_abort, allow_skip
-    )
+    full_prompt_text = create_prompt_text(prompt_text, "a channel mention or ID", allow_abort, allow_skip)
     prompt_message = await reply(ctx, full_prompt_text)
     user_reply = await wait_for_message(
         ctx,
@@ -1102,16 +956,12 @@ async def inquire_for_text_channel(
     )
     if user_reply:
         content = user_reply.content.strip()
-        aborted, skipped = await __check_for_abort_or_skip(
-            content.lower(), allow_abort, allow_skip
-        )
+        aborted, skipped = await __check_for_abort_or_skip(content.lower(), allow_abort, allow_skip)
         if not (aborted or skipped):
             channel = get_channel(ctx, content)
     else:
         aborted = True
-    await __send_aborted_or_skipped(
-        ctx.message, prompt_message, aborted, skipped, abort_text, skip_text
-    )
+    await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
     return channel, aborted, skipped
 
 
@@ -1119,34 +969,28 @@ async def inquire_for_true_false(
     ctx: _Context,
     prompt_text: str,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    abort_text: _Optional[str] = None,
-    skip_text: _Optional[str] = None,
-) -> _Tuple[_Optional[bool], bool, bool]:
+    abort_text: str | None = None,
+    skip_text: str | None = None,
+) -> tuple[bool | None, bool, bool]:
     """
     Returns (result: `bool`, user_has_aborted: `bool`, user_has_skipped: `bool`)
     """
-    return await inquire_for_boolean(
-        ctx, prompt_text, timeout=timeout, abort_text=abort_text, skip_text=skip_text
-    )
+    return await inquire_for_boolean(ctx, prompt_text, timeout=timeout, abort_text=abort_text, skip_text=skip_text)
 
 
-async def reply(
-    ctx: _Context, content: str, mention_author: bool = False, **kwargs
-) -> _Message:
+async def reply(ctx: _Context, content: str, mention_author: bool = False, **kwargs) -> _Message:
     if content or "embed" in kwargs or "embeds" in kwargs:
         return await ctx.reply(content=content, mention_author=mention_author, **kwargs)
 
 
 async def reply_lines(
     ctx: _Context,
-    content_lines: _List[str],
+    content_lines: list[str],
     mention_author: bool = False,
     send_file_if_too_long: bool = False,
     **kwargs,
-) -> _List[_Message]:
-    posts = create_posts_from_lines(
-        content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT
-    )
+) -> list[_Message]:
+    posts = create_posts_from_lines(content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
     posts = [post for post in posts if post]
     result = []
     if send_file_if_too_long and len(posts) > 1:
@@ -1160,9 +1004,7 @@ async def reply_lines(
             _os.remove(file_name)
     else:
         for post in posts:
-            result.append(
-                (await ctx.reply(content=post, mention_author=mention_author, **kwargs))
-            )
+            result.append((await ctx.reply(content=post, mention_author=mention_author, **kwargs)))
     return result
 
 
@@ -1171,12 +1013,8 @@ async def send(ctx: _Context, content: str, **kwargs) -> _Message:
         return await ctx.send(content=content, **kwargs)
 
 
-async def send_lines(
-    ctx: _Context, content_lines: _List[str], **kwargs
-) -> _List[_Message]:
-    posts = create_posts_from_lines(
-        content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT
-    )
+async def send_lines(ctx: _Context, content_lines: list[str], **kwargs) -> list[_Message]:
+    posts = create_posts_from_lines(content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
     result = []
     for post in posts:
         if post:
@@ -1189,12 +1027,8 @@ async def send_to_channel(channel: _TextChannel, content: str, **kwargs) -> _Mes
         return await channel.send(content=content, **kwargs)
 
 
-async def send_lines_to_channel(
-    channel: _TextChannel, content_lines: _List[str], **kwargs
-) -> _List[_Message]:
-    posts = create_posts_from_lines(
-        content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT
-    )
+async def send_lines_to_channel(channel: _TextChannel, content_lines: list[str], **kwargs) -> list[_Message]:
+    posts = create_posts_from_lines(content_lines, settings.MESSAGE_MAXIMUM_CHARACTER_COUNT)
     result = []
     for post in posts:
         if post:
@@ -1213,9 +1047,7 @@ async def try_delete_message(message: _Message) -> bool:
         return False
 
 
-def update_embed_definition(
-    embed_definition: str, substitutions: _Optional[_Dict[str, _Any]]
-) -> str:
+def update_embed_definition(embed_definition: str, substitutions: dict[str, Any | None]) -> str:
     embed_dct = _json_loads(embed_definition)
 
     for key, value in substitutions.items():
@@ -1226,23 +1058,15 @@ def update_embed_definition(
             field["value"] = field.get("value", "").replace(key, value)
         if "author" in embed_dct:
             if "icon_url" in embed_dct["author"]:
-                embed_dct["author"]["icon_url"] = embed_dct["author"][
-                    "icon_url"
-                ].replace(key, value)
+                embed_dct["author"]["icon_url"] = embed_dct["author"]["icon_url"].replace(key, value)
             if "name" in embed_dct["author"]:
-                embed_dct["author"]["name"] = embed_dct["author"]["name"].replace(
-                    key, value
-                )
+                embed_dct["author"]["name"] = embed_dct["author"]["name"].replace(key, value)
         if "footer" in embed_dct and "icon_url" in embed_dct["footer"]:
-            embed_dct["footer"]["icon_url"] = embed_dct["footer"]["icon_url"].replace(
-                key, value
-            )
+            embed_dct["footer"]["icon_url"] = embed_dct["footer"]["icon_url"].replace(key, value)
         if "image" in embed_dct and "url" in embed_dct["image"]:
             embed_dct["image"]["url"] = embed_dct["image"]["url"].replace(key, value)
         if "thumbnail" in embed_dct and "url" in embed_dct["thumbnail"]:
-            embed_dct["thumbnail"]["url"] = embed_dct["thumbnail"]["url"].replace(
-                key, value
-            )
+            embed_dct["thumbnail"]["url"] = embed_dct["thumbnail"]["url"].replace(key, value)
 
     return _json_dumps(embed_dct, separators=(",", ":"))
 
@@ -1251,25 +1075,19 @@ async def wait_for_message(
     ctx: _Context,
     allow_abort: bool,
     allow_skip: bool,
-    *check_args: _Any,
-    check: _Optional[WaitForCheck] = None,
+    *check_args: Any,
+    check: WaitForCheck | None = None,
     timeout: float = DEFAULT_INQUIRE_TIMEOUT,
-    **check_kwargs: _Any,
-) -> _Optional[_Message]:
+    **check_kwargs: Any,
+) -> _Message | None:
     timeout_delta = _timedelta(seconds=timeout)
     end_inquiry = _utils_datetime.get_utc_now() + timeout_delta
     try:
         while True and timeout and timeout > 0.0:
             user_reply: _Message = await ctx.bot.wait_for("message", timeout=timeout)
-            if (
-                user_reply
-                and user_reply.author == ctx.author
-                and user_reply.channel == ctx.channel
-            ):
+            if user_reply and user_reply.author == ctx.author and user_reply.channel == ctx.channel:
                 content = user_reply.content.strip()
-                if not check or check(
-                    content, allow_abort, allow_skip, *check_args, **check_kwargs
-                ):
+                if not check or check(content, allow_abort, allow_skip, *check_args, **check_kwargs):
                     return user_reply
             timeout = (end_inquiry - _utils_datetime.get_utc_now()).total_seconds()
     except _TimeoutError:
@@ -1279,9 +1097,7 @@ async def wait_for_message(
 # ---------- Private Functions ----------
 
 
-async def __check_for_abort_or_skip(
-    message_content: str, allow_abort: bool, allow_skip: bool
-) -> _Tuple[bool, bool]:
+async def __check_for_abort_or_skip(message_content: str, allow_abort: bool, allow_skip: bool) -> tuple[bool, bool]:
     aborted = False
     skipped = False
     if allow_abort and message_content == "abort":
@@ -1296,8 +1112,8 @@ async def __send_aborted_or_skipped(
     skip_reply_to: _Message,
     aborted: bool,
     skipped: bool,
-    abort_text: _Optional[str],
-    skip_text: _Optional[str],
+    abort_text: str | None,
+    skip_text: str | None,
 ) -> None:
     if aborted and bool(abort_text):
         await abort_reply_to.reply(abort_text, mention_author=False)
@@ -1310,8 +1126,6 @@ def escape_markdown_and_mentions(s: str) -> str:
         return s
 
     s = _escape_markdown(s)
-    s = s.replace(
-        "@", "@​"
-    )  # Remove mentions (discord.py / py-cord doesn't escape the @everyone mention)
+    s = s.replace("@", "@​")  # Remove mentions (discord.py / py-cord doesn't escape the @everyone mention)
     s = _re.sub(__RX_HYPERLINK, "", s)  # Make hyperlinks unclickable
     return s

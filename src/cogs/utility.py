@@ -1,16 +1,15 @@
+import json as _json
 from datetime import datetime as _datetime
 from datetime import timezone as _timezone
-import json as _json
-from typing import List as _List
 
 import discord as _discord
 import discord.ext.commands as _commands
 
-from .cog_base import CogBase as _CogBase
-from ..model import database as _db
 from .. import bot_settings as _bot_settings
-from .. import utils as _utils
 from .. import model as _model
+from .. import utils as _utils
+from ..model import database as _db
+from .cog_base import CogBase as _CogBase
 
 
 class Utility(_CogBase):
@@ -40,28 +39,26 @@ $do$"""
         Provides commands for checking user input. Check out the subcommands.
 
         Usage:
-          vivi check [subcommand]
+          fh check [subcommand]
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help("check")
 
     @_commands.is_owner()
     @check.command(name="channel")
-    async def check_channel(
-        self, ctx: _commands.Context, channel_id_or_mention: str
-    ) -> None:
+    async def check_channel(self, ctx: _commands.Context, channel_id_or_mention: str) -> None:
         """
         Checks, if a channel with the provided ID or mention exists on this guild and can be accessed by the bot.
 
         Usage:
-          vivi check channel [channel_id_or_mention]
+          fh check channel [channel_id_or_mention]
 
         Parameters:
           channel_id_or_mention: Mandatory. A mention or an ID of a channel to be checked.
 
         Examples:
-          vivi check channel 1
-          vivi check channel #foobar
+          fh check channel 1
+          fh check channel #foobar
         """
         result = _utils.discord.get_text_channel(ctx, channel_id_or_mention)
         if result:
@@ -80,14 +77,14 @@ $do$"""
         Checks, if a given emoji exists on this guild or is a standard emoji and can be accessed by the bot.
 
         Usage:
-          vivi check emoji [emoji]
+          fh check emoji [emoji]
 
         Parameters:
           emoji: Mandatory. A standard emoji or a custom emoji of the current guild.
 
         Examples:
-          vivi check emoji 😁
-          vivi check <:ayy:1>
+          fh check emoji 😁
+          fh check <:ayy:1>
         """
         result = _utils.discord.get_emoji(ctx, emoji)
         if result:
@@ -98,23 +95,21 @@ $do$"""
 
     @_commands.is_owner()
     @check.command(name="member")
-    async def check_member(
-        self, ctx: _commands.Context, *, member_id_mention_or_name: str
-    ) -> None:
+    async def check_member(self, ctx: _commands.Context, *, member_id_mention_or_name: str) -> None:
         """
         Checks, if a given member exists on this guild.
 
         Usage:
-          vivi check member [member_id_mention_or_name]
+          fh check member [member_id_mention_or_name]
 
         Parameters:
           member_id_mention_or_name: Mandatory. The ID, a mention or the (nick) name of a member of this guild.
 
         Examples:
-          vivi check member 1
-          vivi check member @The worst.
-          vivi check member The worst.
-          vivi check member The worst.#1337
+          fh check member 1
+          fh check member @The worst.
+          fh check member The worst.
+          fh check member The worst.#1337
         """
         result = _utils.discord.get_member(ctx, member_id_mention_or_name)
         if result:
@@ -128,27 +123,23 @@ $do$"""
 
     @_commands.is_owner()
     @check.command(name="message")
-    async def check_message(
-        self, ctx: _commands.Context, channel: _discord.TextChannel, message_id: str
-    ) -> None:
+    async def check_message(self, ctx: _commands.Context, channel: _discord.TextChannel, message_id: str) -> None:
         """
         Checks, if a message with the given ID exists in the given channel and can be accessed by the bot.
 
         Usage:
-          vivi check message [channel] [message_id]
+          fh check message [channel] [message_id]
 
         Parameters:
           channel:    Mandatory. A channel name or mention of a channel on this guild.
           message_id: Mandatory. The ID of a message in the given channel.
 
         Examples:
-          vivi check message #foobar 1
+          fh check message #foobar 1
         """
         result = await _utils.discord.fetch_message(channel, message_id)
         if result:
-            await _utils.discord.reply(
-                ctx, f"{result.content}\nBy {result.author.mention}"
-            )
+            await _utils.discord.reply(ctx, f"{result.content}\nBy {result.author.mention}")
         else:
             lines = [
                 f"This is not a valid message id or I cannot access the channel:",
@@ -164,14 +155,14 @@ $do$"""
         Checks, if a role with the given ID or mention exists on this guild and prints information about it.
 
         Usage:
-          vivi check role [role_id_or_mention]
+          fh check role [role_id_or_mention]
 
         Parameters:
           role_id_or_mention: Mandatory. The ID or a mention of a role on this guild.
 
         Exmaples:
-          vivi check role 1
-          vivi check role @foobar
+          fh check role 1
+          fh check role @foobar
         """
         result: _discord.Role = _utils.discord.get_role(ctx, role_id_or_mention)
         if result:
@@ -202,9 +193,7 @@ $do$"""
         utc_now = _utils.datetime.get_utc_now()
         export = await _db.export_to_json()
 
-        file_name = (
-            f'pss-fleet-helper-db-export_{utc_now.strftime("%Y%m%d-%H%M%S")}.json'
-        )
+        file_name = f'pss-fleet-helper-db-export_{utc_now.strftime("%Y%m%d-%H%M%S")}.json'
         with open(file_name, "w") as fp:
             fp.write(export)
         await ctx.reply("Database export:", file=_discord.File(file_name))
@@ -216,9 +205,7 @@ $do$"""
         Attempts to import the data from the provided JSON file.
         """
         if not ctx.message.attachments:
-            raise Exception(
-                "You need to upload a JSON file to be imported with the command!"
-            )
+            raise Exception("You need to upload a JSON file to be imported with the command!")
 
         attachment = ctx.message.attachments[0]
         file_contents = (await attachment.read()).decode("utf-8")
@@ -230,14 +217,10 @@ $do$"""
         if updated_sequences:
             await ctx.reply("Database imported successfully!")
         else:
-            await ctx.reply(
-                f"Data has been imported, but the sequences could not be updated! You need to perform the following sql query:\n{Utility.QUERY_UPDATE_SEQUENCES}"
-            )
+            await ctx.reply(f"Data has been imported, but the sequences could not be updated! You need to perform the following sql query:\n{Utility.QUERY_UPDATE_SEQUENCES}")
 
     @_commands.group(name="embed", invoke_without_command=True)
-    async def embed(
-        self, ctx: _commands.Context, *, definition_or_url: str = None
-    ) -> None:
+    async def embed(self, ctx: _commands.Context, *, definition_or_url: str = None) -> None:
         """
         Test the look of an embed.
         Create and edit embed definitions: https://leovoel.github.io/embed-visualizer/
@@ -252,28 +235,16 @@ $do$"""
         You can also copy the code onto pastebin.com and type the url to that file instead.
         You can also type the link to any file on the web containing an embed definition.
         """
-        embeds: _List[_discord.Embed] = []
+        embeds: list[_discord.Embed] = []
         if definition_or_url:
-            embeds.append(
-                (
-                    await _utils.discord.get_embed_from_definition_or_url(
-                        definition_or_url
-                    )
-                )
-            )
+            embeds.append((await _utils.discord.get_embed_from_definition_or_url(definition_or_url)))
         elif ctx.message.attachments:
             for attachment in ctx.message.attachments:
                 attachment_content = (await attachment.read()).decode("utf-8")
                 if attachment_content:
-                    embeds.append(
-                        _json.loads(
-                            attachment_content, cls=_utils.discord.EmbedLeovoelDecoder
-                        )
-                    )
+                    embeds.append(_json.loads(attachment_content, cls=_utils.discord.EmbedLeovoelDecoder))
         else:
-            raise ValueError(
-                "Parameter 'definition_or_url' received an invalid value: You need to specify a definition or upload a file containing a definition!"
-            )
+            raise ValueError("Parameter 'definition_or_url' received an invalid value: You need to specify a definition or upload a file containing a definition!")
         for embed in embeds:
             await _utils.discord.reply(ctx, None, embed=embed)
 
@@ -282,38 +253,26 @@ $do$"""
         """
         Retrieves the definition of an embed from a message.
         """
-        if not _utils.discord.check_for_message_link(
-            url, allow_abort=False, allow_skip=False
-        ):
-            raise ValueError(
-                "Parameter `url` received an invalid value: value is not a valid message url!"
-            )
+        if not _utils.discord.check_for_message_link(url, allow_abort=False, allow_skip=False):
+            raise ValueError("Parameter `url` received an invalid value: value is not a valid message url!")
 
-        channel, message = (
-            await _utils.discord.get_channel_and_message_from_message_link(ctx, url)
-        )
+        channel, message = await _utils.discord.get_channel_and_message_from_message_link(ctx, url)
         if not message.embeds:
             raise Exception("The referenced message does not include any embeds.")
 
         definitions_lines = []
         for embed in message.embeds:
-            definitions_lines.extend(
-                _json.dumps(embed, cls=_utils.discord.EmbedLeovoelEncoder).split("\n")
-            )
+            definitions_lines.extend(_json.dumps(embed, cls=_utils.discord.EmbedLeovoelEncoder).split("\n"))
 
         if definitions_lines:
             definitions_lines.insert(0, "```json")
             definitions_lines.append("```")
             await _utils.discord.reply_lines(ctx, definitions_lines)
         else:
-            raise Exception(
-                "An unknown error occured. Please contact the bot's author."
-            )
+            raise Exception("An unknown error occured. Please contact the bot's author.")
 
     @embed.command(name="link")
-    async def embed_link(
-        self, ctx: _commands.Context, url: str, *, display_text: str = None
-    ) -> None:
+    async def embed_link(self, ctx: _commands.Context, url: str, *, display_text: str = None) -> None:
         """
         Creates an embed containing a hyperlink.
         """
@@ -335,48 +294,26 @@ $do$"""
         """
         Replaces the embeds in an existing message sent by the bot.
         """
-        _utils.assert_.authorized_channel_or_server_manager(
-            ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
-        )
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
 
-        channel, message = (
-            await _utils.discord.get_channel_and_message_from_message_link(
-                ctx, message_link
-            )
-        )
+        channel, message = await _utils.discord.get_channel_and_message_from_message_link(ctx, message_link)
         if not channel:
             raise Exception("I cannot access the channel referenced in the link.")
         if not message:
-            raise Exception(
-                "I cannot access the message referenced in the link or it does not exist."
-            )
+            raise Exception("I cannot access the message referenced in the link or it does not exist.")
         if message.author != self.bot.user:
-            raise Exception(
-                "I cannot edit the message referenced in the link, because I did not send it."
-            )
+            raise Exception("I cannot edit the message referenced in the link, because I did not send it.")
 
-        embeds: _List[_discord.Embed] = []
+        embeds: list[_discord.Embed] = []
         if definition_or_url:
-            embeds.append(
-                (
-                    await _utils.discord.get_embed_from_definition_or_url(
-                        definition_or_url
-                    )
-                )
-            )
+            embeds.append((await _utils.discord.get_embed_from_definition_or_url(definition_or_url)))
         elif ctx.message.attachments:
             for attachment in ctx.message.attachments:
                 attachment_content = (await attachment.read()).decode("utf-8")
                 if attachment_content:
-                    embeds.append(
-                        _json.loads(
-                            attachment_content, cls=_utils.discord.EmbedLeovoelDecoder
-                        )
-                    )
+                    embeds.append(_json.loads(attachment_content, cls=_utils.discord.EmbedLeovoelDecoder))
         else:
-            raise Exception(
-                "You need to specify a definition or upload a file containing a definition!"
-            )
+            raise Exception("You need to specify a definition or upload a file containing a definition!")
 
         if len(embeds) > 10:
             raise Exception("Too many embeds! Max number of embeds per message is 10.")
@@ -385,44 +322,28 @@ $do$"""
     @_commands.group(name="message", invoke_without_command=False)
     async def message(self, ctx: _commands.Context) -> None:
         """ """
-        pass
 
     @message.command(name="replace")
-    async def message_replace(
-        self, ctx: _commands.Context, message_link: str, *, content: str
-    ) -> None:
+    async def message_replace(self, ctx: _commands.Context, message_link: str, *, content: str) -> None:
         """
         Replaces the contents of a message sent by the bot.
         """
-        _utils.assert_.authorized_channel_or_server_manager(
-            ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
-        )
+        _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
 
-        channel, message = (
-            await _utils.discord.get_channel_and_message_from_message_link(
-                ctx, message_link
-            )
-        )
+        channel, message = await _utils.discord.get_channel_and_message_from_message_link(ctx, message_link)
         if not channel:
             raise Exception("I cannot access the channel referenced in the link.")
         if not message:
-            raise Exception(
-                "I cannot access the message referenced in the link or it does not exist."
-            )
+            raise Exception("I cannot access the message referenced in the link or it does not exist.")
         if message.author != self.bot.user:
-            raise Exception(
-                "I cannot edit the message referenced in the link, because I did not send it."
-            )
+            raise Exception("I cannot edit the message referenced in the link, because I did not send it.")
 
         await message.edit(content=content)
         await _utils.discord.reply(ctx, "Message edited successfully.")
 
-    @_commands.group(
-        name="timestamp", brief="Get localized timestamps", invoke_without_command=False
-    )
+    @_commands.group(name="timestamp", brief="Get localized timestamps", invoke_without_command=False)
     async def timestamp(self, ctx: _commands.Context) -> None:
         """ """
-        pass
 
     @timestamp.command(name="date", brief="Get localized date")
     async def timestamp_date(
@@ -518,9 +439,7 @@ $do$"""
             if second > 59:
                 raise ValueError("The second must not be greater than 59.")
 
-        result = _datetime(
-            year, month, day, hour or 0, minute or 0, second or 0, tzinfo=_timezone.utc
-        )
+        result = _datetime(year, month, day, hour or 0, minute or 0, second or 0, tzinfo=_timezone.utc)
         return result
 
 
