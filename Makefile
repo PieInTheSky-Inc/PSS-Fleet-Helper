@@ -1,3 +1,13 @@
+.PHONY: check
+check:
+	uv run flake8 .
+	
+.PHONY: format
+format:
+	uv run autoflake .
+	uv run isort .
+	uv run black .
+
 .PHONY: docker
 docker:
 	-docker stop container-pss-fleet-helper
