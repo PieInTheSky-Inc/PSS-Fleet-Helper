@@ -21,7 +21,7 @@ class About(_CogBase):
         Returns general information about this bot.
 
         Usage:
-          vivi about
+          fh about
         """
         info = {
             "Server count": len(self.bot.guilds),
@@ -50,7 +50,7 @@ class About(_CogBase):
         Produces a link to invite this bot to your server.
 
         Usage:
-          vivi invite
+          fh invite
         """
         invite_link = f"https://discordapp.com/oauth2/authorize?scope=bot%20applications.commands&permissions=476674780370&client_id={_bot_settings.DISCORD_BOT_CLIENT_ID}"
         await _utils.discord.reply(ctx, invite_link)

@@ -196,7 +196,7 @@ class ChatLogger(_CogBase):
         Add a chat logger to this server.
 
         Usage:
-          vivi chatlog add [channel_key] [channel] [name]
+          fh chatlog add [channel_key] [channel] [name]
 
         Parameters:
           channel_key: Mandatory. The channel key of the PSS chat channel to be logged.
@@ -204,7 +204,7 @@ class ChatLogger(_CogBase):
           name:        Mandatory. A name for this logger to recognize it.
 
         Examples:
-          vivi chatlog add public #log Public Chat - Adds a chat logger for the public chat that will post to the channel #log
+          fh chatlog add public #log Public Chat - Adds a chat logger for the public chat that will post to the channel #log
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -228,13 +228,13 @@ class ChatLogger(_CogBase):
         Edit a chat logger. An assistant will guide you.
 
         Usage:
-          vivi chatlog edit [logger_id]
+          fh chatlog edit [logger_id]
 
         Parameter:
           logger_id: Mandatory. The chat logger to be edited.
 
         Examples:
-          vivi chatlog edit 1 - Edits the chat logger with ID '1' on this server.
+          fh chatlog edit 1 - Edits the chat logger with ID '1' on this server.
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -318,7 +318,7 @@ class ChatLogger(_CogBase):
         Lists all chat logger configured on this server.
 
         Usage:
-          vivi chatlog list
+          fh chatlog list
         """
         if ctx.invoked_subcommand is None:
             _utils.assert_.authorized_channel_or_server_manager(
@@ -348,7 +348,7 @@ class ChatLogger(_CogBase):
         Lists all chat logger configured on any server.
 
         Usage:
-          vivi chatlog list all
+          fh chatlog list all
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -376,13 +376,13 @@ class ChatLogger(_CogBase):
         Removes a chat logger.
 
         Usage:
-          vivi chatlog delete [logger_id]
+          fh chatlog delete [logger_id]
 
         Parameters:
           logger_id: Mandatory. The ID of the chat logger to be deleted.
 
         Examples:
-          vivi chatlog delete 1 - Removes the chat logger with the ID '1'.
+          fh chatlog delete 1 - Removes the chat logger with the ID '1'.
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS

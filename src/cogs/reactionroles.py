@@ -140,16 +140,16 @@ class ReactionRoles(_CogBase):
     async def activate(self, ctx: _commands.Context, reaction_role_id: int) -> None:
         """
         Attempts to activate the deactivated Reaction Role with the given ID on this server. This means adding the specified reaction to the specified channel and listening for members adding or removing said reaction to perform the configured role changes.
-        Reaction Role IDs can be retrieved via the command: vivi reactionrole list
+        Reaction Role IDs can be retrieved via the command: fh reactionrole list
 
         Usage:
-          vivi reactionrole activate [reaction_role_id]
+          fh reactionrole activate [reaction_role_id]
 
         Parameters:
           reaction_role_id: Mandatory. The ID of an inactive Reaction Role on this server.
 
         Usage:
-          vivi reactionrole activate 1 - Attempts to activate the Reaction Role with the ID 1.
+          fh reactionrole activate 1 - Attempts to activate the Reaction Role with the ID 1.
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -184,7 +184,7 @@ class ReactionRoles(_CogBase):
         Attempts to activate all inactive Reaction Roles configured on this server. This means adding the specified reaction to the specified channel and listening for members adding or removing said reaction to perform the configured role changes. Will print any Reaction Role that could not be activated.
 
         Usage:
-          vivi reactionrole activate all
+          fh reactionrole activate all
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -241,7 +241,7 @@ class ReactionRoles(_CogBase):
         Add a new Reaction Role to this server. Starts an assistant guiding through the creation process.
 
         Usage:
-          vivi reactionrole add
+          fh reactionrole add
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -410,16 +410,16 @@ class ReactionRoles(_CogBase):
     async def deactivate(self, ctx: _commands.Context, reaction_role_id: int) -> None:
         """
         Attempts to deactivate the activated Reaction Role with the given ID on this server. This means removing the specified reaction to the specified channel and no more listening for members adding or removing said reaction.
-        Reaction Role IDs can be retrieved via the command: vivi reactionrole list
+        Reaction Role IDs can be retrieved via the command: fh reactionrole list
 
         Usage:
-          vivi reactionrole deactivate [reaction_role_id]
+          fh reactionrole deactivate [reaction_role_id]
 
         Parameters:
           reaction_role_id: Mandatory. The ID of an active Reaction Role on this server.
 
         Usage:
-          vivi reactionrole deactivate 1 - Attempts to deactivate the Reaction Role with the ID 1.
+          fh reactionrole deactivate 1 - Attempts to deactivate the Reaction Role with the ID 1.
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -454,7 +454,7 @@ class ReactionRoles(_CogBase):
         Attempts to deactivate all active Reaction Roles configured on this server. This means removing the specified reaction to the specified channel and no more listening for members adding or removing said reaction. Will print any Reaction Role that could not be activated.
 
         Usage:
-          vivi reactionrole deactivate all
+          fh reactionrole deactivate all
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -496,16 +496,16 @@ class ReactionRoles(_CogBase):
     async def delete(self, ctx: _commands.Context, reaction_role_id: int) -> None:
         """
         Deletes an inactive Reaction Role with the given ID on this server.
-        Reaction Role IDs can be retrieved via the command: vivi reactionrole list
+        Reaction Role IDs can be retrieved via the command: fh reactionrole list
 
         Usage:
-          vivi reactionrole delete [reaction_role_id]
+          fh reactionrole delete [reaction_role_id]
 
         Parameters:
           reaction_role_id: Mandatory. The ID of an inactive Reaction Role on this server.
 
         Examples:
-          vivi reactionrole delete 1 - Attempts to delete the Reaction Role with the ID 1
+          fh reactionrole delete 1 - Attempts to delete the Reaction Role with the ID 1
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -561,16 +561,16 @@ class ReactionRoles(_CogBase):
     async def edit(self, ctx: _commands.Context, reaction_role_id: int) -> None:
         """
         Edits an inactive Reaction Role with the given ID on this server. Starts an assistant guiding through the process.
-        Reaction Role IDs can be retrieved via the command: vivi reactionrole list
+        Reaction Role IDs can be retrieved via the command: fh reactionrole list
 
         Usage:
-          vivi reactionrole edit [reaction_role_id]
+          fh reactionrole edit [reaction_role_id]
 
         Parameters:
           reaction_role_id: Mandatory. The ID of an inactive Reaction Role on this server.
 
         Examples:
-          vivi reactionrole edit 1 - Attempts to edit the Reaction Role with the ID 1
+          fh reactionrole edit 1 - Attempts to edit the Reaction Role with the ID 1
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -669,14 +669,14 @@ class ReactionRoles(_CogBase):
         Lists all Reaction Roles configured on this server.
 
         Usage:
-          vivi reactionrole list <include_messages>
+          fh reactionrole list <include_messages>
 
         Parameters:
           include_messages: Optional. Determines, if Reaction Role Change messages and embeds shall be printed. Defaults to False.
 
         Examples:
-          vivi reactionrole list yes - Prints all Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
-          vivi reactionrole list false - Prints all Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
+          fh reactionrole list yes - Prints all Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
+          fh reactionrole list false - Prints all Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -715,14 +715,14 @@ class ReactionRoles(_CogBase):
         Lists all active Reaction Roles configured on this server.
 
         Usage:
-          vivi reactionrole list active <include_messages>
+          fh reactionrole list active <include_messages>
 
         Parameters:
           include_messages: Optional. Determines, if Reaction Role Change messages and embeds shall be printed. Defaults to False.
 
         Examples:
-          vivi reactionrole list active yes - Prints all active Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
-          vivi reactionrole list active false - Prints all active Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
+          fh reactionrole list active yes - Prints all active Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
+          fh reactionrole list active false - Prints all active Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -762,14 +762,14 @@ class ReactionRoles(_CogBase):
         Lists all inactive Reaction Roles configured on this server.
 
         Usage:
-          vivi reactionrole list inactive <include_messages>
+          fh reactionrole list inactive <include_messages>
 
         Parameters:
           include_messages: Optional. Determines, if Reaction Role Change messages and embeds shall be printed. Defaults to False.
 
         Examples:
-          vivi reactionrole list inactive yes - Prints all inactive Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
-          vivi reactionrole list inactive false - Prints all inactive Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
+          fh reactionrole list inactive yes - Prints all inactive Reaction Roles configured on this server including all messages and embeds to be sent on Role changes.
+          fh reactionrole list inactive false - Prints all inactive Reaction Roles configured on this server without any messages and embeds to be sent on Role changes.
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS

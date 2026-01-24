@@ -40,7 +40,7 @@ $do$"""
         Provides commands for checking user input. Check out the subcommands.
 
         Usage:
-          vivi check [subcommand]
+          fh check [subcommand]
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help("check")
@@ -54,14 +54,14 @@ $do$"""
         Checks, if a channel with the provided ID or mention exists on this guild and can be accessed by the bot.
 
         Usage:
-          vivi check channel [channel_id_or_mention]
+          fh check channel [channel_id_or_mention]
 
         Parameters:
           channel_id_or_mention: Mandatory. A mention or an ID of a channel to be checked.
 
         Examples:
-          vivi check channel 1
-          vivi check channel #foobar
+          fh check channel 1
+          fh check channel #foobar
         """
         result = _utils.discord.get_text_channel(ctx, channel_id_or_mention)
         if result:
@@ -80,14 +80,14 @@ $do$"""
         Checks, if a given emoji exists on this guild or is a standard emoji and can be accessed by the bot.
 
         Usage:
-          vivi check emoji [emoji]
+          fh check emoji [emoji]
 
         Parameters:
           emoji: Mandatory. A standard emoji or a custom emoji of the current guild.
 
         Examples:
-          vivi check emoji 😁
-          vivi check <:ayy:1>
+          fh check emoji 😁
+          fh check <:ayy:1>
         """
         result = _utils.discord.get_emoji(ctx, emoji)
         if result:
@@ -105,16 +105,16 @@ $do$"""
         Checks, if a given member exists on this guild.
 
         Usage:
-          vivi check member [member_id_mention_or_name]
+          fh check member [member_id_mention_or_name]
 
         Parameters:
           member_id_mention_or_name: Mandatory. The ID, a mention or the (nick) name of a member of this guild.
 
         Examples:
-          vivi check member 1
-          vivi check member @The worst.
-          vivi check member The worst.
-          vivi check member The worst.#1337
+          fh check member 1
+          fh check member @The worst.
+          fh check member The worst.
+          fh check member The worst.#1337
         """
         result = _utils.discord.get_member(ctx, member_id_mention_or_name)
         if result:
@@ -135,14 +135,14 @@ $do$"""
         Checks, if a message with the given ID exists in the given channel and can be accessed by the bot.
 
         Usage:
-          vivi check message [channel] [message_id]
+          fh check message [channel] [message_id]
 
         Parameters:
           channel:    Mandatory. A channel name or mention of a channel on this guild.
           message_id: Mandatory. The ID of a message in the given channel.
 
         Examples:
-          vivi check message #foobar 1
+          fh check message #foobar 1
         """
         result = await _utils.discord.fetch_message(channel, message_id)
         if result:
@@ -164,14 +164,14 @@ $do$"""
         Checks, if a role with the given ID or mention exists on this guild and prints information about it.
 
         Usage:
-          vivi check role [role_id_or_mention]
+          fh check role [role_id_or_mention]
 
         Parameters:
           role_id_or_mention: Mandatory. The ID or a mention of a role on this guild.
 
         Exmaples:
-          vivi check role 1
-          vivi check role @foobar
+          fh check role 1
+          fh check role @foobar
         """
         result: _discord.Role = _utils.discord.get_role(ctx, role_id_or_mention)
         if result:

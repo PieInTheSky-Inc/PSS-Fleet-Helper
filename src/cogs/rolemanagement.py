@@ -36,15 +36,15 @@ class RoleManagement(_CogBase):
         Add a Role to multiple members of this server.
 
         Usage:
-          vivi role add [role_id_or_mention] [user_id 1] <user_id 2> <user_id ...>
+          fh role add [role_id_or_mention] [user_id 1] <user_id 2> <user_id ...>
 
         Parameters:
           role_id_or_mention: Mandatory. An ID or a mention of Role on this server.
           user_id(s): Mandatory. One or more User IDs of members of this server.
 
         Examples:
-          vivi role add @foobar 1 2 3 - Adds the Role @foobar to the members with the IDs 1, 2 & 3
-          vivi role add 45 1 2 3 - Adds the Role with ID '45' to the members with the IDs 1, 2 & 3
+          fh role add @foobar 1 2 3 - Adds the Role @foobar to the members with the IDs 1, 2 & 3
+          fh role add 45 1 2 3 - Adds the Role with ID '45' to the members with the IDs 1, 2 & 3
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -132,7 +132,7 @@ class RoleManagement(_CogBase):
         Add a Role to all members with all of the specified roles.
 
         Usage:
-          vivi role addtorole [role to add] [required role 1] <required role 2 and more>
+          fh role addtorole [role to add] [required role 1] <required role 2 and more>
 
         Parameters:
           role_to_add: Mandatory. An ID or a mention of a Role on this server.
@@ -140,8 +140,8 @@ class RoleManagement(_CogBase):
           required_roles: Optional. IDs or mentions of further required roles.
 
         Examples:
-          vivi role addtorole @foo @bar - Adds the role @foo to all members with the @bar role.
-          vivi role addtorole @foo @bar @baz - Adds the role @foo to all members having the roles @bar and @baz.
+          fh role addtorole @foo @bar - Adds the role @foo to all members with the @bar role.
+          fh role addtorole @foo @bar @baz - Adds the role @foo to all members having the roles @bar and @baz.
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -212,14 +212,14 @@ class RoleManagement(_CogBase):
         Remove a Role from all members of this server.
 
         Usage:
-          vivi role clear [role_id_or_mention]
+          fh role clear [role_id_or_mention]
 
         Parameters:
           role_id_or_mention: Mandatory. An ID or a mention of Role on this server.
 
         Examples:
-          vivi role clear @foobar - Removes the Role @foobar from all members of this server.
-          vivi role clear 45 - Removes the Role with ID '45' from all members of this server.
+          fh role clear @foobar - Removes the Role @foobar from all members of this server.
+          fh role clear 45 - Removes the Role with ID '45' from all members of this server.
         """
         if ctx.invoked_subcommand is None:
             _utils.assert_.authorized_channel_or_server_manager(
@@ -297,13 +297,13 @@ class RoleManagement(_CogBase):
         Remove all Roles from multiple members of this server.
 
         Usage:
-          vivi role clear users [user_id 1] <user_id 2> <user_id ...>
+          fh role clear users [user_id 1] <user_id 2> <user_id ...>
 
         Parameters:
           user_id(s): Mandatory. One or more User IDs of members of this server.
 
         Examples:
-          vivi role clear users 1 2 3 - Removes all Roles from the members with ids 1, 2 & 3.
+          fh role clear users 1 2 3 - Removes all Roles from the members with ids 1, 2 & 3.
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -387,15 +387,15 @@ class RoleManagement(_CogBase):
         Remove a Role from multiple members of this server.
 
         Usage:
-          vivi role remove [role_id_or_mention] [user_id 1] <user_id 2> <user_id ...>
+          fh role remove [role_id_or_mention] [user_id 1] <user_id 2> <user_id ...>
 
         Parameters:
           role_id_or_mention: Mandatory. An ID or a mention of Role on this server.
           user_id(s): Mandatory. One or more User IDs of members of this server.
 
         Examples:
-          vivi role remove @foobar 1 2 3 - Removes the Role @foobar from Members with the User ID 1, 2 & 3.
-          vivi role remove 45 1 2 3 - Removes the Role with ID '45' from Members with the User ID 1, 2 & 3.
+          fh role remove @foobar 1 2 3 - Removes the Role @foobar from Members with the User ID 1, 2 & 3.
+          fh role remove 45 1 2 3 - Removes the Role with ID '45' from Members with the User ID 1, 2 & 3.
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
@@ -488,7 +488,7 @@ class RoleManagement(_CogBase):
         Remove a Role from all members with all of the specified roles.
 
         Usage:
-          vivi role removefromrole [role to remove] [required role 1] <required role 2 and more>
+          fh role removefromrole [role to remove] [required role 1] <required role 2 and more>
 
         Parameters:
           role_to_remove: Mandatory. An ID or a mention of a Role on this server.
@@ -496,8 +496,8 @@ class RoleManagement(_CogBase):
           required_roles: Optional. IDs or mentions of further required roles.
 
         Examples:
-          vivi role removefromrole @foo @bar - Clears the role @foo from all members with the @bar role.
-          vivi role removefromrole @foo @bar @baz - Clears the role @foo from all members having the roles @bar and @baz.
+          fh role removefromrole @foo @bar - Clears the role @foo from all members with the @bar role.
+          fh role removefromrole @foo @bar @baz - Clears the role @foo from all members having the roles @bar and @baz.
         """
         _utils.assert_.authorized_channel_or_server_manager(
             ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS
