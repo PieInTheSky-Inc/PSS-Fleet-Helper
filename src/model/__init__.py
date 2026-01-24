@@ -1,12 +1,10 @@
-from . import database
-from . import errors
-from . import model_settings
-from . import orm
-from .fleet import Fleet
-from .setup import setup as setup_model
-from .reaction_role import ReactionRole, ReactionRoleChange, ReactionRoleRequirement
-from .chat_log import PssChatLogger
 from src.model.pssapi_discord_bot import PssApiDiscordBot
+
+from . import database, errors, model_settings, orm
+from .chat_log import PssChatLogger
+from .fleet import Fleet
+from .reaction_role import ReactionRole, ReactionRoleChange, ReactionRoleRequirement
+from .setup import setup as setup_model
 
 __all__ = [
     database.__name__,

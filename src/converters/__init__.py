@@ -1,4 +1,2 @@
 from .psschatlog import PssChatLoggerConverter
-from .reactionrole import ReactionRoleConverter
-from .reactionrole import ReactionRoleChangeConverter
-from .reactionrole import ReactionRoleRequirementConverter
+from .reactionrole import ReactionRoleChangeConverter, ReactionRoleConverter, ReactionRoleRequirementConverter

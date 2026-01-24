@@ -1,9 +1,8 @@
 from datetime import datetime as _datetime
-from typing import List as _List
 from typing import Generic as _Generic
 from typing import Optional as _Optional
-from typing import TypeVar as _TypeVar
 from typing import Type as _Type
+from typing import TypeVar as _TypeVar
 
 import sqlalchemy as _sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base as _declarative_base
@@ -12,13 +11,10 @@ from sqlalchemy.orm.scoping import scoped_session as _scoped_session
 
 from .database import DATABASE_URL
 
-
 # ---------- Constants ----------
 
 _ENGINE: _sqlalchemy.engine.Engine = _sqlalchemy.create_engine(DATABASE_URL)
-_SESSION_MAKER: _sqlalchemy.orm.sessionmaker = _sqlalchemy.orm.sessionmaker(
-    autocommit=False, autoflush=False, bind=_ENGINE
-)
+_SESSION_MAKER: _sqlalchemy.orm.sessionmaker = _sqlalchemy.orm.sessionmaker(autocommit=False, autoflush=False, bind=_ENGINE)
 ScopedSession = _scoped_session
 
 
@@ -35,9 +31,7 @@ class ModelBase(_Record, _Generic[_T]):
 
     __abstract__ = True
 
-    created_at = _sqlalchemy.Column(
-        CREATED_AT_COLUMN_NAME, _sqlalchemy.DateTime, default=_datetime.utcnow
-    )
+    created_at = _sqlalchemy.Column(CREATED_AT_COLUMN_NAME, _sqlalchemy.DateTime, default=_datetime.utcnow)
     modified_at = _sqlalchemy.Column(
         MODIFIED_AT_COLUMN_NAME,
         _sqlalchemy.DateTime,
@@ -72,7 +66,7 @@ def create_session() -> _scoped_session:
     return _SESSION_MAKER(expire_on_commit=False)
 
 
-def get_all(cls: _Type[_T], session: _scoped_session) -> _List[_T]:
+def get_all(cls: _Type[_T], session: _scoped_session) -> list[_T]:
     return get_query(cls, session).all()
 
 
@@ -80,15 +74,11 @@ def get_by_id(cls: _Type[_T], session: _scoped_session, id: int) -> _Optional[_T
     return get_query(cls, session).get(id)
 
 
-def get_all_filtered_by(
-    cls: _Type[_T], session: _scoped_session, **kwargs
-) -> _List[_T]:
+def get_all_filtered_by(cls: _Type[_T], session: _scoped_session, **kwargs) -> list[_T]:
     return get_query(cls, session).filter_by(**kwargs).all()
 
 
-def get_first_filtered_by(
-    cls: _Type[_T], session: _scoped_session, **kwargs
-) -> _Optional[_T]:
+def get_first_filtered_by(cls: _Type[_T], session: _scoped_session, **kwargs) -> _Optional[_T]:
     return get_query(cls, session).filter_by(**kwargs).first()
 
 

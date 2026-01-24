@@ -1,21 +1,17 @@
 import discord.ext.commands as _commands
 
-from .cog_base import CogBase as _CogBase
 from .. import bot_settings as _bot_settings
-from .. import utils as _utils
 from .. import model as _model
+from .. import utils as _utils
+from .cog_base import CogBase as _CogBase
 
 
 class About(_CogBase):
     def __init__(self, bot: _model.PssApiDiscordBot) -> None:
         super().__init__(bot)
-        self.about_placeholders.help = self.about_placeholders.help.format(
-            _utils.discord.PLACEHOLDERS.replace("`", "")
-        )
+        self.about_placeholders.help = self.about_placeholders.help.format(_utils.discord.PLACEHOLDERS.replace("`", ""))
 
-    @_commands.group(
-        name="about", brief="General info about the bot", invoke_without_command=True
-    )
+    @_commands.group(name="about", brief="General info about the bot", invoke_without_command=True)
     async def about(self, ctx: _commands.Context) -> None:
         """
         Returns general information about this bot.

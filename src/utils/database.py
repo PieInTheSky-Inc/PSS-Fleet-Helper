@@ -1,7 +1,5 @@
 from datetime import datetime as _datetime
 from typing import Any as _Any
-from typing import List as _List
-
 
 # ---------- Constants ----------
 
@@ -65,23 +63,21 @@ def get_column_definition(
     return result.strip()
 
 
-def get_where_and_string(where_strings: _List[str]) -> str:
+def get_where_and_string(where_strings: list[str]) -> str:
     if where_strings:
         return " AND ".join(where_strings)
     else:
         return ""
 
 
-def get_where_or_string(where_strings: _List[str]) -> str:
+def get_where_or_string(where_strings: list[str]) -> str:
     if where_strings:
         return " OR ".join(where_strings)
     else:
         return ""
 
 
-def get_where_string(
-    column_name: str, column_value: _Any, is_text_type: bool = False
-) -> str:
+def get_where_string(column_name: str, column_value: _Any, is_text_type: bool = False) -> str:
     column_name = column_name.lower()
     if column_value is None:
         return f"{column_name} IS NULL"

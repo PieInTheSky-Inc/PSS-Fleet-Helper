@@ -1,12 +1,9 @@
 from datetime import datetime as _datetime
 
-
 # ---------- Functions ----------
 
 
-def date(
-    date_time: _datetime, include_tz: bool = True, include_tz_brackets: bool = True
-) -> str:
+def date(date_time: _datetime, include_tz: bool = True, include_tz_brackets: bool = True) -> str:
     result = date_time.strftime("%Y-%m-%d")
     if include_tz:
         tz = date_time.strftime("%Z")

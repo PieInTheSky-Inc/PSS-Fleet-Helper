@@ -1,5 +1,4 @@
 import asyncio as _asyncio
-from typing import Dict as _Dict
 
 from discord import Message as _Message
 from discord import Reaction as _Reaction
@@ -9,12 +8,11 @@ from discord.ext.commands import Context as _Context
 
 from .discord import DEFAULT_INQUIRE_TIMEOUT as _DEFAULT_INQUIRE_TIMEOUT
 
-
 # ---------- Classes ----------
 
 
 class Confirmator:
-    reactions: _Dict[str, bool] = {"✅": True, "❌": False}
+    reactions: dict[str, bool] = {"✅": True, "❌": False}
 
     def __init__(self, ctx: _Context, confirmation_message: str) -> None:
         self.__context: _Context = ctx
@@ -25,10 +23,7 @@ class Confirmator:
         def emoji_selection_check(reaction: _Reaction, user: _User) -> bool:
             if user != self.__context.bot.user:
                 emoji = str(reaction.emoji)
-                if (
-                    emoji in Confirmator.reactions.keys()
-                    and self.__reply.id == reaction.message.id
-                ):
+                if emoji in Confirmator.reactions.keys() and self.__reply.id == reaction.message.id:
                     return True
             return False
 

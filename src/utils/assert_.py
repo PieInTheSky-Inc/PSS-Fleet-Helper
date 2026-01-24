@@ -1,5 +1,3 @@
-from typing import List as _List
-
 from discord import Member as _Member
 from discord import Role as _Role
 from discord.ext.commands import Context as _Context
@@ -8,9 +6,7 @@ from discord.ext.commands.errors import MissingPermissions as _MissingPermission
 from ..model.errors import UnauthorizedChannelError as _UnauthorizedChannelError
 
 
-def authorized_channel(
-    ctx: _Context, authorized_channel_ids: _List[int], raise_on_error: bool = True
-) -> bool:
+def authorized_channel(ctx: _Context, authorized_channel_ids: list[int], raise_on_error: bool = True) -> bool:
     """
     Asserts that the command has been issued in an authorized channel.
     """
@@ -22,9 +18,7 @@ def authorized_channel(
     return True
 
 
-def authorized_channel_or_server_manager(
-    ctx: _Context, authorized_channel_ids: _List[int], raise_on_error: bool = True
-) -> bool:
+def authorized_channel_or_server_manager(ctx: _Context, authorized_channel_ids: list[int], raise_on_error: bool = True) -> bool:
     """
     Asserts that the command has been issued in an authorized channel or by a server manager.
     """
@@ -33,15 +27,11 @@ def authorized_channel_or_server_manager(
     elif authorized_channel(ctx, authorized_channel_ids, raise_on_error=False):
         return True
     if raise_on_error:
-        raise Exception(
-            [_UnauthorizedChannelError, _MissingPermissions(["manage_guild"])]
-        )
+        raise Exception([_UnauthorizedChannelError, _MissingPermissions(["manage_guild"])])
     return False
 
 
-def can_add_remove_role(
-    me: _Member, role: _Role, action: str = None, raise_on_error: bool = True
-) -> bool:
+def can_add_remove_role(me: _Member, role: _Role, action: str = None, raise_on_error: bool = True) -> bool:
     """
     Asserts that the bot is allowed to add or remove the specified role.
     """
@@ -49,9 +39,7 @@ def can_add_remove_role(
         return True
     if raise_on_error:
         action = action or "add/remove"
-        raise Exception(
-            f"I can't {action} the role {role.mention}: it is either my top role or above."
-        )
+        raise Exception(f"I can't {action} the role {role.mention}: it is either my top role or above.")
     return False
 
 
