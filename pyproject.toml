@@ -8,7 +8,7 @@ authors = [
 dependencies = [
     "psycopg2-binary>=2.9.9",
     "py-cord>=2.5.0",
-    "pssapi>=0.5.1",
+    "pssapi>=0.6.0,<1.0.0",
     "emoji>=2.12.1",
     "sqlalchemy==1.4.47",
     "asyncpg==0.27.0",
