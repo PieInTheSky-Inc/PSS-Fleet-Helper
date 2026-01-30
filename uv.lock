@@ -842,7 +842,7 @@ wheels = [
 
 [[package]]
 name = "pss-fleet-helper"
-version = "0.8.1"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "asyncpg" },
@@ -873,7 +873,7 @@ dev = [
 requires-dist = [
     { name = "asyncpg", specifier = "==0.27.0" },
     { name = "emoji", specifier = ">=2.12.1" },
-    { name = "pssapi", specifier = ">=0.6.0,<1.0.0" },
+    { name = "pssapi", git = "https://github.com/PSS-Tools-Development/pssapi.py.git?rev=release%2Fv0.7.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.9" },
     { name = "py-cord", specifier = ">=2.5.0" },
     { name = "sqlalchemy", specifier = "==1.4.47" },
@@ -897,17 +897,13 @@ dev = [
 
 [[package]]
 name = "pssapi"
-version = "0.6.0"
-source = { registry = "https://pypi.org/simple" }
+version = "0.7.0"
+source = { git = "https://github.com/PSS-Tools-Development/pssapi.py.git?rev=release%2Fv0.7.0#064af197470c6904f36b58e98efa1afd2e103212" }
 dependencies = [
     { name = "aiohttp" },
     { name = "apscheduler" },
     { name = "pytz" },
     { name = "websockets" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/17/19/1ffc27f5cb9385439bff607424f3597004f184eeb634d50b348ae857f8c5/pssapi-0.6.0.tar.gz", hash = "sha256:626d8d2a72c55066320a701f2fb6175b325a701d194e2734fff2a64b3c8b1073", size = 4181202, upload-time = "2025-06-16T13:23:06.592Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/81/55/8fa212fdbc7b27ab7b783cf059d40407091e2f80cc54aad41953e674db58/pssapi-0.6.0-py3-none-any.whl", hash = "sha256:13dfe3a5846da3098a79a461f1dfe3235ce32ab24e9ad5bb338e778b90bbb96f", size = 252922, upload-time = "2025-06-16T13:22:57.628Z" },
 ]
 
 [[package]]

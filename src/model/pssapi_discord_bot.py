@@ -29,24 +29,16 @@ class PssApiDiscordBot(_commands.Bot):
 
     async def pssapi_login(self) -> str | None:
         utc_now = _pssapi.utils.get_utc_now()
+
+        device_id = _settings.DEVICE_ID
         if _settings.DEVICE_IDS:
             device_count = len(_settings.DEVICE_IDS)
             device_index = _math.floor(utc_now.hour / (24 / device_count))
             device_id = _settings.DEVICE_IDS[device_index]
-        elif _settings.DEVICE_ID:
-            device_id = _settings.DEVICE_ID
-        checksum = self.pssapi_client.user_service.utils.create_device_login_checksum(
+
+        user_login = await self.pssapi_client.device_login(
             device_id,
-            self.pssapi_client.device_type,
-            utc_now,
             _settings.PSS_DEVICE_LOGIN_CHECKSUM_KEY,
-        )
-        user_login = await self.pssapi_client.user_service.device_login_15(
-            checksum,
-            utc_now,
-            device_id,
-            self.pssapi_client.device_type,
-            self.pssapi_client.language_key,
         )
 
         return user_login.access_token
