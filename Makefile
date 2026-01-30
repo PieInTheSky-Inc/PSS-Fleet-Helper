@@ -8,6 +8,10 @@ format:
 	uv run isort .
 	uv run black .
 
+.PHONY: lock#
+lock:
+	uv pip compile pyproject.toml -o requirements.lock
+
 .PHONY: docker
 docker:
 	-docker stop container-pss-fleet-helper
