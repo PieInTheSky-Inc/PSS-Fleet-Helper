@@ -48,13 +48,14 @@ async def on_ready() -> None:
     print(f"Bot logged in as {FLEET_HELPER.user.name} ({FLEET_HELPER.user.id})")
     print(f"Bot version: {_bot_settings.VERSION}")
     print(f"py-cord version: {_discord.__version__}")
+
+    from . import cogs as _cogs
+    await _cogs.chatlogger.migrate_to_webhooks(FLEET_HELPER)
+
     for cog_name, cog_path in _bot_settings.COGS_TO_LOAD.items():
         print(f"Loading cog {cog_name} from extension {cog_path}")
         FLEET_HELPER.load_extension(cog_path)
 
-    from . import cogs as _cogs
-
-    await _cogs.chatlogger.migrate_to_webhooks(FLEET_HELPER)
 
 
 # ---------- Module init ----------
