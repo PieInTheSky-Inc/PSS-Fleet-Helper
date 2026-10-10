@@ -388,7 +388,13 @@ async def add_webhook_to_channel(channel: _discord.TextChannel):
 
 async def get_webhook_from_channel(channel: _discord.TextChannel, webhook_link: str) -> _discord.Webhook | None:
     if channel and isinstance(channel, _discord.TextChannel):
-        for webhook in await channel.webhooks():
+        try:
+            channel_webhooks = await channel.webhooks()
+        except _discord.Forbidden:
+            print(f"[get_webhook_from_channel] Bot does not have permission to access webhooks in channel '{channel}' (ID: {channel.id}).")
+            return None
+        
+        for webhook in channel_webhooks:
             if webhook.url == webhook_link:
                 return webhook
     return None
