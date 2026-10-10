@@ -43,6 +43,7 @@ class PssApiDiscordBot(_commands.Bot):
 
         return user_login.access_token
 
+
 def get_intents() -> _discord.Intents:
     intents = _discord.Intents.default()
     if _bot_settings.INTENT_PRESENCE:
