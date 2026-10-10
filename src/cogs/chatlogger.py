@@ -108,7 +108,8 @@ class ChatLogger(_CogBase):
                 messages = sorted(messages, key=lambda x: x.message_id)
                 for pss_chat_logger in pss_chat_loggers:
                     channel: _discord.TextChannel = self.bot.get_channel(pss_chat_logger.channel_id)
-                    if channel:
+                    webhook = await get_webhook_from_channel(channel, pss_chat_logger.webhook_link)
+                    if webhook:
                         messages = [message for message in messages if message.message_id > pss_chat_logger.last_pss_message_id]
                         lines = []
                         for message in messages:
@@ -118,7 +119,7 @@ class ChatLogger(_CogBase):
                             lines.append(f"{user_name_and_fleet}:** {_utils.discord.escape_markdown_and_mentions(message.message)}")
                         if lines:
                             try:
-                                await _utils.discord.send_lines_to_channel(channel, lines)
+                                await webhook.send(content="\n".join(lines), username=f"PSS Chat Logger ({pss_chat_logger.name})", avatar_url=self.bot.user.display_avatar.url)
                             except:
                                 continue
                             pss_chat_logger.last_pss_message_id = max(message.message_id for message in messages)
@@ -173,8 +174,8 @@ class ChatLogger(_CogBase):
         if not isinstance(channel, (_discord.TextChannel,)):
             raise TypeError(f"Chat Logging is only supported to Text Channels. The channel '{channel}' is not a text channel.")
 
-        webhook = await channel.create_webhook(name=f"PSS Chat Logger: {name}", reason=f"Created by {ctx.author} via Fleet Helper")
-        log_channel = _model.chat_log.PssChatLogger.make(ctx.guild.id, channel.id, channel_key, name, webhook.url)
+        webhook_link = await add_webhook_to_channel(channel)
+        log_channel = _model.chat_log.PssChatLogger.make(ctx.guild.id, channel.id, channel_key, name, webhook_link)
         with _model.orm.create_session() as session:
             log_channel.create(session)
             pss_chat_loggers = _model.orm.get_all(_model.chat_log.PssChatLogger, session)
@@ -245,8 +246,7 @@ class ChatLogger(_CogBase):
             old_channel = self.bot.get_channel(pss_chat_logger.channel_id)
             await delete_webhook_from_channel(pss_chat_logger.webhook_link, old_channel)
 
-            webhook = await new_channel.create_webhook(name=f"PSS Chat Logger: {new_name or pss_chat_logger.name}", reason=f"Created by {ctx.author} via Fleet Helper")
-            pss_chat_logger.webhook_link = webhook.url
+            pss_chat_logger.webhook_link = await add_webhook_to_channel(new_channel)
             edited = True
 
         if new_name and not skipped_new_name:
@@ -375,3 +375,42 @@ async def delete_webhook_from_channel(webhook_link: str, channel: _discord.TextC
             if webhook.url == webhook_link:
                 await webhook.delete(reason=f"Deleted by Fleet Helper")
                 break
+
+
+async def add_webhook_to_channel(channel: _discord.TextChannel):
+    if channel and isinstance(channel, _discord.TextChannel):
+        webhook = await channel.create_webhook(name=f"PSS Chat Logger", reason=f"Created by Fleet Helper")
+        return webhook.url
+
+
+async def get_webhook_from_channel(channel: _discord.TextChannel, webhook_link: str) -> _discord.Webhook | None:
+    if channel and isinstance(channel, _discord.TextChannel):
+        for webhook in await channel.webhooks():
+            if webhook.url == webhook_link:
+                return webhook
+    return None
+
+
+async def convert_to_webhook(chat_logger: _model.chat_log.PssChatLogger, bot: _model.PssApiDiscordBot) -> str:
+    channel = bot.get_channel(chat_logger.channel_id)
+    webhook_link = await add_webhook_to_channel(channel)
+    return webhook_link
+
+
+async def migrate_to_webhooks(bot: _model.PssApiDiscordBot):
+    already_migrated, _ = await _model.database.get_setting("chat_logger_migrated_to_webhooks")
+    if already_migrated:
+        return
+
+    with _model.orm.create_session() as session:
+        pss_chat_loggers = _model.orm.get_all(_model.chat_log.PssChatLogger, session)
+    for pss_chat_logger in pss_chat_loggers:
+        if not pss_chat_logger.webhook_link:
+            print("Migrating chat logger to webhook:", pss_chat_logger)
+            webhook_link = await convert_to_webhook(pss_chat_logger, bot)
+            pss_chat_logger.webhook_link = webhook_link
+            with _model.orm.create_session() as session:
+                pss_chat_logger = _model.orm.merge(session, pss_chat_logger)
+                pss_chat_logger.save(session)
+                session.commit()
+    await _model.database.set_setting("chat_logger_migrated_to_webhooks", True)
