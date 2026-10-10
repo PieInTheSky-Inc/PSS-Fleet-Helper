@@ -400,8 +400,13 @@ async def convert_to_webhook(chat_logger: _model.chat_log.PssChatLogger, bot: _m
     except (_discord.NotFound, _discord.Forbidden, _discord.HTTPException):
         print(f"[convert_to_webhook] Could not fetch channel with ID {chat_logger.channel_id} for chat logger '{chat_logger.name}' (ID: {chat_logger.id}).")
         return None
+
+    try:
+        webhook_link = await add_webhook_to_channel(channel)
+    except _discord.Forbidden:
+        print(f"[convert_to_webhook] Bot does not have permission to create a webhook in channel '{channel}' (ID: {chat_logger.channel_id}) for chat logger '{chat_logger.name}' (ID: {chat_logger.id}).")
+        return None
     
-    webhook_link = await add_webhook_to_channel(channel)
     return webhook_link
 
 
