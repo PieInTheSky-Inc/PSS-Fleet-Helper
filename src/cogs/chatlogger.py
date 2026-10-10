@@ -411,6 +411,7 @@ async def migrate_to_webhooks(bot: _model.PssApiDiscordBot):
             print("Migrating chat logger to webhook:", pss_chat_logger)
             webhook_link = await convert_to_webhook(pss_chat_logger, bot)
             pss_chat_logger.webhook_link = webhook_link
+            print("Webhook link for chat logger:", pss_chat_logger.webhook_link)
             with _model.orm.create_session() as session:
                 pss_chat_logger = _model.orm.merge(session, pss_chat_logger)
                 pss_chat_logger.save(session)
