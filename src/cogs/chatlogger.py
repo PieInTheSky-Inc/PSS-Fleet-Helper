@@ -39,6 +39,7 @@ class ChatLogger(_CogBase):
         utc_now = _utils.datetime.get_utc_now()
 
         if not self.log_chat.is_running():
+            print("[watch_log_chat] The task 'log_chat' is not running. Starting it now.")
             self.log_chat.start()
             return
 
@@ -394,7 +395,7 @@ async def get_webhook_from_channel(channel: _discord.TextChannel, webhook_link: 
 
 
 async def convert_to_webhook(chat_logger: _model.chat_log.PssChatLogger, bot: _model.PssApiDiscordBot) -> str:
-    channel = bot.get_channel(chat_logger.channel_id)
+    channel = await bot.fetch_channel(chat_logger.channel_id)
     webhook_link = await add_webhook_to_channel(channel)
     return webhook_link
 
