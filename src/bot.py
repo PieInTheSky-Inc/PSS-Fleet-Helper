@@ -53,8 +53,9 @@ async def on_ready() -> None:
         FLEET_HELPER.load_extension(cog_path)
 
     from . import cogs as _cogs
+
     await _cogs.chatlogger.migrate_to_webhooks(FLEET_HELPER)
-    
+
 
 # ---------- Module init ----------
 
