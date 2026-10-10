@@ -97,10 +97,10 @@ class ChatLogger(_CogBase):
                     messages = await self.bot.pssapi_client.message_service.list_messages_for_channel_key(access_token, channel_key)
                     break
                 except _pssapi.utils.exceptions.ServerMaintenanceError:
-                    print(f"Server is under maintenance.")
+                    print(f"[log_chat] Server is under maintenance.")
                     return
                 except _pssapi.utils.exceptions.PssApiError as ex:
-                    print(f"Could not get messages for channel key '{channel_key}':\n{ex}")
+                    print(f"[log_chat] Could not get messages for channel key '{channel_key}':\n{ex}")
                     messages = None
                     tries -= 1
                     await _asyncio.sleep(0.2)
@@ -123,6 +123,8 @@ class ChatLogger(_CogBase):
                             except:
                                 continue
                             pss_chat_logger.last_pss_message_id = max(message.message_id for message in messages)
+                    else:
+                        print(f"[log_chat] Could not find webhook for channel '{channel}' (ID: {pss_chat_logger.channel_id}) for chat logger '{pss_chat_logger.name}' (ID: {pss_chat_logger.id}).")
                 try:
                     with _model.orm.create_session() as session:
                         for pss_chat_logger in pss_chat_loggers:
