@@ -838,7 +838,7 @@ wheels = [
 [[package]]
 name = "pss-fleet-helper"
 version = "0.10.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "asyncpg" },
     { name = "emoji" },
