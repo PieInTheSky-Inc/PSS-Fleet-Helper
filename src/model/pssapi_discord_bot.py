@@ -12,7 +12,7 @@ class PssApiDiscordBot(_commands.Bot):
     def __init__(self, *args, device_type: _pssapi.enums.DeviceType = None, language_key: _pssapi.enums.LanguageKey = None, production_server: str = None, **kwargs):
         super().__init__(
             command_prefix=_commands.when_mentioned_or(*_bot_settings.DEFAULT_PREFIXES),
-            intents=_discord.Intents.all(),
+            intents=get_intents(),
             activity=_discord.activity.Activity(type=_discord.ActivityType.playing, name="fh help"),
             *args,
             **kwargs,
@@ -42,3 +42,14 @@ class PssApiDiscordBot(_commands.Bot):
         )
 
         return user_login.access_token
+
+
+def get_intents() -> _discord.Intents:
+    intents = _discord.Intents.default()
+    if _bot_settings.INTENT_PRESENCE:
+        intents.presences = True
+    if _bot_settings.INTENT_MEMBERS:
+        intents.members = True
+    if _bot_settings.INTENT_MESSAGES:
+        intents.messages = True
+    return intents

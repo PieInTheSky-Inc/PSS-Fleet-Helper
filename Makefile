@@ -10,7 +10,8 @@ format:
 
 .PHONY: lock#
 lock:
-	uv pip compile pyproject.toml -o requirements.lock
+	uv export --format requirements.txt --no-dev --no-hashes --no-annotate --output-file requirements.txt
+	uv export --format requirements.txt --no-hashes --no-annotate --output-file requirements_dev.txt
 
 .PHONY: docker
 docker:

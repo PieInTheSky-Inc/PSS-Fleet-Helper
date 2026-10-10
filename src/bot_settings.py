@@ -28,6 +28,11 @@ DEFAULT_PREFIXES: list[str] = [
     "vv ",
 ]
 
+PRIVILEGED_INTENTS: dict[str, bool] = _json.loads(_os.environ.get("PRIVILEGED_INTENTS", '{"presence": true, "members": true, "messages": true}'))
+INTENT_PRESENCE: bool = PRIVILEGED_INTENTS.get("presence", True)
+INTENT_MEMBERS: bool = PRIVILEGED_INTENTS.get("members", True)
+INTENT_MESSAGES: bool = PRIVILEGED_INTENTS.get("messages", True)
+
 
 THROW_COMMAND_ERRORS: bool = bool(int(_os.environ.get("THROW_COMMAND_ERRORS", 0)))
 
