@@ -37,4 +37,4 @@ INTENT_MESSAGES: bool = PRIVILEGED_INTENTS.get("messages", True)
 THROW_COMMAND_ERRORS: bool = bool(int(_os.environ.get("THROW_COMMAND_ERRORS", 0)))
 
 
-VERSION: str = "0.9.0"
+VERSION: str = "0.10.0"
