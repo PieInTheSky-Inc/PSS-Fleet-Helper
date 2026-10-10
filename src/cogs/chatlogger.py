@@ -108,9 +108,20 @@ class ChatLogger(_CogBase):
             if messages:
                 messages = sorted(messages, key=lambda x: x.message_id)
                 for pss_chat_logger in pss_chat_loggers:
+                    guild: _discord.Guild = self.bot.get_guild(pss_chat_logger.guild_id)
+                    if not guild:
+                        print(f"[log_chat] Could not find guild with ID {pss_chat_logger.guild_id} for chat logger '{pss_chat_logger.name}' (ID: {pss_chat_logger.id}).")
+                        continue
+
                     channel: _discord.TextChannel = self.bot.get_channel(pss_chat_logger.channel_id)
+                    if not channel:
+                        print(f"[log_chat] Could not find channel with ID {pss_chat_logger.channel_id} on guild {guild.name} for chat logger '{pss_chat_logger.name}' (ID: {pss_chat_logger.id}).")
+                        continue
+
                     webhook = await get_webhook_from_channel(channel, pss_chat_logger.webhook_link)
-                    if webhook:
+                    if not webhook:
+                        print(f"[log_chat] Could not find webhook for channel '{channel}' (ID: {pss_chat_logger.channel_id}) on guild {guild.name} for chat logger '{pss_chat_logger.name}' (ID: {pss_chat_logger.id}).")
+                    else:
                         messages = [message for message in messages if message.message_id > pss_chat_logger.last_pss_message_id]
                         lines = []
                         for message in messages:
@@ -124,8 +135,6 @@ class ChatLogger(_CogBase):
                             except:
                                 continue
                             pss_chat_logger.last_pss_message_id = max(message.message_id for message in messages)
-                    else:
-                        print(f"[log_chat] Could not find webhook for channel '{channel}' (ID: {pss_chat_logger.channel_id}) for chat logger '{pss_chat_logger.name}' (ID: {pss_chat_logger.id}).")
                 try:
                     with _model.orm.create_session() as session:
                         for pss_chat_logger in pss_chat_loggers:
