@@ -26,12 +26,34 @@ async def __setup_db_schema() -> None:
         ("0.4.0", __update_db_schema_0_4_0),
         ("0.7.0", __update_db_schema_0_7_0),
         ("0.7.1", __update_db_schema_0_7_1),
+        ("0.10.0", __update_db_schema_0_10_0),
     ]
     for version, callable in init_functions:
         if not (await __update_schema(version, callable)):
             raise Exception("DB initialization failed")
 
     print("DB initialization succeeded")
+
+
+async def __update_db_schema_0_10_0() -> bool:
+    target_version = "0.10.0"
+    column_definition_chat_log_webhook_link = _database.ColumnDefinition("webhook_link", _database.ColumnType.STRING, False, False, None)
+
+    schema_version = await _database.get_schema_version()
+    if schema_version:
+        compare_0_10_0 = _utils.compare_versions(schema_version, target_version)
+        if compare_0_10_0 < 1:
+            return True
+
+    print(f"[update_schema_0_10_0] Updating to database schema v{target_version}")
+
+    success = await _database.try_add_column(_chat_log.PssChatLogger.TABLE_NAME, *column_definition_chat_log_webhook_link)
+    if not success:
+        print(f"[update_schema_0_10_0] Could not update table '{_chat_log.PssChatLogger.TABLE_NAME}'")
+        return False
+
+    success = await _database.try_set_schema_version(target_version)
+    return success
 
 
 async def __update_db_schema_0_7_1() -> bool:
