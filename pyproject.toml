@@ -1,14 +1,12 @@
 [project]
 name = "pss-fleet-helper"
-version = "0.9.0"
+version = "0.10.0"
 description = "A bot assisting in Discord management."
-authors = [
-    { name = "The worst.", email = "theworstpss@gmail.com" }
-]
+authors = [{ name = "The worst.", email = "theworstpss@gmail.com" }]
 dependencies = [
     "psycopg2-binary>=2.9.9",
     "py-cord>=2.5.0",
-    "pssapi@git+https://github.com/PSS-Tools-Development/pssapi.py.git@release/v0.7.0",
+    "pssapi>=0.7.0",
     "emoji>=2.12.1",
     "sqlalchemy==1.4.47",
     "asyncpg==0.27.0",
@@ -34,7 +32,8 @@ dev-dependencies = [
     "pytest-asyncio>=0.21.0",
     "pytest-vcr>=1.0.2",
     "vcrpy>=6.0.1",
-    "pytest-cov>=4.1.0",]
+    "pytest-cov>=4.1.0",
+]
 
 [tool.hatch.metadata]
 allow-direct-references = true
