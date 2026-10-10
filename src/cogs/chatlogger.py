@@ -394,8 +394,13 @@ async def get_webhook_from_channel(channel: _discord.TextChannel, webhook_link: 
     return None
 
 
-async def convert_to_webhook(chat_logger: _model.chat_log.PssChatLogger, bot: _model.PssApiDiscordBot) -> str:
-    channel = await bot.fetch_channel(chat_logger.channel_id)
+async def convert_to_webhook(chat_logger: _model.chat_log.PssChatLogger, bot: _model.PssApiDiscordBot) -> str | None:
+    try:
+        channel = await bot.fetch_channel(chat_logger.channel_id)
+    except (_discord.NotFound, _discord.Forbidden, _discord.HTTPException):
+        print(f"[convert_to_webhook] Could not fetch channel with ID {chat_logger.channel_id} for chat logger '{chat_logger.name}' (ID: {chat_logger.id}).")
+        return None
+    
     webhook_link = await add_webhook_to_channel(channel)
     return webhook_link
 
@@ -411,6 +416,9 @@ async def migrate_to_webhooks(bot: _model.PssApiDiscordBot):
         if not pss_chat_logger.webhook_link:
             print("Migrating chat logger to webhook:", pss_chat_logger)
             webhook_link = await convert_to_webhook(pss_chat_logger, bot)
+            if not webhook_link:
+                continue
+
             pss_chat_logger.webhook_link = webhook_link
             print("Webhook link for chat logger:", pss_chat_logger.webhook_link)
             with _model.orm.create_session() as session:
