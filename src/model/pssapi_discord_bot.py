@@ -46,10 +46,17 @@ class PssApiDiscordBot(_commands.Bot):
 
 def get_intents() -> _discord.Intents:
     intents = _discord.Intents.default()
+
+    print(f"Requesting privileged presence intent: {_bot_settings.INTENT_PRESENCE}")
     if _bot_settings.INTENT_PRESENCE:
         intents.presences = True
+
+    print(f"Requesting privileged members intent: {_bot_settings.INTENT_MEMBERS}")
     if _bot_settings.INTENT_MEMBERS:
         intents.members = True
+
+    print(f"Requesting privileged messages intent: {_bot_settings.INTENT_MESSAGES}")
     if _bot_settings.INTENT_MESSAGES:
         intents.messages = True
+
     return intents
