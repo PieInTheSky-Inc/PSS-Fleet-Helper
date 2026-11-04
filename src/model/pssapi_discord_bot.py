@@ -57,6 +57,6 @@ def get_intents() -> _discord.Intents:
 
     print(f"Requesting privileged messages intent: {_bot_settings.INTENT_MESSAGES}")
     if _bot_settings.INTENT_MESSAGES:
-        intents.messages = True
+        intents.message_content = True
 
     return intents
