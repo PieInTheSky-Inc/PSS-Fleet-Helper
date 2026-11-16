@@ -19,7 +19,7 @@ from .cog_base import CogBase as _CogBase
 # ---------- Cog ----------
 
 
-class ChatLogger(_CogBase):
+class ChatLoggerCog(_CogBase):
     __CHAT_LOG_INTERVAL: float = 100.0
 
     def __init__(self, bot: _model.PssApiDiscordBot) -> None:
@@ -45,7 +45,7 @@ class ChatLogger(_CogBase):
 
             if self.__last_log_chat_run_at is None:
                 self.log_chat.start()
-            elif (utc_now - self.__last_log_chat_run_at).total_seconds > ChatLogger.__CHAT_LOG_INTERVAL:
+            elif (utc_now - self.__last_log_chat_run_at).total_seconds > ChatLoggerCog.__CHAT_LOG_INTERVAL:
                 try:
                     self.log_chat.cancel()
                     print("[watch_log_chat] Successfully cancelled the task 'log_chat'.")
@@ -88,7 +88,7 @@ class ChatLogger(_CogBase):
             channel_keys.setdefault(pss_chat_logger.pss_channel_key, []).append(pss_chat_logger)
         channel_key_count = len(channel_keys.keys())
 
-        remaining_time = ChatLogger.__CHAT_LOG_INTERVAL - (_utils.datetime.get_utc_now() - utc_now).total_seconds()
+        remaining_time = ChatLoggerCog.__CHAT_LOG_INTERVAL - (_utils.datetime.get_utc_now() - utc_now).total_seconds()
         delay = remaining_time / channel_key_count * (1 - channel_key_count * 0.01)
 
         for channel_key, pss_chat_loggers in channel_keys.items():
@@ -378,7 +378,7 @@ class ChatLogger(_CogBase):
 
 
 def setup(bot: _model.PssApiDiscordBot):
-    bot.add_cog(ChatLogger(bot))
+    bot.add_cog(ChatLoggerCog(bot))
 
 
 async def delete_webhook_from_channel(webhook_link: str, channel: _discord.TextChannel):
