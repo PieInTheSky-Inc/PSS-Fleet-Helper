@@ -23,11 +23,6 @@ class ChatLoggerCog(_CogBase):
 
         self.bot.loop.create_task(self.async_init(self._pss_chat_logger_manager, self._init_errors, first_init=True))
 
-    async def refresh(self):
-        self._pss_chat_logger_manager.dispose()
-        self._pss_chat_logger_manager = _model.PssChatLoggerManager()
-        await self.async_init(self._pss_chat_logger_manager, self._init_errors, False)
-
     async def async_init(self, pss_chat_logger_manager: _model.PssChatLoggerManager, init_errors: list[str], first_init: bool = False):
         await self.bot.wait_until_ready()
 
@@ -65,7 +60,7 @@ class ChatLoggerCog(_CogBase):
             listener = _model.PssDiscordListener(self.bot, webhook)
             pss_chat_logger_manager.subscribe_to_channel(db_chat_logger.pss_channel_key, listener)
 
-        await pss_chat_logger_manager.start(access_token, user_id)
+        pss_chat_logger_manager.start(access_token, user_id)
 
     def cog_unload(self):
         if self.watch_log_chat.is_running() and self.watch_log_chat._can_be_cancelled():
@@ -129,8 +124,6 @@ class ChatLoggerCog(_CogBase):
         lines.extend((await _converters.PssChatLoggerConverter(pss_chat_logger).to_text()))
 
         await _utils.discord.reply_lines(ctx, lines)
-
-        await self.refresh()
 
     @_commands.guild_only()
     @base.command(name="edit", brief="Edit chat logger")
@@ -225,8 +218,6 @@ class ChatLoggerCog(_CogBase):
             lines.extend((await converter.to_text()))
 
             await _utils.discord.reply_lines(ctx, lines)
-
-            await self.refresh()
         else:
             await _utils.discord.reply(ctx, f"The chat logger {pss_chat_logger} has not been edited.")
 
@@ -332,8 +323,6 @@ class ChatLoggerCog(_CogBase):
                 session.commit()
 
             await _utils.discord.reply(ctx, "The chat log has been deleted.")
-
-            await self.refresh()
         else:
             await _utils.discord.reply(ctx, "The chat log has not been deleted.")
 

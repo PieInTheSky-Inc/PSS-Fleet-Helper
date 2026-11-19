@@ -1,8 +1,10 @@
+import asyncio
+import threading
 from abc import ABC, abstractmethod
 
 import pssapi
 
-from .pusher import Pusher
+from .pusher import PssPusherChannel, PssPusherClientAsync
 
 
 class PssChatListener(ABC):
@@ -12,6 +14,16 @@ class PssChatListener(ABC):
 
     @abstractmethod
     def on_message(self, message: pssapi.entities.Message) -> None:
+        raise NotImplementedError("Subclasses must implement the on_message method.")
+
+
+class PssChatListenerAsync(ABC):
+    @abstractmethod
+    def __init__(self, name: str, *args, **kwargs):
+        self.name = name
+
+    @abstractmethod
+    async def on_message(self, message: pssapi.entities.Message) -> None:
         raise NotImplementedError("Subclasses must implement the on_message method.")
 
 
@@ -26,8 +38,8 @@ class NullPssChatListener(PssChatListener):
 class PssChatChannel:
     def __init__(self, channel_key: str):
         self.channel_key: str = channel_key
-        self._listeners: dict[str, PssChatListener] = {}
-        self.pusher_channel: pssapi.pusher.Channel = pssapi.pusher.Channel(channel_key)
+        self._listeners: dict[str, PssChatListener | PssChatListenerAsync] = {}
+        self.pusher_channel: PssPusherChannel = PssPusherChannel(channel_key)
         self.pusher_channel.on_message(self._on_message)
 
     @property
@@ -44,16 +56,20 @@ class PssChatChannel:
         if listener_name in self._listeners:
             del self._listeners[listener_name]
 
-    def _on_message(self, data: dict):
+    async def _on_message(self, data: dict):
         message = pssapi.entities.Message(data)
         for listener in self._listeners.values():
-            listener.on_message(message)
+            if isinstance(listener, PssChatListener):
+                listener.on_message(message)
+            elif isinstance(listener, PssChatListenerAsync):
+                await listener.on_message(message)
 
 
 class PssChatLoggerManager:
     def __init__(self):
         self._channels: dict[str, PssChatChannel] = {}
-        self._pusher: Pusher = Pusher()
+        self._pusher: PssPusherClientAsync = PssPusherClientAsync()
+        self._pusher_thread: threading.Thread | None = None
 
     def subscribe_to_channel(self, channel_key: str, listener: PssChatListener):
         pss_channel = self.get_pss_channel(channel_key)
@@ -77,12 +93,29 @@ class PssChatLoggerManager:
         self._pusher.remove(pss_channel.pusher_channel)
         del self._channels[channel_key]
 
-    async def start(self, access_token: str, user_id: str | int):
+    def start(self, access_token: str, user_id: str | int):
         channel_count = len(self._channels)
         listener_count = sum(channel.listeners_count for channel in self._channels.values())
         print(f"[PssChatLoggerManager.start] Starting PSS Chat Logger Manager with {channel_count} channels with {listener_count} listeners.")
-        await self._pusher.run(access_token, user_id)
+
+        if self._pusher_thread and self._pusher_thread.is_alive():
+            return
+
+        self._thread = threading.Thread(
+            target=lambda: asyncio.run(self._pusher.run(access_token, user_id)),
+            daemon=True,
+        )
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._pusher.stop()
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=5)
+        self._thread = None
 
     def dispose(self):
+        if self._pusher_thread and self._pusher_thread.is_alive():
+            raise RuntimeError(f"Cannot dispose of the {PssChatLoggerManager.__name__} while running a Pusher listener.")
+
         for channel_key in list(self._channels.keys()):
             self.remove_pss_channel(channel_key)
