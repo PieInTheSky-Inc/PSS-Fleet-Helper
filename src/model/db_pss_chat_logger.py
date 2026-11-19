@@ -3,7 +3,7 @@ import sqlalchemy as _db
 from . import orm as _orm
 
 
-class PssChatLogger(_orm.ModelBase):
+class PssChatLoggerModel(_orm.ModelBase):
     ID_COLUMN_NAME: str = "pss_chat_log_id"
     TABLE_NAME: str = "pss_chat_log"
     __tablename__ = TABLE_NAME
@@ -29,8 +29,8 @@ class PssChatLogger(_orm.ModelBase):
         return f"'{self.name}' (ID: {self.id})"
 
     @classmethod
-    def make(cls, guild_id: int, log_to_channel_id: int, pss_channel_key: str, name: str, webhook_link: str | None = None) -> "PssChatLogger":
-        result = PssChatLogger(
+    def make(cls, guild_id: int, log_to_channel_id: int, pss_channel_key: str, name: str, webhook_link: str | None = None) -> "PssChatLoggerModel":
+        result = PssChatLoggerModel(
             guild_id=guild_id,
             channel_id=log_to_channel_id,
             pss_channel_key=pss_channel_key,

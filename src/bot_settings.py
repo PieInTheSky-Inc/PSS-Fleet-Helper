@@ -1,6 +1,7 @@
 import json as _json
 import os as _os
 
+
 AUTHORIZED_CHANNEL_IDS: list[int] = _json.loads(_os.environ.get("AUTHORIZED_CHANNEL_IDS", "[]"))
 
 
@@ -32,6 +33,10 @@ PRIVILEGED_INTENTS: dict[str, bool] = _json.loads(_os.environ.get("PRIVILEGED_IN
 INTENT_PRESENCE: bool = PRIVILEGED_INTENTS.get("presence", True)
 INTENT_MEMBERS: bool = PRIVILEGED_INTENTS.get("members", True)
 INTENT_MESSAGES: bool = PRIVILEGED_INTENTS.get("messages", True)
+
+
+PSS_ACCESS_TOKEN: str | None = _os.environ.get("PSS_ACCESS_TOKEN", _os.environ.get("PSSAPI_PUBLIC_ACCESS_TOKEN"))
+PSS_USER_ID: int = int(_os.environ.get("PSS_USER_ID", 0))
 
 
 THROW_COMMAND_ERRORS: bool = bool(int(_os.environ.get("THROW_COMMAND_ERRORS", 0)))

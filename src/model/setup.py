@@ -2,10 +2,11 @@ import asyncio as _asyncio
 from typing import Callable as _Callable
 
 from .. import utils as _utils
-from . import chat_log as _chat_log
 from . import database as _database
+from . import db_pss_chat_logger as _chat_log
 from . import fleet as _fleet
 from . import reaction_role as _reaction_role
+
 
 # ---------- Initialization ----------
 
@@ -47,9 +48,9 @@ async def __update_db_schema_0_10_0() -> bool:
 
     print(f"[update_schema_0_10_0] Updating to database schema v{target_version}")
 
-    success = await _database.try_add_column(_chat_log.PssChatLogger.TABLE_NAME, *column_definition_chat_log_webhook_link)
+    success = await _database.try_add_column(_chat_log.PssChatLoggerModel.TABLE_NAME, *column_definition_chat_log_webhook_link)
     if not success:
-        print(f"[update_schema_0_10_0] Could not update table '{_chat_log.PssChatLogger.TABLE_NAME}'")
+        print(f"[update_schema_0_10_0] Could not update table '{_chat_log.PssChatLoggerModel.TABLE_NAME}'")
         return False
 
     success = await _database.try_set_schema_version(target_version)
@@ -120,7 +121,7 @@ async def __update_db_schema_0_4_0() -> bool:
     target_version = "0.4.0"
     column_definitions_chat_log = [
         _database.ColumnDefinition(
-            _chat_log.PssChatLogger.ID_COLUMN_NAME,
+            _chat_log.PssChatLoggerModel.ID_COLUMN_NAME,
             _database.ColumnType.AUTO_INCREMENT,
             True,
             True,
@@ -154,9 +155,9 @@ async def __update_db_schema_0_4_0() -> bool:
 
     print(f"[update_schema_0_4_0] Updating to database schema v{target_version}")
 
-    success_chat_log = await _database.try_create_table(_chat_log.PssChatLogger.TABLE_NAME, column_definitions_chat_log)
+    success_chat_log = await _database.try_create_table(_chat_log.PssChatLoggerModel.TABLE_NAME, column_definitions_chat_log)
     if not success_chat_log:
-        print(f"[update_schema_0_4_0] Could not create table '{_chat_log.PssChatLogger.TABLE_NAME}'")
+        print(f"[update_schema_0_4_0] Could not create table '{_chat_log.PssChatLoggerModel.TABLE_NAME}'")
         return False
 
     success = await _database.try_set_schema_version(target_version)

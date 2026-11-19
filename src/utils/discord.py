@@ -24,6 +24,7 @@ from discord import Message as _Message
 from discord import Role as _Role
 from discord import TextChannel as _TextChannel
 from discord import User as _User
+from discord import Webhook as _Webhook
 from discord.abc import Messageable as _Messageable
 from discord.errors import Forbidden as _Forbidden
 from discord.errors import NotFound as _NotFound
@@ -33,6 +34,7 @@ from discord.utils import escape_markdown as _escape_markdown
 from . import datetime as _utils_datetime
 from . import settings
 from . import web as _web
+
 
 # ---------- Typehints ----------
 
@@ -233,9 +235,9 @@ def check_for_boolean_string(
     false_values: list[str],
 ) -> bool:
     if not true_values:
-        raise ValueError(f"Parameter 'true_values' must not be None or empty!")
+        raise ValueError("Parameter 'true_values' must not be None or empty!")
     if not false_values:
-        raise ValueError(f"Parameter 'false_values' must not be None or empty!")
+        raise ValueError("Parameter 'false_values' must not be None or empty!")
 
     content_lower = message_content.lower()
     return message_content in true_values or message_content in false_values or (allow_abort and content_lower == "abort") or (allow_skip and content_lower == "skip")
@@ -567,6 +569,20 @@ def get_text_channel(ctx: _Context, channel_id_or_mention: str) -> _TextChannel 
     return None
 
 
+async def get_webhook_from_channel(channel: _TextChannel, webhook_link: str) -> _Webhook | None:
+    if channel and isinstance(channel, _TextChannel):
+        try:
+            channel_webhooks = await channel.webhooks()
+        except _Forbidden:
+            print(f"[get_webhook_from_channel] Bot does not have permission to access webhooks in channel '{channel}' (ID: {channel.id}).")
+            return None
+
+        for webhook in channel_webhooks:
+            if webhook.url == webhook_link:
+                return webhook
+    return None
+
+
 async def inquire_for_add_remove(
     ctx: _Context,
     prompt_message: str,
@@ -640,7 +656,7 @@ async def inquire_for_boolean(
         content_lower = user_reply.content.strip().lower()
         aborted, skipped = await __check_for_abort_or_skip(content_lower, allow_abort, allow_skip)
         if not (aborted or skipped):
-            result = content_lower in true_values_lower or not (content_lower in false_values_lower)
+            result = content_lower in true_values_lower or content_lower not in false_values_lower
     else:
         aborted = True
     await __send_aborted_or_skipped(ctx.message, prompt_message, aborted, skipped, abort_text, skip_text)
