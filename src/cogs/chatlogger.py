@@ -18,51 +18,54 @@ from .cog_base import CogBase as _CogBase
 class ChatLoggerCog(_CogBase):
     def __init__(self, bot: _model.PssApiDiscordBot) -> None:
         super().__init__(bot)
-        self._initialized: bool = False
-        self._pss_chat_logger_manager: _model.PssChatLoggerManager | None = None
+        self._pss_chat_logger_manager: _model.PssChatLoggerManager = _model.PssChatLoggerManager()
         self._init_errors: list[str] = []
 
-    @_commands.Cog.listener()
-    async def on_ready(self):
-        if self._initialized:
-            return
+        self.bot.loop.create_task(self.async_init(self._pss_chat_logger_manager, self._init_errors, first_init=True))
+
+    async def refresh(self):
+        self._pss_chat_logger_manager.dispose()
+        self._pss_chat_logger_manager = _model.PssChatLoggerManager()
+        await self.async_init(self._pss_chat_logger_manager, self._init_errors, False)
+
+    async def async_init(self, pss_chat_logger_manager: _model.PssChatLoggerManager, init_errors: list[str], first_init: bool = False):
+        await self.bot.wait_until_ready()
 
         access_token = _bot_settings.PSS_ACCESS_TOKEN
         user_id = _bot_settings.PSS_USER_ID
 
         if not access_token or not user_id:
-            print("[ChatLoggerCog.on_ready] PSS access token or user ID is not set. Cannot start chat logging.")
+            msg = make_error_message("PSS access token or user ID is not set.", first_init)
+            print(f"[ChatLoggerCog.async_init] {msg}")
+            init_errors.append(msg)
             return
 
         try:
             with _model.orm.create_session() as session:
                 db_chat_loggers = _model.orm.get_all(_model.db_pss_chat_logger.PssChatLoggerModel, session)
         except _psycopg2.OperationalError as ex:
-            print("[ChatLoggerCog.on_ready] Could not retrieve configured Chat Loggers from database:")
+            print("[ChatLoggerCog.async_init] Could not retrieve configured Chat Loggers from database:")
             print(ex)
             return
 
         if not db_chat_loggers:
-            print("[ChatLoggerCog.on_ready] No chat loggers configured in the database.")
-            self._initialized = True
-            return
-
-        self._pss_chat_logger_manager = _model.PssChatLoggerManager()
+            msg = make_error_message("No chat loggers configured in the database.", first_init)
+            print(f"[ChatLoggerCog.async_init] {msg}")
+            init_errors.append(msg)
 
         for db_chat_logger in db_chat_loggers:
             channel = self.bot.get_channel(db_chat_logger.channel_id)
             webhook = await get_webhook_from_channel(channel, db_chat_logger.webhook_link)
             if not webhook:
                 msg = f"Could not find webhook for channel '{db_chat_logger.channel_id}' on guild '{db_chat_logger.guild_id}' for chat logger '{db_chat_logger.name}' (ID: {db_chat_logger.id})."
-                self._init_errors.append(msg)
+                msg = make_error_message(msg, first_init)
+                init_errors.append(msg)
                 continue
 
             listener = _model.PssDiscordListener(self.bot, webhook)
-            self._pss_chat_logger_manager.subscribe_to_channel(db_chat_logger.pss_channel_key, listener)
+            pss_chat_logger_manager.subscribe_to_channel(db_chat_logger.pss_channel_key, listener)
 
-        await self._pss_chat_logger_manager.start(access_token, user_id)
-
-        self._initialized = True
+        await pss_chat_logger_manager.start(access_token, user_id)
 
     def cog_unload(self):
         if self.watch_log_chat.is_running() and self.watch_log_chat._can_be_cancelled():
@@ -70,8 +73,6 @@ class ChatLoggerCog(_CogBase):
 
         if self.log_chat.is_running() and self.log_chat._can_be_cancelled():
             self.log_chat.cancel()
-
-        self._initialized = False
 
     @_commands.guild_only()
     @_commands.group(name="chatlog", brief="Configure Chat Logging", invoke_without_command=True)
@@ -107,27 +108,29 @@ class ChatLoggerCog(_CogBase):
         Examples:
           fh chatlog add public #log Public Chat - Adds a chat logger for the public chat that will post to the channel #log
         """
-        if not self._initialized:
-            raise Exception("The chat logger manager is not initialized. Please notify the author.")
-
         _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
 
         if not isinstance(channel, (_discord.TextChannel,)):
             raise TypeError(f"Chat Logging is only supported to Text Channels. The channel '{channel}' is not a text channel.")
 
-        webhook = await add_webhook_to_channel(channel)
+        webhook = await add_webhook_to_channel(channel, name=name)
         if not webhook:
             raise Exception(f"Failed to create a webhook for the channel '{channel}' (ID: {channel.id}). Please check the bot's permissions.")
 
-        log_channel = _model.db_pss_chat_logger.PssChatLoggerModel.make(ctx.guild.id, channel.id, channel_key, name, webhook.url)
+        pss_chat_logger = _model.db_pss_chat_logger.PssChatLoggerModel.make(ctx.guild.id, channel.id, channel_key, name, webhook.url)
         with _model.orm.create_session() as session:
-            log_channel.create(session)
+            pss_chat_logger.create(session)
             _ = _model.orm.get_all(_model.db_pss_chat_logger.PssChatLoggerModel, session)
 
         listener = _model.PssDiscordListener(self.bot, webhook)
         self._pss_chat_logger_manager.subscribe_to_channel(channel_key, listener)
 
-        await _utils.discord.reply(ctx, f"Posting messages from channel '{channel_key}' to {channel.mention}.")
+        lines = [f"Posting messages from channel '{channel_key}' to {channel.mention}."]
+        lines.extend((await _converters.PssChatLoggerConverter(pss_chat_logger).to_text()))
+
+        await _utils.discord.reply_lines(ctx, lines)
+
+        await self.refresh()
 
     @_commands.guild_only()
     @base.command(name="edit", brief="Edit chat logger")
@@ -144,9 +147,6 @@ class ChatLoggerCog(_CogBase):
         Examples:
           fh chatlog edit 1 - Edits the chat logger with ID '1' on this server.
         """
-        if not self._initialized:
-            raise Exception("The chat logger manager is not initialized. Please notify the author.")
-
         _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
 
         with _model.orm.create_session() as session:
@@ -196,6 +196,9 @@ class ChatLoggerCog(_CogBase):
         name_changed = new_name and not skipped_new_name
 
         if channel_key_changed or discord_channel_changed or name_changed:
+            if name_changed:
+                pss_chat_logger.name = new_name
+
             if channel_key_changed or discord_channel_changed:
                 old_webhook = await get_webhook_from_channel(self.bot.get_channel(pss_chat_logger.channel_id), pss_chat_logger.webhook_link)
                 old_channel = self.bot.get_channel(old_channel_id)
@@ -205,17 +208,14 @@ class ChatLoggerCog(_CogBase):
                     pss_chat_logger.pss_channel_key = new_channel_key
 
                 if discord_channel_changed:
-                    new_webhook = await add_webhook_to_channel(new_channel)
+                    new_webhook = await add_webhook_to_channel(new_channel, name=pss_chat_logger.name)
                     pss_chat_logger.webhook_link = new_webhook.url
                     pss_chat_logger.channel_id = new_channel.id
 
-                self._pss_chat_logger_manager.unsubscribe_from_channel(old_channel_key, str(old_webhook.id))
+                self._pss_chat_logger_manager.unsubscribe_from_channel(old_channel_key, old_webhook.url)
                 self._pss_chat_logger_manager.subscribe_to_channel(pss_chat_logger.pss_channel_key, _model.PssDiscordListener(self.bot, new_webhook or old_webhook))
                 if old_channel:
                     await delete_webhook_from_channel(pss_chat_logger.webhook_link, old_channel)
-
-            if name_changed:
-                pss_chat_logger.name = new_name
 
             with _model.orm.create_session() as session:
                 pss_chat_logger = _model.orm.merge(session, pss_chat_logger)
@@ -225,6 +225,8 @@ class ChatLoggerCog(_CogBase):
             lines.extend((await converter.to_text()))
 
             await _utils.discord.reply_lines(ctx, lines)
+
+            await self.refresh()
         else:
             await _utils.discord.reply(ctx, f"The chat logger {pss_chat_logger} has not been edited.")
 
@@ -245,16 +247,19 @@ class ChatLoggerCog(_CogBase):
             _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
             with _model.orm.create_session() as session:
                 pss_chat_loggers = _model.orm.get_all_filtered_by(_model.db_pss_chat_logger.PssChatLoggerModel, session, guild_id=ctx.guild.id)
-            lines = ["_listing chat loggers for this Discord server__"]
+
+            lines = ["_listing chat loggers for this Discord server_"]
             for pss_chat_logger in pss_chat_loggers:
                 converter = _converters.PssChatLoggerConverter(pss_chat_logger)
                 definition_lines = await converter.to_text()
                 lines.extend(definition_lines)
                 lines.append("_ _")
+
             if len(lines) > 1:
                 lines = lines[:-1]
             else:
                 lines.append("There are no chat loggers configured for this server.")
+
             await _utils.discord.reply_lines(ctx, lines)
 
     @_commands.is_owner()
@@ -319,7 +324,7 @@ class ChatLoggerCog(_CogBase):
         elif delete_log:
             channel = self.bot.get_channel(pss_chat_logger.channel_id)
             await delete_webhook_from_channel(pss_chat_logger.webhook_link, channel)
-            self._pss_chat_logger_manager.unsubscribe_from_channel(pss_chat_logger.pss_channel_key, self.bot.user.id)
+            self._pss_chat_logger_manager.unsubscribe_from_channel(pss_chat_logger.pss_channel_key, pss_chat_logger.webhook_link)
 
             with _model.orm.create_session() as session:
                 pss_chat_logger = _model.orm.get_by_id(_model.db_pss_chat_logger.PssChatLoggerModel, session, logger_id)
@@ -327,6 +332,8 @@ class ChatLoggerCog(_CogBase):
                 session.commit()
 
             await _utils.discord.reply(ctx, "The chat log has been deleted.")
+
+            await self.refresh()
         else:
             await _utils.discord.reply(ctx, "The chat log has not been deleted.")
 
@@ -344,7 +351,7 @@ class ChatLoggerCog(_CogBase):
             await _utils.discord.reply(ctx, "No errors occurred during cog initialization.")
             return
 
-        lines = ["Errors that occurred during cog initialization:"]
+        lines = ["## Cog initialization errors"]
         lines.extend(self._init_errors)
         await _utils.discord.reply_lines(ctx, lines)
 
@@ -361,9 +368,11 @@ async def delete_webhook_from_channel(webhook_link: str, channel: _discord.TextC
                 break
 
 
-async def add_webhook_to_channel(channel: _discord.TextChannel) -> _discord.Webhook | None:
+async def add_webhook_to_channel(channel: _discord.TextChannel, name: str | None = None) -> _discord.Webhook | None:
     if channel and isinstance(channel, _discord.TextChannel):
-        webhook = await channel.create_webhook(name="PSS Chat Logger", reason="Created by Fleet Helper")
+        if not name:
+            name = "PSS Chat Logger"
+        webhook = await channel.create_webhook(name=name, reason="Created by Fleet Helper")
         return webhook
     return None
 
@@ -390,7 +399,7 @@ async def convert_to_webhook(chat_logger: _model.db_pss_chat_logger.PssChatLogge
         return None
 
     try:
-        webhook_link = await add_webhook_to_channel(channel)
+        webhook_link = await add_webhook_to_channel(channel, name=chat_logger.name)
     except _discord.Forbidden:
         print(
             f"[convert_to_webhook] Bot does not have permission to create a webhook in channel '{channel}' (ID: {chat_logger.channel_id}) for chat logger '{chat_logger.name}' (ID: {chat_logger.id})."
@@ -421,3 +430,9 @@ async def migrate_to_webhooks(bot: _model.PssApiDiscordBot):
                 pss_chat_logger.save(session)
                 session.commit()
     await _model.database.set_setting("chat_logger_migrated_to_webhooks", True)
+
+
+def make_error_message(msg: str, first_init: bool = False) -> str:
+    if first_init:
+        msg = f"Initial init: {msg}"
+    return f"{_utils.format.datetime(_utils.datetime.get_utc_now())} - {msg}"

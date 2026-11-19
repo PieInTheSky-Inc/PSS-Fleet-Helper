@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import pssapi
 
-from .pusher import PusherWithRemove
+from .pusher import Pusher
 
 
 class PssChatListener(ABC):
@@ -13,6 +13,14 @@ class PssChatListener(ABC):
     @abstractmethod
     def on_message(self, message: pssapi.entities.Message) -> None:
         raise NotImplementedError("Subclasses must implement the on_message method.")
+
+
+class NullPssChatListener(PssChatListener):
+    def __init__(self, name: str = "NullListener"):
+        super().__init__(name)
+
+    def on_message(self, message: pssapi.entities.Message) -> None:
+        pass
 
 
 class PssChatChannel:
@@ -36,7 +44,8 @@ class PssChatChannel:
         if listener_name in self._listeners:
             del self._listeners[listener_name]
 
-    def _on_message(self, message: pssapi.entities.Message):
+    def _on_message(self, data: dict):
+        message = pssapi.entities.Message(data)
         for listener in self._listeners.values():
             listener.on_message(message)
 
@@ -44,7 +53,7 @@ class PssChatChannel:
 class PssChatLoggerManager:
     def __init__(self):
         self._channels: dict[str, PssChatChannel] = {}
-        self._pusher: PusherWithRemove = PusherWithRemove()
+        self._pusher: Pusher = Pusher()
 
     def subscribe_to_channel(self, channel_key: str, listener: PssChatListener):
         pss_channel = self.get_pss_channel(channel_key)
@@ -69,6 +78,9 @@ class PssChatLoggerManager:
         del self._channels[channel_key]
 
     async def start(self, access_token: str, user_id: str | int):
+        channel_count = len(self._channels)
+        listener_count = sum(channel.listeners_count for channel in self._channels.values())
+        print(f"[PssChatLoggerManager.start] Starting PSS Chat Logger Manager with {channel_count} channels with {listener_count} listeners.")
         await self._pusher.run(access_token, user_id)
 
     def dispose(self):
