@@ -2,16 +2,16 @@ from discord import Guild as _Guild
 from discord import TextChannel as _TextChannel
 
 from .. import model as _model
-from ..model import PssChatLogger as _PssChatLogger
+from ..model import PssChatLoggerModel as _PssChatLoggerModel
 
 
 class PssChatLoggerConverter:
-    def __init__(self, pss_chat_log: _PssChatLogger) -> None:
-        self.__pss_chat_log: _PssChatLogger = pss_chat_log
+    def __init__(self, pss_chat_log: _PssChatLoggerModel) -> None:
+        self.__pss_chat_log: _PssChatLoggerModel = pss_chat_log
         self.__text: list[str] = None
 
     @property
-    def pss_chat_log(self) -> _PssChatLogger:
+    def pss_chat_log(self) -> _PssChatLoggerModel:
         return self.__pss_chat_log
 
     async def to_text(self, for_admin: bool = False, bot: _model.PssApiDiscordBot = None) -> list[str]:
