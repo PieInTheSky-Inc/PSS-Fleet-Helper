@@ -34,7 +34,7 @@ class PssDiscordListener(PssChatListenerAsync):
         try:
             await self.webhook.send(content=content, username=username, avatar_url=avatar_url)
         except (discord.errors.HTTPException, discord.errors.Forbidden):
-            LOGGER.error(f"Failed to send message with ID {message_id} for chat logger '{self.webhook.name}' on guild '{webhook.guild.name}' (ID: {self.webhook.id})"
+            LOGGER.error(f"Failed to send message with ID {message_id} for chat logger '{self.webhook.name}' on guild '{webhook.guild.name}' (ID: {self.webhook.id})")
 
     @staticmethod
     def _make_discord_message_content(message: pssapi.entities.Message) -> str:
