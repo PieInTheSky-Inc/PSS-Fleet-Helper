@@ -22,6 +22,7 @@ def setup_logging(bot: discord.Bot, error_channel_id: int) -> logging.Logger:
     logger.addHandler(console_handler)
 
     if bot_settings.DISCORD_ERROR_LOG_GUILD_ID and bot_settings.DISCORD_ERROR_LOG_CHANNEL_ID:
+        print(f"[setup_logging] Setting up Discord error logging. Guild ID: {bot_settings.DISCORD_ERROR_LOG_GUILD_ID}, Channel ID: {bot_settings.DISCORD_ERROR_LOG_CHANNEL_ID}")
         discord_handler = DiscordLogHandler(bot, bot_settings.DISCORD_ERROR_LOG_GUILD_ID, bot_settings.DISCORD_ERROR_LOG_CHANNEL_ID)
         discord_handler.setLevel(logging.ERROR)
         discord_handler.setFormatter(formatter)
