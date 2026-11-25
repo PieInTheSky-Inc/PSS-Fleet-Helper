@@ -406,13 +406,13 @@ async def convert_to_webhook(chat_logger: _model.db_pss_chat_logger.PssChatLogge
         return None
 
     try:
-        webhook_link = await add_webhook_to_channel(channel, name=chat_logger.name)
+        webhook = await add_webhook_to_channel(channel, name=chat_logger.name)
     except _discord.Forbidden:
         msg = f"[convert_to_webhook] Bot does not have permission to create a webhook in channel '{channel}' (ID: {chat_logger.channel_id}) for chat logger '{chat_logger.name}' (ID: {chat_logger.id})."
         LOGGER.error(msg)
         return None
 
-    return webhook_link
+    return webhook.url
 
 
 async def migrate_to_webhooks(bot: _model.PssApiDiscordBot):
