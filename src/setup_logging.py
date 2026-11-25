@@ -4,7 +4,7 @@ import logging
 import discord
 
 def setup_logging(bot: discord.Bot, error_channel_id: int) -> logging.Logger:
-    logger = logging.getLogger("my_bot")
+    logger = logging.getLogger("pss_fleet_helper")
     logger.setLevel(logging.INFO)  # Capture INFO and above globally
 
     formatter = logging.Formatter(
