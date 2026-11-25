@@ -53,6 +53,13 @@ class ChatLoggerCog(_CogBase):
 
         for db_chat_logger in db_chat_loggers:
             channel = await fetch_channel(self.bot, db_chat_logger.guild_id, db_chat_logger.channel_id)
+            if not channel:
+                msg = f"Could not find channel with ID '{db_chat_logger.channel_id}' on guild with ID '{db_chat_logger.guild_id}' for chat logger '{db_chat_logger.name}' (ID: {db_chat_logger.id})."
+                msg = make_error_message(msg, first_init)
+                logging.error("[ChatLoggerCog.async_init] {0}", msg)
+                init_errors.append(msg)
+                continue
+                
             webhook = await get_webhook_from_channel(channel, db_chat_logger.webhook_link)
             if not webhook:
                 msg = f"Could not find webhook for channel '{db_chat_logger.channel_id}' on guild '{db_chat_logger.guild_id}' for chat logger '{db_chat_logger.name}' (ID: {db_chat_logger.id})."
@@ -455,7 +462,7 @@ async def fetch_channel(bot: _discord.Bot, guild_id: int, channel_id: int) -> _d
             guild = await bot.fetch_guild(guild_id)
         except (_discord.NotFound, _discord.Forbidden, _discord.HTTPException) as ex:
             LOGGER.error(f"Could not get or fetch guild with ID '{guild_id}'")
-            return
+            return None
 
     try:
         channel = guild.get_channel(channel_id)
@@ -467,6 +474,6 @@ async def fetch_channel(bot: _discord.Bot, guild_id: int, channel_id: int) -> _d
             channel = await guild.fetch_channel(channel_id)
         except (_discord.NotFound, _discord.Forbidden, _discord.HTTPException) as ex:
             LOGGER.error(f"Could not get or fetch channel with ID '{channel_id}' from guild '{guild.name}' (ID: {guild_id}).")
-            return
+            return None
 
     return channel
