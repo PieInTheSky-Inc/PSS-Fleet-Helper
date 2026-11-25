@@ -444,7 +444,7 @@ def make_error_message(msg: str, first_init: bool = False) -> str:
     return f"{_utils.format.datetime(_utils.datetime.get_utc_now())} - {msg}"
 
 
-async def fetch_channel(bot: _discord.Bot, guild_id: int, channel_id: int) -> _discord.Channel | None:
+async def fetch_channel(bot: _discord.Bot, guild_id: int, channel_id: int) -> _discord.TextChannel | None:
     try:
         guild = bot.get_guild(guild_id)
     except (_discord.NotFound, _discord.Forbidden, _discord.HTTPException) as ex:
