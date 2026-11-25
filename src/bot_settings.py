@@ -21,6 +21,7 @@ DISCORD_BOT_CLIENT_ID: str = _os.environ.get(
     _os.environ.get("FLEETHELPER_DISCORD_BOT_CLIENT_ID"),
 )
 DISCORD_BOT_TOKEN: str = _os.environ.get("VIVIBOT_DISCORD_BOT_TOKEN", _os.environ.get("FLEETHELPER_DISCORD_BOT_TOKEN"))
+DISCORD_ERROR_LOG_CHANNEL_ID: int | None = int(_os.environ.get("DISCORD_ERROR_LOG_CHANNEL_ID, 0)) or None
 
 
 DEFAULT_PREFIXES: list[str] = [
