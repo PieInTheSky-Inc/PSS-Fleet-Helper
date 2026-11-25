@@ -110,11 +110,15 @@ class ChatLoggerCog(_CogBase):
         _utils.assert_.authorized_channel_or_server_manager(ctx, _bot_settings.AUTHORIZED_CHANNEL_IDS)
 
         if not isinstance(channel, (_discord.TextChannel,)):
-            raise TypeError(f"Chat Logging is only supported to Text Channels. The channel '{channel}' is not a text channel.")
+            msg = f"Chat Logging is only supported to Text Channels. The channel '{channel}' is not a text channel."
+            LOGGER.error(msg)
+            raise TypeError(msg)
 
         webhook = await add_webhook_to_channel(channel, name=name)
         if not webhook:
-            raise Exception(f"Failed to create a webhook for the channel '{channel}' (ID: {channel.id}). Please check the bot's permissions.")
+            msg = f"Failed to create a webhook for the channel '{channel}' (ID: {channel.id}). Please check the bot's permissions."
+            LOGGER.error(msg)
+            raise Exception(msg)
 
         pss_chat_logger = _model.db_pss_chat_logger.PssChatLoggerModel.make(ctx.guild.id, channel.id, channel_key, name, webhook.url)
         with _model.orm.create_session() as session:
@@ -154,7 +158,9 @@ class ChatLoggerCog(_CogBase):
                 guild_id=ctx.guild.id,
             )
         if not pss_chat_logger:
-            raise Exception(f"A chat log with the ID {logger_id} does not exist on this server.")
+            msg = f"A chat log with the ID {logger_id} does not exist on this server."
+            LOGGER.error(msg)
+            raise Exception(msg)
 
         old_channel_key, old_channel_id = pss_chat_logger.pss_channel_key, pss_chat_logger.channel_id
         skipped_new_channel_key, skipped_new_channel, skipped_new_name = False, False, False
@@ -306,7 +312,9 @@ class ChatLoggerCog(_CogBase):
                 guild_id=ctx.guild.id,
             )
         if not pss_chat_logger:
-            raise Exception(f"A chat log with the ID {logger_id} does not exist on this server.")
+            msg = f"A chat log with the ID {logger_id} does not exist on this server."
+            LOGGER.error(msg)
+            raise ValueError(msg)
 
         converter = _converters.PssChatLoggerConverter(pss_chat_logger)
         await _utils.discord.reply_lines(ctx, (await converter.to_text()))
@@ -365,7 +373,11 @@ async def add_webhook_to_channel(channel: _discord.TextChannel, name: str | None
     if channel and isinstance(channel, _discord.TextChannel):
         if not name:
             name = "PSS Chat Logger"
-        webhook = await channel.create_webhook(name=name, reason="Created by Fleet Helper")
+        try:
+            webhook = await channel.create_webhook(name=name, reason="Created by Fleet Helper")
+        except (_discord.NotFound, _discord.Forbidden, _discord.HTTPException) as ex:
+            msg = f"[add_webhook_to_channel] Could not create webhook: {0}"
+            LOGGER.error(msg, ex)
         return webhook
     return None
 
@@ -375,7 +387,8 @@ async def get_webhook_from_channel(channel: _discord.TextChannel, webhook_link: 
         try:
             channel_webhooks = await channel.webhooks()
         except _discord.Forbidden:
-            print(f"[get_webhook_from_channel] Bot does not have permission to access webhooks in channel '{channel}' (ID: {channel.id}).")
+            msg = f"[get_webhook_from_channel] Bot does not have permission to access webhooks in channel '{channel}' (ID: {channel.id})."
+            LOGGER.error(msg)
             return None
 
         for webhook in channel_webhooks:
@@ -388,15 +401,15 @@ async def convert_to_webhook(chat_logger: _model.db_pss_chat_logger.PssChatLogge
     try:
         channel = await bot.fetch_channel(chat_logger.channel_id)
     except (_discord.NotFound, _discord.Forbidden, _discord.HTTPException):
-        print(f"[convert_to_webhook] Could not fetch channel with ID {chat_logger.channel_id} for chat logger '{chat_logger.name}' (ID: {chat_logger.id}).")
+        msg = f"[convert_to_webhook] Could not fetch channel with ID {chat_logger.channel_id} for chat logger '{chat_logger.name}' (ID: {chat_logger.id})."
+        LOGGER.error(msg)
         return None
 
     try:
         webhook_link = await add_webhook_to_channel(channel, name=chat_logger.name)
     except _discord.Forbidden:
-        print(
-            f"[convert_to_webhook] Bot does not have permission to create a webhook in channel '{channel}' (ID: {chat_logger.channel_id}) for chat logger '{chat_logger.name}' (ID: {chat_logger.id})."
-        )
+        msg = f"[convert_to_webhook] Bot does not have permission to create a webhook in channel '{channel}' (ID: {chat_logger.channel_id}) for chat logger '{chat_logger.name}' (ID: {chat_logger.id})."
+        LOGGER.error(msg)
         return None
 
     return webhook_link
