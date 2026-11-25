@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import json
+import logging
 import platform
 from typing import Any, Callable
 
@@ -14,6 +15,7 @@ from websockets.asyncio.client import ClientConnection, connect
 from websockets.exceptions import ConnectionClosed as ConnectionClosedError
 
 
+LOGGER = logging.getLogger("pss_fleet_helper.pusher")
 SCHEDULER_JOB_DEFAULTS = {
     "misfire_grace_time": 5,
 }
@@ -55,7 +57,9 @@ class PusherChannel:
         async with ClientSession() as session:
             async with session.post(endpoint, data=data) as response:
                 if not response.ok:
-                    raise RuntimeError("Couldn't authenticate connection")
+                    msg = "Couldn't authenticate connection"
+                    LOGGER.critical(msg)
+                    raise RuntimeError(msg)
 
                 return json.loads(await response.text())["auth"]
 
@@ -133,14 +137,11 @@ class PusherClientAsync:
         await self._connection.close()
 
         if code or error_message:
-            raise PusherConnectionClosed(
-                f"""Connection closed.
-Code: {code}
-Message: {error_message}""",
-                code,
-                error_message,
-            )
-
+            msg = f"Connection closed.\nCode: {code}\nMessage: {error_message}"
+        else:
+            msg = "Connection timed out / closed with unknown cause."
+            
+        LOGGER.error(msg)
         raise PusherConnectionClosed("Connection timed out / closed with unknown cause.")
 
     # Scheduled tasks

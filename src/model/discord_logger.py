@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import discord
 import pssapi
@@ -6,6 +7,8 @@ import pssapi
 from src import utils
 
 from .pss_chat_logger import PssChatListenerAsync
+
+LOGGER = logging.getLogger("pss_fleet_helper.PssDiscordListener")
 
 
 class PssDiscordListener(PssChatListenerAsync):
@@ -31,7 +34,7 @@ class PssDiscordListener(PssChatListenerAsync):
         try:
             await self.webhook.send(content=content, username=username, avatar_url=avatar_url)
         except (discord.errors.HTTPException, discord.errors.Forbidden):
-            print(f"[log_message] Failed to send message with ID {message_id} for chat logger '{self.webhook.name}' (ID: {self.webhook.id}).")
+            LOGGER.error(f"Failed to send message with ID {message_id} for chat logger '{self.webhook.name}' on guild '{webhook.guild.name}' (ID: {self.webhook.id})")
 
     @staticmethod
     def _make_discord_message_content(message: pssapi.entities.Message) -> str:
