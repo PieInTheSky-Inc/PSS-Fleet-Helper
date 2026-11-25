@@ -32,7 +32,7 @@ class DiscordLogHandler(logging.Handler):
             print(f"[DiscordLogHandler] Could not get/fetch guild with id '{self.guild_id}'.")
             return
 
-        channel = guild.get_channel(self.channel_id) or await guild.fetch_channel(self.guild_id)
+        channel = guild.get_channel(self.channel_id) or await guild.fetch_channel(self.channel_id)
         if not channel:
             print(f"[DiscordLogHandler] Could not get/fetch channel with id '{self.channel_id}' on guild '{guild.name}' (ID: {guild.id}).")
             return
