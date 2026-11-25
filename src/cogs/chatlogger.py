@@ -1,3 +1,5 @@
+import logging
+
 import discord as _discord
 import discord.ext.commands as _commands
 import psycopg2 as _psycopg2
@@ -10,6 +12,8 @@ from .cog_base import CogBase as _CogBase
 
 
 # ---------- Constants ----------
+
+LOGGER = logging.getLogger("pss_fleet_helper.chatlogger_cog")
 
 
 # ---------- Cog ----------
@@ -31,7 +35,7 @@ class ChatLoggerCog(_CogBase):
 
         if not access_token or not user_id:
             msg = make_error_message("PSS access token or user ID is not set.", first_init)
-            print(f"[ChatLoggerCog.async_init] {msg}")
+            logging.error("[ChatLoggerCog.async_init] {0}", msg)
             init_errors.append(msg)
             return
 
@@ -39,13 +43,12 @@ class ChatLoggerCog(_CogBase):
             with _model.orm.create_session() as session:
                 db_chat_loggers = _model.orm.get_all(_model.db_pss_chat_logger.PssChatLoggerModel, session)
         except _psycopg2.OperationalError as ex:
-            print("[ChatLoggerCog.async_init] Could not retrieve configured Chat Loggers from database:")
-            print(ex)
+            logging.error("[ChatLoggerCog.async_init] Could not retrieve configured Chat Loggers from database:\n{0}", ex)
             return
 
         if not db_chat_loggers:
             msg = make_error_message("No chat loggers configured in the database.", first_init)
-            print(f"[ChatLoggerCog.async_init] {msg}")
+            logging.error("[ChatLoggerCog.async_init] {0}", msg)
             init_errors.append(msg)
 
         for db_chat_logger in db_chat_loggers:
@@ -54,6 +57,7 @@ class ChatLoggerCog(_CogBase):
             if not webhook:
                 msg = f"Could not find webhook for channel '{db_chat_logger.channel_id}' on guild '{db_chat_logger.guild_id}' for chat logger '{db_chat_logger.name}' (ID: {db_chat_logger.id})."
                 msg = make_error_message(msg, first_init)
+                logging.error("[ChatLoggerCog.async_init] {0}", msg)
                 init_errors.append(msg)
                 continue
 
