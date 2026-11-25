@@ -6,6 +6,7 @@ import pssapi as _pssapi
 
 from . import bot_settings as _bot_settings
 from . import model as _model
+from . import setup_logging
 from . import utils as _utils
 
 # ---------- Setup ----------
@@ -68,4 +69,5 @@ async def initialize() -> None:
 def run_bot():
     loop = _asyncio.get_event_loop()
     loop.run_until_complete(initialize())
+    logger = setup_logging.setup_logging(FLEET_HELPER, _bot_settings.DISCORD_ERROR_LOG_CHANNEL_ID)
     FLEET_HELPER.run(_bot_settings.DISCORD_BOT_TOKEN)
