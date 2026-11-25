@@ -5,10 +5,11 @@ import discord
 
 
 class DiscordLogHandler(logging.Handler):
-    def __init__(self, bot: discord.Bot, channel_id: int):
+    def __init__(self, bot: discord.Bot, guild_id: int, channel_id: int):
         super().__init__()
         self.bot = bot
         self.channel_id = channel_id
+        self.guild_id = guild_id
 
     def emit(self, record: logging.LogRecord):
         # Prevent infinite loops if Discord itself throws an error while logging
@@ -26,8 +27,14 @@ class DiscordLogHandler(logging.Handler):
         # Wait until the bot's internal cache is ready so get_channel() works
         await self.bot.wait_until_ready()
 
-        channel = self.bot.get_channel(self.channel_id)
+        guild = self.bot.get_guild(self.guild_id) or await self.bot.fetch_guild(self.guild_id)
+        if not guild:
+            print(f"[DiscordLogHandler] Could not get/fetch guild with id '{self.guild_id}'.")
+            return
+
+        channel = guild.get_channel(self.channel_id) or await guild.fetch_guild(self.guild_id)
         if not channel:
+            print(f"[DiscordLogHandler] Could not get/fetch channel with id '{self.channel_id}' on guild '{guild.name}' (ID: {guild.id}).")
             return
 
         # Truncate to stay safely within Discord's 2000-character message limit
