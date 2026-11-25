@@ -3,6 +3,10 @@ import logging
 
 import discord
 
+from . import bot_settings
+from .discord_log_handler import DiscordLogHandler
+
+
 def setup_logging(bot: discord.Bot, error_channel_id: int) -> logging.Logger:
     logger = logging.getLogger("pss_fleet_helper")
     logger.setLevel(logging.INFO)  # Capture INFO and above globally
@@ -15,13 +19,13 @@ def setup_logging(bot: discord.Bot, error_channel_id: int) -> logging.Logger:
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
-
-    discord_handler = DiscordLogHandler(bot, error_channel_id)
-    discord_handler.setLevel(logging.ERROR)
-    discord_handler.setFormatter(formatter)
-
     logger.addHandler(console_handler)
-    logger.addHandler(discord_handler)
+
+    if bot_settings.DISCORD_ERROR_LOG_GUILD_ID and bot_settings.DISCORD_ERROR_LOG_CHANNEL_ID:
+        discord_handler = DiscordLogHandler(bot, bot_settings.DISCORD_ERROR_LOG_GUILD_ID, bot_settings.DISCORD_ERROR_LOG_CHANNEL_ID)
+        discord_handler.setLevel(logging.ERROR)
+        discord_handler.setFormatter(formatter)
+        logger.addHandler(discord_handler)
 
     return logger
 
